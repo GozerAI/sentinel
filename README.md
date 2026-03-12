@@ -1,247 +1,139 @@
-# Sentinel - AI-Native Chief Information Officer (CIO)
+# Sentinel
 
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://python.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**AI-Native Infrastructure Management with Autonomous Operations**
+AI-powered security monitoring and threat detection platform. Uses autonomous agents to scan networks, discover devices, manage VLANs, detect threats, and enforce security policies.
 
-Sentinel is an autonomous CIO platform that uses AI agents to manage, monitor, secure, and optimize internal IT operations. It provides real-time network discovery, automatic segmentation, traffic optimization, security enforcement, and self-healing capabilities.
+Part of the [GozerAI](https://gozerai.com) ecosystem.
 
-## CIO vs CTO Function
+## Features
 
-Sentinel serves as the **CIO function** - managing internal infrastructure and operations:
+- **Network discovery** with automatic device classification and topology mapping
+- **Threat detection** with SOC operations, IP blocking, and device quarantine
+- **VLAN management** with segmentation policies and firewall rules
+- **Self-healing** with automated failover and health monitoring
+- **Traffic optimization** with QoS management and NetFlow analysis
+- **REST API** with API key and JWT authentication
 
-| CIO (Sentinel) | CTO (Coming Soon) |
-|----------------|-------------------|
-| Internal infrastructure | External products |
-| IT operations | Product development |
-| Security & compliance | Technical strategy |
-| Network management | Customer solutions |
-| Asset inventory | Innovation R&D |
+## Feature Tiers
 
-## Agent Council (CIO Team)
+| Feature | Community | Pro | Enterprise |
+|---------|:---------:|:---:|:----------:|
+| Network & discovery agents | x | x | x |
+| REST API & core engine | x | x | x |
+| Native integrations | x | x | x |
+| GUI dashboard | | x | x |
+| Orchestration engine | | x | x |
+| IoT device management | | x | x |
+| Visualization & reporting | | x | x |
+| Nexus integration | | | x |
 
-| Agent | Role | Function |
-|-------|------|----------|
-| **Guardian** | Chief Security Officer | SOC operations, threat detection, IP blocking, device quarantine |
-| **Healer** | VP of Reliability | SRE operations, self-repair, health monitoring, automated failover |
-| **Discovery** | IT Asset Manager | Network scanning, device classification, topology mapping |
-| **Optimizer** | Network Operations | Traffic engineering, QoS management, NetFlow analysis |
-| **Planner** | Infrastructure Architect | VLAN design, segmentation policies, firewall rules |
-| **Strategy** | CIO Executive | Strategic oversight, agent coordination, decision approval |
+## Agents
 
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    SENTINEL CIO CONTROL PLANE                    │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│                     ┌──────────────────┐                        │
-│                     │  Strategy Agent  │                        │
-│                     │  (CIO Executive) │                        │
-│                     └────────┬─────────┘                        │
-│                              │                                   │
-│    ┌─────────────────────────┼─────────────────────────┐        │
-│    │                         │                          │        │
-│    ▼                         ▼                          ▼        │
-│ ┌──────────┐          ┌──────────┐              ┌──────────┐    │
-│ │ Guardian │          │  Healer  │              │ Discovery│    │
-│ │ (SecOps) │          │  (SRE)   │              │(AssetMgr)│    │
-│ └────┬─────┘          └────┬─────┘              └────┬─────┘    │
-│      │                     │                          │          │
-│      └─────────────────────┼──────────────────────────┘          │
-│                            │                                     │
-│    ┌───────────────────────┼───────────────────────┐            │
-│    │                       │                        │            │
-│    ▼                       ▼                        ▼            │
-│ ┌──────────┐         ┌──────────┐            ┌──────────┐       │
-│ │Optimizer │         │ Planner  │            │Event Bus │       │
-│ │(NetOps)  │         │(InfrArch)│            │(Comms)   │       │
-│ └──────────┘         └──────────┘            └──────────┘       │
-│                                                                  │
-├─────────────────────────────────────────────────────────────────┤
-│                      INTEGRATIONS LAYER                          │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐        │
-│  │ OPNsense │  │  UniFi   │  │ Proxmox  │  │ TrueNAS  │        │
-│  │ (Router) │  │ (Switch) │  │(Compute) │  │(Storage) │        │
-│  └──────────┘  └──────────┘  └──────────┘  └──────────┘        │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-## Key Capabilities
-
-### Security (Guardian)
-- Real-time threat detection and response
-- Automated IP blocking with router integration
-- Device quarantine via VLAN isolation
-- Failed authentication tracking
-- Security event correlation
-
-### Reliability (Healer)
-- Infrastructure health monitoring
-- Automated failover and recovery
-- Predictive failure detection
-- Self-healing workflows
-
-### Asset Management (Discovery)
-- Continuous network scanning
-- Device fingerprinting and classification
-- LLDP-based topology mapping
-- Infrastructure auto-detection (MikroTik, RPi, NAS)
-- IoT device classification
-
-### Network Operations (Optimizer)
-- NetFlow/IPFIX traffic analysis
-- Automatic QoS policy application
-- Bandwidth optimization
-- Application classification
-
-### Infrastructure Architecture (Planner)
-- Automated VLAN design
-- Firewall rule management
-- Network segmentation policies
-- Security zone enforcement
+| Agent | Role | Description |
+|-------|------|-------------|
+| **Guardian** | Security | SOC operations, threat detection, IP blocking, quarantine |
+| **Healer** | Reliability | SRE operations, self-repair, health monitoring, failover |
+| **Discovery** | Asset Management | Network scanning, device classification, topology |
+| **Optimizer** | Network Ops | Traffic engineering, QoS, NetFlow analysis |
+| **Planner** | Architecture | VLAN design, segmentation policies, firewall rules |
+| **Strategy** | Executive | Agent coordination, decision approval, oversight |
 
 ## Quick Start
 
-### Prerequisites
-
-- Python 3.11+
-- Network equipment with API access (OPNsense, UniFi, etc.)
-
-### Installation
-
 ```bash
-# Clone the repository
-git clone https://github.com/chrisarseno/sentinel.git
+git clone https://github.com/GozerAI/sentinel.git
 cd sentinel
-
-# Create virtual environment
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
-# Install dependencies
 pip install -e ".[dev]"
 
-# Copy and configure settings
-cp config/default.yaml config/local.yaml
-# Edit config/local.yaml with your settings
+# Copy and edit configuration
+cp config.example.yaml config/config.yaml
+# Edit config.yaml — set network ranges, credentials, auth settings
+
+# Start the server
+python -m sentinel.main
 ```
 
-### Running
+## Configuration
 
-```bash
-# Start GUI application
-python -m sentinel.gui
-
-# Or start the engine directly
-python -m sentinel.main --config config/local.yaml
-```
-
-### Configuration
+Sentinel uses a YAML configuration file (`config/config.yaml`). Key sections:
 
 ```yaml
-# Enable network scanning (disabled by default for safety)
-agents:
-  discovery:
-    enable_scanning: true
-    networks:
-      - "192.168.1.0/24"
+api:
+  host: 0.0.0.0
+  port: 8010
+  auth:
+    enabled: true
+    jwt_secret: "your-secret"
+    api_keys:
+      my-key:
+        name: "My API Key"
+        scopes: ["read", "write"]
 
-# Configure integrations
+state:
+  backend: sqlite           # memory, sqlite, postgresql, redis
+  path: /var/lib/sentinel/state.db
+
+network:
+  scan_range: "192.168.1.0/24"
+  scan_interval: 300         # seconds
+
 integrations:
   router:
-    type: "opnsense"
-    host: "192.168.1.1"
-    api_key: "${ROUTER_API_KEY}"
-    api_secret: "${ROUTER_API_SECRET}"
-
-  switch:
-    type: "ubiquiti"
-    controller_url: "https://192.168.1.2:8443"
-    username: "${UNIFI_USER}"
-    password: "${UNIFI_PASS}"
-
-# Enable NetFlow collection
-agents:
-  optimizer:
-    netflow_enabled: true
-    netflow_port: 2055
+    type: opnsense
+    host: 192.168.1.1
+    api_key: ""
+    api_secret: ""
 ```
 
-## Project Structure
+## API Reference
 
-```
-sentinel/
-├── src/sentinel/
-│   ├── core/           # Engine, event bus, state management
-│   ├── agents/         # AI agents (Guardian, Healer, etc.)
-│   ├── integrations/   # Router, switch, compute, storage
-│   ├── gui/            # Desktop application
-│   ├── api/            # REST API
-│   └── iot/            # IoT classifier and segmenter
-├── tests/              # Test suite
-├── config/             # Configuration files
-├── deploy/             # Deployment configurations
-└── docs/               # Documentation
-```
+Authentication: `X-API-Key: <key>` or `Authorization: Bearer <jwt_token>`.
 
-## Development
+### Network & Discovery
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/devices` | List discovered devices |
+| GET | `/api/v1/devices/:id` | Device details |
+| POST | `/api/v1/scan` | Trigger network scan |
+| GET | `/api/v1/topology` | Network topology map |
+
+### Security
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/events` | Security events |
+| GET | `/api/v1/threats` | Active threats |
+| POST | `/api/v1/quarantine/:device_id` | Quarantine a device |
+| POST | `/api/v1/block/:ip` | Block an IP address |
+
+### VLANs & Segmentation
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/vlans` | List VLANs |
+| POST | `/api/v1/vlans` | Create a VLAN |
+| GET | `/api/v1/policies` | Segmentation policies |
+| POST | `/api/v1/policies` | Create a policy |
+
+### System
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/agents` | Agent statuses |
+| GET | `/api/v1/health` | System health |
+| GET | `/api/v1/metrics` | Metrics and statistics |
+
+## Docker
 
 ```bash
-# Install dev dependencies
-pip install -e ".[dev]"
-
-# Run tests
-pytest
-
-# Format code
-black src tests
-
-# Type checking
-mypy src
+docker compose up -d
 ```
 
-## Roadmap
-
-### Phase 1: CIO Foundation (Current)
-- [x] Agent architecture with event bus
-- [x] Router integration (OPNsense)
-- [x] Switch integration (UniFi)
-- [x] Network discovery and topology
-- [x] Security enforcement (Guardian)
-- [x] NetFlow traffic analysis
-- [x] QoS policy application
-
-### Phase 2: CIO Enhancement
-- [ ] LLM-assisted decision making
-- [ ] Predictive failure analysis
-- [ ] Advanced threat correlation
-- [ ] Multi-site support
-
-### Phase 3: CTO System
-- [ ] Product Architect Agent
-- [ ] Tech Debt Tracker Agent
-- [ ] Developer Experience Agent
-- [ ] Innovation Scout Agent
-
-### Phase 4: Executive Coordination
-- [ ] CIO-CTO communication layer
-- [ ] Unified dashboards
-- [ ] Cross-domain insights
+See `docker-compose.yml` for configuration options and `deploy/` for production deployment scripts.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- Part of the GozerAI ecosystem
-- Built with [Pydantic](https://pydantic.dev/), [PySide6](https://wiki.qt.io/Qt_for_Python), and [asyncio](https://docs.python.org/3/library/asyncio.html)
-
----
-
-**Documentation**: [https://sentinel.gozerai.com/docs](https://sentinel.gozerai.com/docs)
-**Issues**: [https://github.com/chrisarseno/sentinel/issues](https://github.com/chrisarseno/sentinel/issues)
+MIT — see [LICENSE](LICENSE) for details. Learn more at [gozerai.com](https://gozerai.com).
