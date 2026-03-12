@@ -1,0 +1,210 @@
+# Sentinel Security Platform - Docker Compose
+# Full stack deployment with all dependencies
+
+version: "3.9"
+
+services:
+  # ==========================================================================
+  # Sentinel Engine
+  # ==========================================================================
+  sentinel:
+    build:
+      context: .
+      target: production
+    container_name: sentinel-engine
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config/homelab.yaml:/etc/sentinel/config.yaml:ro
+      - sentinel-data:/var/lib/sentinel
+      - sentinel-logs:/var/log/sentinel
+    environment:
+      - SENTINEL_CONFIG=/etc/sentinel/config.yaml
+      - ROUTER_API_KEY=${ROUTER_API_KEY}
+      - ROUTER_API_SECRET=${ROUTER_API_SECRET}
+      - UNIFI_USER=${UNIFI_USER}
+      - UNIFI_PASSWORD=${UNIFI_PASSWORD}
+      - PROXMOX_TOKEN_NAME=${PROXMOX_TOKEN_NAME}
+      - PROXMOX_TOKEN_VALUE=${PROXMOX_TOKEN_VALUE}
+      - TRUENAS_API_KEY=${TRUENAS_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - API_SECRET_KEY=${API_SECRET_KEY:-sentinel-dev-key}
+    networks:
+      - sentinel-network
+    depends_on:
+      - postgres
+      - redis
+      - ollama
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ==========================================================================
+  # PostgreSQL Database
+  # ==========================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: sentinel-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=sentinel
+      - POSTGRES_USER=sentinel
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-sentinel-dev-password}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - sentinel-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sentinel -d sentinel"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================================================
+  # Redis Cache
+  # ==========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: sentinel-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - sentinel-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================================================
+  # Ollama (Local LLM)
+  # ==========================================================================
+  ollama:
+    image: ollama/ollama:latest
+    container_name: sentinel-ollama
+    restart: unless-stopped
+    volumes:
+      - ollama-data:/root/.ollama
+    networks:
+      - sentinel-network
+    # Uncomment for GPU support
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ==========================================================================
+  # Ollama Model Loader (Init Container)
+  # ==========================================================================
+  ollama-init:
+    image: curlimages/curl:latest
+    container_name: sentinel-ollama-init
+    depends_on:
+      ollama:
+        condition: service_healthy
+    networks:
+      - sentinel-network
+    entrypoint: >
+      sh -c "
+        echo 'Pulling Llama 3.1 8B model...' &&
+        curl -s http://ollama:11434/api/pull -d '{\"name\": \"llama3.1:8b\"}' &&
+        echo 'Model pull complete'
+      "
+    restart: "no"
+
+  # ==========================================================================
+  # Prometheus (Metrics)
+  # ==========================================================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: sentinel-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+    volumes:
+      - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - sentinel-network
+
+  # ==========================================================================
+  # Grafana (Dashboards)
+  # ==========================================================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: sentinel-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-sentinel-admin}
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3000:3000"
+    networks:
+      - sentinel-network
+    depends_on:
+      - prometheus
+
+  # ==========================================================================
+  # NetFlow Collector (Optional)
+  # ==========================================================================
+  netflow:
+    image: robcowart/elastiflow-flow-collector:6.4.0
+    container_name: sentinel-netflow
+    restart: unless-stopped
+    environment:
+      - EF_FLOW_DECODER_NETFLOW_ENABLE=true
+      - EF_OUTPUT_ELASTICSEARCH_ENABLE=false
+      - EF_OUTPUT_STDOUT_ENABLE=true
+    ports:
+      - "2055:2055/udp"  # NetFlow
+      - "6343:6343/udp"  # sFlow
+      - "4739:4739/udp"  # IPFIX
+    networks:
+      - sentinel-network
+    profiles:
+      - netflow
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  sentinel-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  sentinel-data:
+  sentinel-logs:
+  postgres-data:
+  redis-data:
+  ollama-data:
+  prometheus-data:
+  grafana-data:

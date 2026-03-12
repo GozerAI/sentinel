@@ -1,0 +1,340 @@
+# Sentinel Security Platform Configuration
+# Homelab Environment
+
+# =============================================================================
+# STATE MANAGEMENT
+# =============================================================================
+state:
+  backend: "sqlite"  # memory, sqlite, postgresql, redis
+  path: "/var/lib/sentinel/state.db"
+  
+  # PostgreSQL (if backend: postgresql)
+  # postgresql:
+  #   host: "localhost"
+  #   port: 5432
+  #   database: "sentinel"
+  #   user: "${DB_USER}"
+  #   password: "${DB_PASSWORD}"
+
+# =============================================================================
+# INTEGRATIONS
+# =============================================================================
+integrations:
+  # Router Integration (OPNsense/pfSense)
+  router:
+    type: "opnsense"
+    host: "192.168.1.1"
+    port: 443
+    api_key: "${ROUTER_API_KEY}"
+    api_secret: "${ROUTER_API_SECRET}"
+    verify_ssl: false
+    timeout: 30
+  
+  # Switch Integration (UniFi)
+  switch:
+    type: "ubiquiti"
+    controller_url: "https://192.168.1.2:8443"
+    username: "${UNIFI_USER}"
+    password: "${UNIFI_PASSWORD}"
+    site: "default"
+    verify_ssl: false
+  
+  # Hypervisor Integration (Proxmox)
+  hypervisor:
+    type: "proxmox"
+    host: "192.168.1.10"
+    port: 8006
+    user: "root@pam"
+    token_name: "${PROXMOX_TOKEN_NAME}"
+    token_value: "${PROXMOX_TOKEN_VALUE}"
+    verify_ssl: false
+  
+  # Storage Integration (TrueNAS)
+  storage:
+    type: "truenas"
+    host: "192.168.1.20"
+    api_key: "${TRUENAS_API_KEY}"
+    verify_ssl: false
+  
+  # Kubernetes Integration (K3s)
+  kubernetes:
+    type: "k3s"
+    kubeconfig: "${HOME}/.kube/config"
+    context: "default"
+  
+  # LLM Integration (Local-First)
+  llm:
+    primary:
+      type: "ollama"
+      host: "http://localhost:11434"
+      model: "llama3.1:8b"
+      # Alternative models:
+      # model: "llama3.1:70b"
+      # model: "mixtral:8x7b"
+      # model: "codellama:13b"
+    fallback:
+      type: "anthropic"
+      model: "claude-3-5-sonnet-20241022"
+      api_key: "${ANTHROPIC_API_KEY}"
+      max_tokens: 4096
+
+# =============================================================================
+# AI AGENTS
+# =============================================================================
+agents:
+  # Discovery Agent - Network scanning and device classification
+  discovery:
+    enabled: true
+    scan_interval_seconds: 300        # Quick scan every 5 minutes
+    full_scan_interval_seconds: 3600  # Full scan every hour
+    networks:
+      - "192.168.1.0/24"
+      - "192.168.10.0/24"
+      - "192.168.20.0/24"
+      - "192.168.30.0/24"
+      - "192.168.100.0/24"
+    port_scan_enabled: true
+    service_detection_enabled: true
+    auto_execute_threshold: 0.95
+    log_execute_threshold: 0.80
+    confirm_threshold: 0.60
+    max_actions_per_minute: 20
+  
+  # Optimizer Agent - Traffic engineering and QoS
+  optimizer:
+    enabled: true
+    analysis_interval_seconds: 60
+    netflow_enabled: true
+    netflow_port: 2055
+    auto_execute_threshold: 0.90
+    log_execute_threshold: 0.75
+    confirm_threshold: 0.50
+    bandwidth_threshold_percent: 80
+  
+  # Planner Agent - Segmentation and VLAN automation
+  planner:
+    enabled: true
+    auto_execute_threshold: 0.95
+    log_execute_threshold: 0.85
+    confirm_threshold: 0.70
+    max_actions_per_minute: 5
+    require_confirmation_for:
+      - "create_vlan"
+      - "delete_vlan"
+      - "modify_firewall"
+  
+  # Healer Agent - Self-repair and failover
+  healer:
+    enabled: true
+    health_check_interval_seconds: 30
+    auto_execute_threshold: 0.90
+    log_execute_threshold: 0.80
+    confirm_threshold: 0.60
+    auto_restart_services: true
+    max_restart_attempts: 3
+  
+  # Guardian Agent - Security enforcement
+  guardian:
+    enabled: true
+    auto_execute_threshold: 0.95
+    log_execute_threshold: 0.85
+    confirm_threshold: 0.75
+    auto_quarantine: true
+    quarantine_vlan: 666
+
+# =============================================================================
+# VLAN DEFINITIONS
+# =============================================================================
+vlans:
+  - id: 1
+    name: "Management"
+    purpose: "management"
+    subnet: "192.168.1.0/24"
+    gateway: "192.168.1.1"
+    dns_zone: "mgmt.home.lan"
+    dhcp_enabled: true
+    dhcp_range_start: "192.168.1.100"
+    dhcp_range_end: "192.168.1.200"
+    isolated: false
+  
+  - id: 10
+    name: "Workstations"
+    purpose: "workstations"
+    subnet: "192.168.10.0/24"
+    gateway: "192.168.10.1"
+    dns_zone: "ws.home.lan"
+    dhcp_enabled: true
+    dhcp_range_start: "192.168.10.100"
+    dhcp_range_end: "192.168.10.250"
+    isolated: false
+    allowed_destinations: [1, 20, 30]
+  
+  - id: 20
+    name: "Servers"
+    purpose: "servers"
+    subnet: "192.168.20.0/24"
+    gateway: "192.168.20.1"
+    dns_zone: "srv.home.lan"
+    dhcp_enabled: false
+    isolated: false
+    allowed_destinations: [1, 30, 50]
+  
+  - id: 30
+    name: "Storage"
+    purpose: "storage"
+    subnet: "192.168.30.0/24"
+    gateway: "192.168.30.1"
+    dns_zone: "stor.home.lan"
+    dhcp_enabled: false
+    isolated: false
+    allowed_destinations: [1, 20]
+  
+  - id: 50
+    name: "AI Compute"
+    purpose: "ai_compute"
+    subnet: "192.168.50.0/24"
+    gateway: "192.168.50.1"
+    dns_zone: "ai.home.lan"
+    dhcp_enabled: false
+    isolated: false
+    allowed_destinations: [20, 30]
+  
+  - id: 100
+    name: "IoT"
+    purpose: "iot"
+    subnet: "192.168.100.0/24"
+    gateway: "192.168.100.1"
+    dns_zone: "iot.home.lan"
+    dhcp_enabled: true
+    dhcp_range_start: "192.168.100.100"
+    dhcp_range_end: "192.168.100.250"
+    isolated: true
+    allowed_destinations: []  # IoT devices isolated
+  
+  - id: 200
+    name: "Guest"
+    purpose: "guest"
+    subnet: "192.168.200.0/24"
+    gateway: "192.168.200.1"
+    dns_zone: "guest.home.lan"
+    dhcp_enabled: true
+    dhcp_range_start: "192.168.200.100"
+    dhcp_range_end: "192.168.200.250"
+    isolated: true
+    allowed_destinations: []  # Guest isolated
+  
+  - id: 666
+    name: "Quarantine"
+    purpose: "quarantine"
+    subnet: "192.168.166.0/24"
+    gateway: "192.168.166.1"
+    dhcp_enabled: true
+    dhcp_range_start: "192.168.166.100"
+    dhcp_range_end: "192.168.166.200"
+    isolated: true
+    allowed_destinations: []  # Quarantine fully isolated
+
+# =============================================================================
+# SEGMENTATION POLICIES
+# =============================================================================
+segmentation_policies:
+  # Workstations can access servers for common services
+  - name: "workstation_to_server"
+    source_vlan: 10
+    destination_vlan: 20
+    allowed_services:
+      - "http"
+      - "https"
+      - "ssh"
+      - "rdp"
+      - "smb"
+    default_action: "deny"
+  
+  # Servers can access storage
+  - name: "server_to_storage"
+    source_vlan: 20
+    destination_vlan: 30
+    allowed_services:
+      - "nfs"
+      - "smb"
+      - "iscsi"
+    default_action: "deny"
+  
+  # AI compute can access servers and storage
+  - name: "ai_to_infrastructure"
+    source_vlan: 50
+    destination_vlan: 20
+    allowed_services:
+      - "http"
+      - "https"
+      - "ssh"
+    default_action: "deny"
+  
+  - name: "ai_to_storage"
+    source_vlan: 50
+    destination_vlan: 30
+    allowed_services:
+      - "nfs"
+      - "smb"
+    default_action: "deny"
+
+# =============================================================================
+# API CONFIGURATION
+# =============================================================================
+api:
+  enabled: true
+  host: "0.0.0.0"
+  port: 8080
+  cors_origins:
+    - "http://localhost:3000"
+    - "https://sentinel.home.lan"
+  auth:
+    type: "jwt"
+    secret_key: "${API_SECRET_KEY}"
+    algorithm: "HS256"
+    access_token_expire_minutes: 60
+  rate_limit:
+    enabled: true
+    requests_per_minute: 100
+
+# =============================================================================
+# ALERTING
+# =============================================================================
+alerting:
+  enabled: true
+  
+  # Pushover notifications
+  pushover:
+    enabled: true
+    user_key: "${PUSHOVER_USER_KEY}"
+    api_token: "${PUSHOVER_API_TOKEN}"
+    priority_mapping:
+      critical: 2   # Emergency
+      error: 1      # High priority
+      warning: 0    # Normal
+      info: -1      # Low priority
+  
+  # Webhook notifications
+  webhook:
+    enabled: false
+    url: "https://hooks.example.com/sentinel"
+    headers:
+      Authorization: "Bearer ${WEBHOOK_TOKEN}"
+
+# =============================================================================
+# LOGGING
+# =============================================================================
+logging:
+  level: "INFO"
+  format: "json"
+  file:
+    enabled: true
+    path: "/var/log/sentinel/sentinel.log"
+    max_size_mb: 100
+    backup_count: 5
+  
+  # Structured logging output
+  structured:
+    enabled: true
+    include_timestamp: true
+    include_caller: false

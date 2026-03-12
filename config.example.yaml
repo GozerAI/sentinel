@@ -1,0 +1,206 @@
+# =============================================================================
+# Sentinel Security Platform - Example Configuration
+# =============================================================================
+# Copy this file to config.yaml and fill in your actual values.
+# Environment variables can be used with ${VAR_NAME} syntax.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# API Server Configuration
+# -----------------------------------------------------------------------------
+api:
+  host: "0.0.0.0"           # Bind address (0.0.0.0 for all interfaces)
+  port: 8080                 # API port
+  cors_origins:              # Allowed CORS origins
+    - "http://localhost:3000"
+    - "https://sentinel.yourdomain.com"
+  rate_limit:
+    enabled: true
+    requests_per_minute: 100
+
+  # API Authentication
+  auth:
+    enabled: true
+    # Generate with: sentinel config generate-api-key <name>
+    api_keys:
+      - name: "admin"
+        hash: "${SENTINEL_ADMIN_API_KEY_HASH}"  # Fill in after generating
+      - name: "readonly"
+        hash: "${SENTINEL_READONLY_API_KEY_HASH}"
+
+# -----------------------------------------------------------------------------
+# Agent Configuration
+# -----------------------------------------------------------------------------
+agents:
+  # Discovery Agent - Network scanning and device classification
+  discovery:
+    enabled: true
+    scan_interval: 300       # Seconds between full network scans
+    networks:                # Networks to scan (CIDR notation)
+      - "192.168.1.0/24"
+      - "192.168.10.0/24"
+      - "10.0.0.0/24"
+
+  # Guardian Agent - Security policy enforcement
+  guardian:
+    enabled: true
+    auto_block: true         # Automatically block detected threats
+    block_duration: 3600     # How long to block IPs (seconds)
+    threat_threshold: 0.7    # Confidence threshold for threat detection
+
+  # Planner Agent - VLAN and segmentation automation
+  planner:
+    enabled: true
+    auto_assign_vlan: false  # Require approval for VLAN changes
+    default_vlan: 1          # Default VLAN for unclassified devices
+
+  # Optimizer Agent - Traffic engineering and QoS
+  optimizer:
+    enabled: true
+    auto_apply_qos: false    # Require approval for QoS changes
+    bandwidth_threshold: 0.8 # Trigger optimization at 80% utilization
+
+  # Healer Agent - Self-repair and failover
+  healer:
+    enabled: true
+    auto_restart: true       # Automatically restart failed services
+    health_check_interval: 60
+
+  # Testing Agent - Automated health monitoring
+  testing:
+    enabled: true
+    check_interval: 120      # Seconds between health checks
+
+# -----------------------------------------------------------------------------
+# Integration Configuration
+# -----------------------------------------------------------------------------
+integrations:
+  # Router Integration (OPNsense)
+  router:
+    type: "opnsense"
+    host: "${OPNSENSE_HOST}"           # e.g., "192.168.1.1"
+    port: 443
+    api_key: "${OPNSENSE_API_KEY}"
+    api_secret: "${OPNSENSE_API_SECRET}"
+    verify_ssl: false                   # Set true in production with valid certs
+
+  # Switch Integration (Ubiquiti UniFi)
+  switch:
+    type: "ubiquiti"
+    controller_url: "${UNIFI_CONTROLLER_URL}"  # e.g., "https://192.168.1.2:8443"
+    username: "${UNIFI_USERNAME}"
+    password: "${UNIFI_PASSWORD}"
+    site: "default"
+    verify_ssl: false
+
+  # Hypervisor Integration (Proxmox)
+  hypervisor:
+    type: "proxmox"
+    host: "${PROXMOX_HOST}"            # e.g., "proxmox.local"
+    port: 8006
+    token_id: "${PROXMOX_TOKEN_ID}"    # e.g., "sentinel@pam!monitoring"
+    token_secret: "${PROXMOX_TOKEN_SECRET}"
+    verify_ssl: false
+
+  # Storage Integration (TrueNAS)
+  storage:
+    type: "truenas"
+    host: "${TRUENAS_HOST}"            # e.g., "truenas.local"
+    api_key: "${TRUENAS_API_KEY}"
+    verify_ssl: false
+
+# -----------------------------------------------------------------------------
+# LLM Configuration (for AI-powered decisions)
+# -----------------------------------------------------------------------------
+llm:
+  # Primary: Local Ollama (privacy-first)
+  primary:
+    type: "ollama"
+    host: "http://localhost:11434"
+    model: "llama3.1:8b"               # Or "mistral", "codellama", etc.
+    timeout: 60
+
+  # Fallback: Cloud API (for complex queries)
+  fallback:
+    type: "anthropic"
+    model: "claude-3-5-sonnet-20241022"
+    api_key: "${ANTHROPIC_API_KEY}"    # Optional - leave empty to disable
+    timeout: 120
+
+# -----------------------------------------------------------------------------
+# Logging Configuration
+# -----------------------------------------------------------------------------
+logging:
+  level: "INFO"                        # DEBUG, INFO, WARNING, ERROR
+  format: "text"                       # "text" or "json"
+
+  # Structured logging (recommended for production)
+  structured:
+    enabled: true
+    include_timestamp: true
+
+  # File logging
+  file:
+    enabled: true
+    path: "/var/log/sentinel/sentinel.log"
+    max_size_mb: 100
+    backup_count: 5
+
+# -----------------------------------------------------------------------------
+# Database Configuration (for persistent state)
+# -----------------------------------------------------------------------------
+database:
+  # SQLite for single-node deployments
+  type: "sqlite"
+  path: "/var/lib/sentinel/sentinel.db"
+
+  # PostgreSQL for multi-node deployments (uncomment to use)
+  # type: "postgresql"
+  # host: "${POSTGRES_HOST}"
+  # port: 5432
+  # database: "sentinel"
+  # username: "${POSTGRES_USER}"
+  # password: "${POSTGRES_PASSWORD}"
+
+# -----------------------------------------------------------------------------
+# CTO Mode Configuration (AI-Native Autonomous Management)
+# -----------------------------------------------------------------------------
+# When enabled, Sentinel acts as an autonomous CTO:
+# - Spawns new agents to address emerging threats
+# - Learns from outcomes to improve decision-making
+# - Coordinates between agents via registry
+# - Makes strategic decisions about infrastructure
+cto_mode:
+  enabled: true                      # Enable CTO architecture
+
+# Strategy Agent settings (the "brain" of the CTO)
+strategy:
+  planning_interval: 300           # Seconds between planning cycles
+  review_interval: 3600            # Seconds between strategic reviews
+  max_concurrent_agents: 20        # Maximum agents running simultaneously
+
+# Learning System settings (outcome-based improvement)
+learning:
+  min_samples: 10                  # Minimum samples before pattern detection
+  learning_rate: 0.1               # How quickly to adjust confidence
+  persistence_path: "/var/lib/sentinel/learning.json"
+  auto_persist_interval: 300       # Seconds between auto-saves
+
+# -----------------------------------------------------------------------------
+# Metrics and Monitoring
+# -----------------------------------------------------------------------------
+metrics:
+  enabled: true
+  prometheus:
+    enabled: true
+    port: 9090
+    path: "/metrics"
+
+  # Export to external systems
+  export:
+    influxdb:
+      enabled: false
+      url: "${INFLUXDB_URL}"
+      token: "${INFLUXDB_TOKEN}"
+      org: "sentinel"
+      bucket: "metrics"
