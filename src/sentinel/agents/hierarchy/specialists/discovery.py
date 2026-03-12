@@ -17,6 +17,8 @@ import struct
 from datetime import datetime
 from typing import Dict, List, Any, Optional, TYPE_CHECKING
 
+import ipaddress as _ipaddress
+
 from sentinel.core.hierarchy.base import (
     Specialist,
     Task,
@@ -28,6 +30,18 @@ if TYPE_CHECKING:
     from nexus.core.llm import LLMRouter
 
 logger = logging.getLogger(__name__)
+
+
+def _validate_network(network: str) -> str:
+    """Validate a network CIDR string."""
+    _ipaddress.ip_network(network, strict=False)  # Raises ValueError if invalid
+    return network
+
+
+def _validate_ip(ip_str: str) -> str:
+    """Validate and return a safe IP address string."""
+    addr = _ipaddress.ip_address(ip_str)  # Raises ValueError if invalid
+    return str(addr)
 
 
 # OUI (Organizationally Unique Identifier) database for vendor lookup
@@ -183,6 +197,7 @@ class ARPScanSpecialist(Specialist):
         devices = []
 
         try:
+            network = _validate_network(network)
             # First ping the network to populate ARP cache
             # This is a simplistic approach - real implementation would be more thorough
             import subprocess
@@ -198,6 +213,7 @@ class ARPScanSpecialist(Specialist):
                     base = base_parts[0]
                     for i in range(1, 255):
                         ip = f"{base}.{i}"
+                        ip = _validate_ip(ip)
                         # Quick ping (non-blocking)
                         proc = await asyncio.create_subprocess_exec(
                             "ping",

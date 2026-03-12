@@ -75,10 +75,10 @@ sentinel = "sentinel.cli.main:main"
 sentinel-gui = "sentinel.gui.app:main"
 
 [project.urls]
-Homepage = "https://github.com/GozerAI/sentinel"
+Homepage = "https://github.com/chrisarseno/sentinel"
 Documentation = "https://sentinel.gozerai.com/docs"
-Repository = "https://github.com/GozerAI/sentinel"
-Issues = "https://github.com/GozerAI/sentinel/issues"
+Repository = "https://github.com/chrisarseno/sentinel"
+Issues = "https://github.com/chrisarseno/sentinel/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]

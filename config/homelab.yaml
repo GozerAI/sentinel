@@ -1,4 +1,3 @@
-# EXAMPLE configuration — replace with your own network topology
 # Sentinel Security Platform Configuration
 # Homelab Environment
 
@@ -152,7 +151,7 @@ vlans:
     purpose: "management"
     subnet: "192.168.1.0/24"
     gateway: "192.168.1.1"
-    dns_zone: "mgmt.example.lan"
+    dns_zone: "mgmt.home.lan"
     dhcp_enabled: true
     dhcp_range_start: "192.168.1.100"
     dhcp_range_end: "192.168.1.200"
@@ -163,7 +162,7 @@ vlans:
     purpose: "workstations"
     subnet: "192.168.10.0/24"
     gateway: "192.168.10.1"
-    dns_zone: "ws.example.lan"
+    dns_zone: "ws.home.lan"
     dhcp_enabled: true
     dhcp_range_start: "192.168.10.100"
     dhcp_range_end: "192.168.10.250"
@@ -175,7 +174,7 @@ vlans:
     purpose: "servers"
     subnet: "192.168.20.0/24"
     gateway: "192.168.20.1"
-    dns_zone: "srv.example.lan"
+    dns_zone: "srv.home.lan"
     dhcp_enabled: false
     isolated: false
     allowed_destinations: [1, 30, 50]
@@ -185,7 +184,7 @@ vlans:
     purpose: "storage"
     subnet: "192.168.30.0/24"
     gateway: "192.168.30.1"
-    dns_zone: "stor.example.lan"
+    dns_zone: "stor.home.lan"
     dhcp_enabled: false
     isolated: false
     allowed_destinations: [1, 20]
@@ -195,7 +194,7 @@ vlans:
     purpose: "ai_compute"
     subnet: "192.168.50.0/24"
     gateway: "192.168.50.1"
-    dns_zone: "ai.example.lan"
+    dns_zone: "ai.home.lan"
     dhcp_enabled: false
     isolated: false
     allowed_destinations: [20, 30]
@@ -205,7 +204,7 @@ vlans:
     purpose: "iot"
     subnet: "192.168.100.0/24"
     gateway: "192.168.100.1"
-    dns_zone: "iot.example.lan"
+    dns_zone: "iot.home.lan"
     dhcp_enabled: true
     dhcp_range_start: "192.168.100.100"
     dhcp_range_end: "192.168.100.250"
@@ -217,7 +216,7 @@ vlans:
     purpose: "guest"
     subnet: "192.168.200.0/24"
     gateway: "192.168.200.1"
-    dns_zone: "guest.example.lan"
+    dns_zone: "guest.home.lan"
     dhcp_enabled: true
     dhcp_range_start: "192.168.200.100"
     dhcp_range_end: "192.168.200.250"
@@ -288,7 +287,7 @@ api:
   port: 8080
   cors_origins:
     - "http://localhost:3000"
-    - "https://sentinel.example.lan"
+    - "https://sentinel.home.lan"
   auth:
     type: "jwt"
     secret_key: "${API_SECRET_KEY}"

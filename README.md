@@ -115,7 +115,7 @@ Sentinel serves as the **CIO function** - managing internal infrastructure and o
 
 ```bash
 # Clone the repository
-git clone https://github.com/GozerAI/sentinel.git
+git clone https://github.com/chrisarseno/sentinel.git
 cd sentinel
 
 # Create virtual environment
@@ -244,4 +244,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 **Documentation**: [https://sentinel.gozerai.com/docs](https://sentinel.gozerai.com/docs)
-**Issues**: [https://github.com/GozerAI/sentinel/issues](https://github.com/GozerAI/sentinel/issues)
+**Issues**: [https://github.com/chrisarseno/sentinel/issues](https://github.com/chrisarseno/sentinel/issues)

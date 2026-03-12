@@ -507,7 +507,22 @@ class NativeFirewall(RouterIntegration):
 
         Returns:
             Rule ID
+
+        Raises:
+            ValueError: If source or destination IP/CIDR is invalid
         """
+        # Validate IP addresses before they reach subprocess commands
+        if rule.get("source"):
+            try:
+                ip_network(rule["source"], strict=False)
+            except ValueError:
+                ip_address(rule["source"])  # Raises ValueError if invalid
+        if rule.get("destination"):
+            try:
+                ip_network(rule["destination"], strict=False)
+            except ValueError:
+                ip_address(rule["destination"])  # Raises ValueError if invalid
+
         self._rule_counter += 1
         rule_id = f"sentinel_{self._rule_counter}"
 

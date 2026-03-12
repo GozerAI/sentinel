@@ -16,6 +16,8 @@ import socket
 from datetime import datetime
 from typing import Dict, List, Any, Optional, TYPE_CHECKING
 
+import ipaddress as _ipaddress
+
 from sentinel.core.hierarchy.base import (
     Specialist,
     Task,
@@ -27,6 +29,21 @@ if TYPE_CHECKING:
     from nexus.core.llm import LLMRouter
 
 logger = logging.getLogger(__name__)
+
+_IFACE_RE = re.compile(r'^[a-zA-Z0-9._-]+$')
+
+
+def _validate_ip(ip_str: str) -> str:
+    """Validate and return a safe IP address string."""
+    addr = _ipaddress.ip_address(ip_str)  # Raises ValueError if invalid
+    return str(addr)
+
+
+def _validate_interface(name: str) -> str:
+    """Validate a network interface name to prevent command injection."""
+    if not _IFACE_RE.match(name):
+        raise ValueError(f"Invalid interface name: {name}")
+    return name
 
 
 # ============================================================================
@@ -104,6 +121,7 @@ class TrafficAnalysisSpecialist(Specialist):
     async def _collect_traffic_data(self, interface: str, duration: int) -> Dict[str, Any]:
         """Collect traffic data from interface."""
         try:
+            interface = _validate_interface(interface)
             # Try to use system tools for traffic capture
             # This is a simplified version - production would use proper tools
 
@@ -847,6 +865,7 @@ class PathOptimizationSpecialist(Specialist):
 
         for target in targets:
             try:
+                target = _validate_ip(target)
                 # Run traceroute
                 proc = await asyncio.create_subprocess_exec(
                     "traceroute",

@@ -265,6 +265,7 @@ async def list_devices(
     online: Optional[bool] = Query(None, description="Filter by online status"),
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0),
+    user: dict = Depends(get_current_user),
     engine=Depends(get_engine),
 ):
     """List all discovered devices."""
@@ -310,7 +311,8 @@ async def list_devices(
 
 
 @app.get("/devices/{device_id}", response_model=DeviceResponse, tags=["Devices"])
-async def get_device(device_id: str, engine=Depends(get_engine)):
+async def get_device(device_id: str, user: dict = Depends(get_current_user),
+                                     engine=Depends(get_engine)):
     """Get device by ID."""
     from uuid import UUID
 
@@ -347,7 +349,8 @@ async def get_device(device_id: str, engine=Depends(get_engine)):
 
 
 @app.post("/devices/{device_id}/scan", tags=["Devices"])
-async def scan_device(device_id: str, engine=Depends(get_engine)):
+async def scan_device(device_id: str, user: dict = Depends(get_current_user),
+                                      engine=Depends(get_engine)):
     """Trigger rescan of a specific device."""
     from uuid import UUID
 
@@ -380,7 +383,8 @@ async def scan_device(device_id: str, engine=Depends(get_engine)):
 
 
 @app.get("/vlans", response_model=list[VLANResponse], tags=["VLANs"])
-async def list_vlans(engine=Depends(get_engine)):
+async def list_vlans(user: dict = Depends(get_current_user),
+                     engine=Depends(get_engine)):
     """List all configured VLANs."""
     planner = engine.agents.get("planner")
     if not planner:
@@ -412,7 +416,8 @@ async def list_vlans(engine=Depends(get_engine)):
 
 
 @app.get("/vlans/{vlan_id}", response_model=VLANResponse, tags=["VLANs"])
-async def get_vlan(vlan_id: int, engine=Depends(get_engine)):
+async def get_vlan(vlan_id: int, user: dict = Depends(get_current_user),
+                                 engine=Depends(get_engine)):
     """Get VLAN by ID."""
     planner = engine.agents.get("planner")
     if not planner:
@@ -452,7 +457,8 @@ class VLANCreateRequest(BaseModel):
 
 
 @app.post("/vlans", response_model=VLANResponse, tags=["VLANs"])
-async def create_vlan(request: VLANCreateRequest, engine=Depends(get_engine)):
+async def create_vlan(request: VLANCreateRequest, user: dict = Depends(get_current_user),
+                                                  engine=Depends(get_engine)):
     """Create a new VLAN."""
     planner = engine.agents.get("planner")
     if not planner:
@@ -515,7 +521,8 @@ class FirewallRuleResponse(BaseModel):
 
 
 @app.get("/policies", response_model=list[PolicyResponse], tags=["Policies"])
-async def list_policies(engine=Depends(get_engine)):
+async def list_policies(user: dict = Depends(get_current_user),
+                        engine=Depends(get_engine)):
     """List all segmentation policies."""
     planner = engine.agents.get("planner")
     if not planner:
@@ -536,7 +543,8 @@ async def list_policies(engine=Depends(get_engine)):
 
 
 @app.get("/policies/{policy_id}", response_model=PolicyResponse, tags=["Policies"])
-async def get_policy(policy_id: str, engine=Depends(get_engine)):
+async def get_policy(policy_id: str, user: dict = Depends(get_current_user),
+                                     engine=Depends(get_engine)):
     """Get a specific segmentation policy."""
     planner = engine.agents.get("planner")
     if not planner:
@@ -558,7 +566,8 @@ async def get_policy(policy_id: str, engine=Depends(get_engine)):
 
 
 @app.get("/firewall-rules", response_model=list[FirewallRuleResponse], tags=["Policies"])
-async def list_firewall_rules(engine=Depends(get_engine)):
+async def list_firewall_rules(user: dict = Depends(get_current_user),
+                              engine=Depends(get_engine)):
     """List all firewall rules."""
     planner = engine.agents.get("planner")
     if not planner:
@@ -587,7 +596,8 @@ async def list_firewall_rules(engine=Depends(get_engine)):
 
 
 @app.get("/agents", response_model=list[AgentResponse], tags=["Agents"])
-async def list_agents(engine=Depends(get_engine)):
+async def list_agents(user: dict = Depends(get_current_user),
+                      engine=Depends(get_engine)):
     """List all agents."""
     agents = []
     for name, agent in engine.agents.items():
@@ -609,7 +619,8 @@ async def list_agents(engine=Depends(get_engine)):
 
 
 @app.get("/agents/{agent_name}", response_model=AgentResponse, tags=["Agents"])
-async def get_agent(agent_name: str, engine=Depends(get_engine)):
+async def get_agent(agent_name: str, user: dict = Depends(get_current_user),
+                                     engine=Depends(get_engine)):
     """Get agent by name."""
     agent = engine.agents.get(agent_name)
     if not agent:
@@ -630,7 +641,8 @@ async def get_agent(agent_name: str, engine=Depends(get_engine)):
 
 
 @app.post("/agents/{agent_name}/enable", tags=["Agents"])
-async def enable_agent(agent_name: str, engine=Depends(get_engine)):
+async def enable_agent(agent_name: str, user: dict = Depends(get_current_user),
+                                        engine=Depends(get_engine)):
     """Enable an agent."""
     agent = engine.agents.get(agent_name)
     if not agent:
@@ -641,7 +653,8 @@ async def enable_agent(agent_name: str, engine=Depends(get_engine)):
 
 
 @app.post("/agents/{agent_name}/disable", tags=["Agents"])
-async def disable_agent(agent_name: str, engine=Depends(get_engine)):
+async def disable_agent(agent_name: str, user: dict = Depends(get_current_user),
+                                         engine=Depends(get_engine)):
     """Disable an agent."""
     agent = engine.agents.get(agent_name)
     if not agent:
@@ -661,6 +674,7 @@ async def list_events(
     category: Optional[str] = Query(None, description="Filter by category"),
     severity: Optional[str] = Query(None, description="Filter by severity"),
     limit: int = Query(100, ge=1, le=1000),
+    user: dict = Depends(get_current_user),
     engine=Depends(get_engine),
 ):
     """List recent events."""
@@ -690,7 +704,8 @@ async def list_events(
 
 
 @app.post("/events/{event_id}/acknowledge", tags=["Events"])
-async def acknowledge_event(event_id: str, engine=Depends(get_engine)):
+async def acknowledge_event(event_id: str, user: dict = Depends(get_current_user),
+                                           engine=Depends(get_engine)):
     """Acknowledge an event."""
     # Find and acknowledge event
     for event in engine.event_bus._event_history:
@@ -708,7 +723,8 @@ async def acknowledge_event(event_id: str, engine=Depends(get_engine)):
 
 
 @app.post("/actions", response_model=ActionResponse, tags=["Actions"])
-async def execute_action(request: ActionRequest, engine=Depends(get_engine)):
+async def execute_action(request: ActionRequest, user: dict = Depends(get_current_user),
+                                                 engine=Depends(get_engine)):
     """Execute an action through an agent."""
     # Route to appropriate agent based on action type
     agent_mapping = {
@@ -768,7 +784,8 @@ async def execute_action(request: ActionRequest, engine=Depends(get_engine)):
 
 
 @app.post("/scan/quick", tags=["Scan"])
-async def quick_scan(engine=Depends(get_engine)):
+async def quick_scan(user: dict = Depends(get_current_user),
+                     engine=Depends(get_engine)):
     """Trigger a quick network scan."""
     discovery = engine.agents.get("discovery")
     if not discovery:
@@ -779,7 +796,8 @@ async def quick_scan(engine=Depends(get_engine)):
 
 
 @app.post("/scan/full", tags=["Scan"])
-async def full_scan(engine=Depends(get_engine)):
+async def full_scan(user: dict = Depends(get_current_user),
+                    engine=Depends(get_engine)):
     """Trigger a full network scan."""
     discovery = engine.agents.get("discovery")
     if not discovery:
@@ -795,7 +813,8 @@ async def full_scan(engine=Depends(get_engine)):
 
 
 @app.get("/security/blocked", tags=["Security"])
-async def list_blocked_ips(engine=Depends(get_engine)):
+async def list_blocked_ips(user: dict = Depends(get_current_user),
+                           engine=Depends(get_engine)):
     """List blocked IP addresses."""
     guardian = engine.agents.get("guardian")
     if not guardian:
@@ -805,7 +824,8 @@ async def list_blocked_ips(engine=Depends(get_engine)):
 
 
 @app.get("/security/quarantined", tags=["Security"])
-async def list_quarantined(engine=Depends(get_engine)):
+async def list_quarantined(user: dict = Depends(get_current_user),
+                           engine=Depends(get_engine)):
     """List quarantined devices."""
     guardian = engine.agents.get("guardian")
     if not guardian:
@@ -818,7 +838,8 @@ async def list_quarantined(engine=Depends(get_engine)):
 
 
 @app.post("/security/unblock/{ip}", tags=["Security"])
-async def unblock_ip(ip: str, engine=Depends(get_engine)):
+async def unblock_ip(ip: str, user: dict = Depends(get_current_user),
+                              engine=Depends(get_engine)):
     """Unblock an IP address."""
     guardian = engine.agents.get("guardian")
     if not guardian:
@@ -870,6 +891,7 @@ async def get_topology(
     include_offline: bool = Query(True, description="Include offline devices"),
     include_infrastructure: bool = Query(True, description="Include infrastructure"),
     group_by_vlan: bool = Query(True, description="Group nodes by VLAN"),
+    user: dict = Depends(get_current_user),
     engine=Depends(get_engine),
 ):
     """
@@ -921,7 +943,8 @@ async def get_topology(
 
 
 @app.get("/topology/summary", tags=["Visualization"])
-async def get_topology_summary(engine=Depends(get_engine)):
+async def get_topology_summary(user: dict = Depends(get_current_user),
+                               engine=Depends(get_engine)):
     """
     Get topology summary with VLAN breakdown.
 
@@ -967,7 +990,8 @@ def _count_edge_types(graph) -> dict:
 
 
 @app.post("/topology/export", tags=["Visualization"])
-async def export_topology(request: ExportRequest, engine=Depends(get_engine)):
+async def export_topology(request: ExportRequest, user: dict = Depends(get_current_user),
+                                                  engine=Depends(get_engine)):
     """
     Export topology in various formats.
 
@@ -1039,7 +1063,8 @@ async def export_topology(request: ExportRequest, engine=Depends(get_engine)):
 
 
 @app.get("/topology/d3", tags=["Visualization"])
-async def get_d3_visualization(engine=Depends(get_engine)):
+async def get_d3_visualization(user: dict = Depends(get_current_user),
+                               engine=Depends(get_engine)):
     """
     Get complete D3.js HTML visualization.
 
@@ -1062,7 +1087,8 @@ async def get_d3_visualization(engine=Depends(get_engine)):
 
 
 @app.get("/topology/node/{node_id}", tags=["Visualization"])
-async def get_node_connections(node_id: str, engine=Depends(get_engine)):
+async def get_node_connections(node_id: str, user: dict = Depends(get_current_user),
+                                             engine=Depends(get_engine)):
     """
     Get connection details for a specific node.
 
