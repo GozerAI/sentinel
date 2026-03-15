@@ -4,7 +4,6 @@ Tests for Network models.
 Tests cover VLANs, network links, topology, traffic flows, QoS policies,
 DNS records, and DHCP leases.
 """
-
 import pytest
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
@@ -47,7 +46,12 @@ class TestVLAN:
 
     def test_required_fields(self):
         """Test required fields."""
-        vlan = VLAN(id=10, name="Management", subnet="192.168.10.0/24", gateway="192.168.10.1")
+        vlan = VLAN(
+            id=10,
+            name="Management",
+            subnet="192.168.10.0/24",
+            gateway="192.168.10.1"
+        )
 
         assert vlan.id == 10
         assert vlan.name == "Management"
@@ -56,7 +60,12 @@ class TestVLAN:
 
     def test_default_values(self):
         """Test default values."""
-        vlan = VLAN(id=20, name="Servers", subnet="192.168.20.0/24", gateway="192.168.20.1")
+        vlan = VLAN(
+            id=20,
+            name="Servers",
+            subnet="192.168.20.0/24",
+            gateway="192.168.20.1"
+        )
 
         assert vlan.purpose == VLANPurpose.CUSTOM
         assert vlan.dhcp_enabled is True
@@ -77,7 +86,7 @@ class TestVLAN:
             dhcp_range_start="192.168.66.100",
             dhcp_range_end="192.168.66.200",
             isolated=True,
-            auto_managed=True,
+            auto_managed=True
         )
 
         assert vlan.purpose == VLANPurpose.QUARANTINE
@@ -86,13 +95,23 @@ class TestVLAN:
 
     def test_network_address_property(self):
         """Test network_address property."""
-        vlan = VLAN(id=10, name="Test", subnet="192.168.10.0/24", gateway="192.168.10.1")
+        vlan = VLAN(
+            id=10,
+            name="Test",
+            subnet="192.168.10.0/24",
+            gateway="192.168.10.1"
+        )
 
         assert vlan.network_address == "192.168.10.0"
 
     def test_prefix_length_property(self):
         """Test prefix_length property."""
-        vlan = VLAN(id=10, name="Test", subnet="192.168.10.0/24", gateway="192.168.10.1")
+        vlan = VLAN(
+            id=10,
+            name="Test",
+            subnet="192.168.10.0/24",
+            gateway="192.168.10.1"
+        )
 
         assert vlan.prefix_length == 24
 
@@ -129,14 +148,20 @@ class TestNetworkLink:
 
     def test_required_fields(self):
         """Test required fields."""
-        link = NetworkLink(source_device_id=uuid4(), target_device_id=uuid4())
+        link = NetworkLink(
+            source_device_id=uuid4(),
+            target_device_id=uuid4()
+        )
 
         assert link.source_device_id is not None
         assert link.target_device_id is not None
 
     def test_default_values(self):
         """Test default values."""
-        link = NetworkLink(source_device_id=uuid4(), target_device_id=uuid4())
+        link = NetworkLink(
+            source_device_id=uuid4(),
+            target_device_id=uuid4()
+        )
 
         assert link.link_type == LinkType.ETHERNET
         assert link.status == LinkStatus.UP
@@ -155,7 +180,7 @@ class TestNetworkLink:
             target_port="eth1",
             link_type=LinkType.AGGREGATE,
             speed_mbps=10000,
-            duplex="full",
+            duplex="full"
         )
 
         assert link.source_port == "eth0"
@@ -171,7 +196,7 @@ class TestNetworkLink:
             status=LinkStatus.UP,
             errors_in=0,
             errors_out=0,
-            utilization_percent=50.0,
+            utilization_percent=50.0
         )
 
         assert link.is_healthy is True
@@ -179,21 +204,29 @@ class TestNetworkLink:
     def test_is_healthy_link_down(self):
         """Test is_healthy when link is down."""
         link = NetworkLink(
-            source_device_id=uuid4(), target_device_id=uuid4(), status=LinkStatus.DOWN
+            source_device_id=uuid4(),
+            target_device_id=uuid4(),
+            status=LinkStatus.DOWN
         )
 
         assert link.is_healthy is False
 
     def test_is_healthy_has_errors(self):
         """Test is_healthy when link has errors."""
-        link = NetworkLink(source_device_id=uuid4(), target_device_id=uuid4(), errors_in=10)
+        link = NetworkLink(
+            source_device_id=uuid4(),
+            target_device_id=uuid4(),
+            errors_in=10
+        )
 
         assert link.is_healthy is False
 
     def test_is_healthy_high_utilization(self):
         """Test is_healthy when utilization is high."""
         link = NetworkLink(
-            source_device_id=uuid4(), target_device_id=uuid4(), utilization_percent=95.0
+            source_device_id=uuid4(),
+            target_device_id=uuid4(),
+            utilization_percent=95.0
         )
 
         assert link.is_healthy is False
@@ -204,7 +237,11 @@ class TestTopologyNode:
 
     def test_required_fields(self):
         """Test required fields."""
-        node = TopologyNode(device_id=uuid4(), node_type="switch", layer=2)
+        node = TopologyNode(
+            device_id=uuid4(),
+            node_type="switch",
+            layer=2
+        )
 
         assert node.device_id is not None
         assert node.node_type == "switch"
@@ -212,7 +249,11 @@ class TestTopologyNode:
 
     def test_default_values(self):
         """Test default values."""
-        node = TopologyNode(device_id=uuid4(), node_type="router", layer=1)
+        node = TopologyNode(
+            device_id=uuid4(),
+            node_type="router",
+            layer=1
+        )
 
         assert node.position is None
         assert node.children == []
@@ -225,7 +266,11 @@ class TestTopologyNode:
         parent = uuid4()
 
         node = TopologyNode(
-            device_id=uuid4(), node_type="switch", layer=2, children=[child1, child2], parent=parent
+            device_id=uuid4(),
+            node_type="switch",
+            layer=2,
+            children=[child1, child2],
+            parent=parent
         )
 
         assert len(node.children) == 2
@@ -337,21 +382,16 @@ class TestNetworkTopology:
     def test_get_vlans_by_purpose(self):
         """Test getting VLANs by purpose."""
         vlan1 = VLAN(
-            id=10,
-            name="Servers1",
-            subnet="10.0.0.0/24",
-            gateway="10.0.0.1",
-            purpose=VLANPurpose.SERVERS,
+            id=10, name="Servers1", subnet="10.0.0.0/24", gateway="10.0.0.1",
+            purpose=VLANPurpose.SERVERS
         )
         vlan2 = VLAN(
-            id=20,
-            name="Servers2",
-            subnet="20.0.0.0/24",
-            gateway="20.0.0.1",
-            purpose=VLANPurpose.SERVERS,
+            id=20, name="Servers2", subnet="20.0.0.0/24", gateway="20.0.0.1",
+            purpose=VLANPurpose.SERVERS
         )
         vlan3 = VLAN(
-            id=30, name="Guest", subnet="30.0.0.0/24", gateway="30.0.0.1", purpose=VLANPurpose.GUEST
+            id=30, name="Guest", subnet="30.0.0.0/24", gateway="30.0.0.1",
+            purpose=VLANPurpose.GUEST
         )
 
         topology = NetworkTopology(vlans=[vlan1, vlan2, vlan3])
@@ -372,7 +412,7 @@ class TestTrafficFlow:
             source_port=54321,
             destination_ip="10.0.0.50",
             destination_port=443,
-            protocol="TCP",
+            protocol="TCP"
         )
 
         assert flow.source_ip == "192.168.1.100"
@@ -388,7 +428,7 @@ class TestTrafficFlow:
             source_port=54321,
             destination_ip="10.0.0.50",
             destination_port=443,
-            protocol="TCP",
+            protocol="TCP"
         )
 
         assert flow.application is None
@@ -409,7 +449,7 @@ class TestTrafficFlow:
             destination_port=443,
             protocol="TCP",
             start_time=start,
-            last_seen=end,
+            last_seen=end
         )
 
         assert flow.duration_seconds == 300.0
@@ -421,7 +461,7 @@ class TestTrafficFlow:
             source_port=54321,
             destination_ip="10.0.0.50",
             destination_port=443,
-            protocol="TCP",
+            protocol="TCP"
         )
 
         expected = ("192.168.1.100", 54321, "10.0.0.50", 443, "TCP")
@@ -453,7 +493,7 @@ class TestQoSPolicy:
             match_applications=["sip", "rtp"],
             set_dscp=46,
             bandwidth_guarantee_mbps=10,
-            priority_queue=5,
+            priority_queue=5
         )
 
         assert policy.match_applications == ["sip", "rtp"]
@@ -468,49 +508,58 @@ class TestQoSPolicy:
             source_port=54321,
             destination_ip="10.0.0.50",
             destination_port=443,
-            protocol="TCP",
+            protocol="TCP"
         )
 
         assert policy.matches_flow(flow) is True
 
     def test_matches_flow_application_match(self):
         """Test matches_flow with matching application."""
-        policy = QoSPolicy(name="Test", match_applications=["https"])
+        policy = QoSPolicy(
+            name="Test",
+            match_applications=["https"]
+        )
         flow = TrafficFlow(
             source_ip="192.168.1.100",
             source_port=54321,
             destination_ip="10.0.0.50",
             destination_port=443,
             protocol="TCP",
-            application="https",
+            application="https"
         )
 
         assert policy.matches_flow(flow) is True
 
     def test_matches_flow_application_no_match(self):
         """Test matches_flow with non-matching application."""
-        policy = QoSPolicy(name="Test", match_applications=["voip"])
+        policy = QoSPolicy(
+            name="Test",
+            match_applications=["voip"]
+        )
         flow = TrafficFlow(
             source_ip="192.168.1.100",
             source_port=54321,
             destination_ip="10.0.0.50",
             destination_port=443,
             protocol="TCP",
-            application="https",
+            application="https"
         )
 
         assert policy.matches_flow(flow) is False
 
     def test_matches_flow_dscp_match(self):
         """Test matches_flow with matching DSCP."""
-        policy = QoSPolicy(name="Test", match_dscp=[46])
+        policy = QoSPolicy(
+            name="Test",
+            match_dscp=[46]
+        )
         flow = TrafficFlow(
             source_ip="192.168.1.100",
             source_port=54321,
             destination_ip="10.0.0.50",
             destination_port=443,
             protocol="TCP",
-            dscp_marking=46,
+            dscp_marking=46
         )
 
         assert policy.matches_flow(flow) is True
@@ -521,7 +570,11 @@ class TestDNSRecord:
 
     def test_default_values(self):
         """Test default values."""
-        record = DNSRecord(name="server1", zone="example.com", value="192.168.1.10")
+        record = DNSRecord(
+            name="server1",
+            zone="example.com",
+            value="192.168.1.10"
+        )
 
         assert record.name == "server1"
         assert record.zone == "example.com"
@@ -533,7 +586,11 @@ class TestDNSRecord:
 
     def test_fqdn_property(self):
         """Test fqdn property."""
-        record = DNSRecord(name="server1", zone="example.com", value="192.168.1.10")
+        record = DNSRecord(
+            name="server1",
+            zone="example.com",
+            value="192.168.1.10"
+        )
 
         assert record.fqdn == "server1.example.com"
 
@@ -543,7 +600,10 @@ class TestDHCPLease:
 
     def test_default_values(self):
         """Test default values."""
-        lease = DHCPLease(mac_address="AA:BB:CC:DD:EE:FF", ip_address="192.168.1.100")
+        lease = DHCPLease(
+            mac_address="AA:BB:CC:DD:EE:FF",
+            ip_address="192.168.1.100"
+        )
 
         assert lease.mac_address == "AA:BB:CC:DD:EE:FF"
         assert lease.ip_address == "192.168.1.100"
@@ -556,7 +616,10 @@ class TestDHCPLease:
 
     def test_is_expired_no_end(self):
         """Test is_expired when no end time set."""
-        lease = DHCPLease(mac_address="AA:BB:CC:DD:EE:FF", ip_address="192.168.1.100")
+        lease = DHCPLease(
+            mac_address="AA:BB:CC:DD:EE:FF",
+            ip_address="192.168.1.100"
+        )
 
         assert lease.is_expired is False
 
@@ -565,7 +628,7 @@ class TestDHCPLease:
         lease = DHCPLease(
             mac_address="AA:BB:CC:DD:EE:FF",
             ip_address="192.168.1.100",
-            lease_end=_utc_now() + timedelta(hours=1),
+            lease_end=_utc_now() + timedelta(hours=1)
         )
 
         assert lease.is_expired is False
@@ -575,7 +638,7 @@ class TestDHCPLease:
         lease = DHCPLease(
             mac_address="AA:BB:CC:DD:EE:FF",
             ip_address="192.168.1.100",
-            lease_end=_utc_now() - timedelta(hours=1),
+            lease_end=_utc_now() - timedelta(hours=1)
         )
 
         assert lease.is_expired is True

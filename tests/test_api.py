@@ -1,7 +1,6 @@
 """
 Tests for Sentinel API endpoints.
 """
-
 import sys
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -13,12 +12,7 @@ class MockDevice:
     """Mock device for testing."""
 
     def __init__(self, device_id=None, mac="00:11:22:33:44:55"):
-        from sentinel.core.models.device import (
-            DeviceType,
-            DeviceStatus,
-            DeviceFingerprint,
-            TrustLevel,
-        )
+        from sentinel.core.models.device import DeviceType, DeviceStatus, DeviceFingerprint, TrustLevel
 
         self.id = device_id or uuid4()
         self.hostname = "test-device"
@@ -137,8 +131,11 @@ class MockEngine:
         return {
             "status": "running",
             "uptime_seconds": 100.0,
-            "agents": {name: {"enabled": agent._enabled} for name, agent in self.agents.items()},
-            "integrations": {},
+            "agents": {
+                name: {"enabled": agent._enabled}
+                for name, agent in self.agents.items()
+            },
+            "integrations": {}
         }
 
 
@@ -164,8 +161,8 @@ def client(mock_engine):
     import sentinel.api.app as app_module
 
     # Save original state
-    original_auth = getattr(auth_module, "_auth_config", None)
-    original_engine = getattr(app_module, "_engine", None)
+    original_auth = getattr(auth_module, '_auth_config', None)
+    original_engine = getattr(app_module, '_engine', None)
 
     # Disable auth for testing
     auth_module._auth_config = None
@@ -273,16 +270,13 @@ class TestVLANEndpoints:
 
     def test_create_vlan(self, client):
         """Test creating a VLAN."""
-        response = client.post(
-            "/vlans",
-            json={
-                "id": 30,
-                "name": "IoT",
-                "subnet": "192.168.30.0/24",
-                "purpose": "iot",
-                "isolated": True,
-            },
-        )
+        response = client.post("/vlans", json={
+            "id": 30,
+            "name": "IoT",
+            "subnet": "192.168.30.0/24",
+            "purpose": "iot",
+            "isolated": True
+        })
         assert response.status_code == 200
         data = response.json()
         assert data["id"] == 30
@@ -291,7 +285,10 @@ class TestVLANEndpoints:
 
     def test_create_duplicate_vlan(self, client):
         """Test creating duplicate VLAN fails."""
-        response = client.post("/vlans", json={"id": 10, "name": "Duplicate"})
+        response = client.post("/vlans", json={
+            "id": 10,
+            "name": "Duplicate"
+        })
         assert response.status_code == 409
 
 

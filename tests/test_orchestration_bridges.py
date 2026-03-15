@@ -4,7 +4,6 @@ Tests for orchestration bridges.
 Tests cover the integration bridges that coordinate between
 Discovery, Compute Cluster, and other Sentinel components.
 """
-
 import asyncio
 import pytest
 from datetime import datetime
@@ -58,7 +57,7 @@ def mock_discovery_agent():
             "mac": "64:D1:54:11:22:33",
             "hostname": "mikrotik-router",
             "confidence": 0.95,
-        },
+        }
     }
     return agent
 
@@ -222,9 +221,7 @@ class TestDiscoveryComputeBridge:
         assert len(discovery_compute_bridge._registered_ips) == 0
 
     @pytest.mark.asyncio
-    async def test_handle_infrastructure_discovered_no_cluster_manager(
-        self, discovery_compute_bridge
-    ):
+    async def test_handle_infrastructure_discovered_no_cluster_manager(self, discovery_compute_bridge):
         """Test handling when cluster manager not available."""
         await discovery_compute_bridge.start()
 
@@ -242,7 +239,9 @@ class TestDiscoveryComputeBridge:
 
     @pytest.mark.asyncio
     async def test_register_compute_node_success(
-        self, discovery_compute_bridge, mock_cluster_manager
+        self,
+        discovery_compute_bridge,
+        mock_cluster_manager
     ):
         """Test successful node registration."""
         # Create a mock node without importing the actual class
@@ -272,7 +271,9 @@ class TestDiscoveryComputeBridge:
 
     @pytest.mark.asyncio
     async def test_register_compute_node_probe_failed(
-        self, discovery_compute_bridge, mock_cluster_manager
+        self,
+        discovery_compute_bridge,
+        mock_cluster_manager
     ):
         """Test handling probe failure."""
         mock_cluster_manager._probe_node = AsyncMock(return_value=None)
@@ -306,7 +307,9 @@ class TestDiscoveryComputeBridge:
 
     @pytest.mark.asyncio
     async def test_manual_register_no_infra_data(
-        self, discovery_compute_bridge, mock_discovery_agent
+        self,
+        discovery_compute_bridge,
+        mock_discovery_agent
     ):
         """Test manual register with unknown IP."""
         discovery_compute_bridge._discovery_agent = mock_discovery_agent
@@ -414,9 +417,9 @@ class TestInfrastructureIntegrationBridge:
         mock_integration.connect = AsyncMock()
         mock_mikrotik_module.MikroTikIntegration.return_value = mock_integration
 
-        with patch.dict(
-            "sys.modules", {"sentinel.integrations.routers.mikrotik": mock_mikrotik_module}
-        ):
+        with patch.dict("sys.modules", {
+            "sentinel.integrations.routers.mikrotik": mock_mikrotik_module
+        }):
             event = Event(
                 category=EventCategory.NETWORK,
                 event_type="infrastructure.discovered",
@@ -455,7 +458,8 @@ class TestInfrastructureIntegrationBridge:
     def test_add_credentials(self, infra_integration_bridge):
         """Test adding credentials."""
         infra_integration_bridge.add_credentials(
-            "192.168.1.1", {"username": "admin", "password": "secret"}
+            "192.168.1.1",
+            {"username": "admin", "password": "secret"}
         )
 
         assert "192.168.1.1" in infra_integration_bridge._credentials

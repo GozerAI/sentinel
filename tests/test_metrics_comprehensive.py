@@ -7,7 +7,6 @@ These tests achieve full coverage including:
 - Update methods with engine integration
 - Recording methods
 """
-
 import pytest
 from unittest.mock import MagicMock, patch, PropertyMock
 from prometheus_client import CollectorRegistry
@@ -124,7 +123,10 @@ class TestUpdateAgentMetrics:
         mock_agent2._running = False
 
         mock_engine = MagicMock()
-        mock_engine._agents = {"agent1": mock_agent1, "agent2": mock_agent2}
+        mock_engine._agents = {
+            "agent1": mock_agent1,
+            "agent2": mock_agent2
+        }
 
         collector.set_engine(mock_engine)
         collector.update_agent_metrics()
@@ -319,7 +321,9 @@ class TestUpdateAllMetrics:
         registry = CollectorRegistry()
         collector = MetricsCollector(registry)
 
-        collector.update_engine_metrics = MagicMock(side_effect=RuntimeError("Error"))
+        collector.update_engine_metrics = MagicMock(
+            side_effect=RuntimeError("Error")
+        )
 
         # Should not raise
         collector.update_all_metrics()
@@ -392,7 +396,9 @@ class TestRecordingMethods:
         registry = CollectorRegistry()
         collector = MetricsCollector(registry)
 
-        collector.record_integration_request("router", "get_rules", "success", latency=0.05)
+        collector.record_integration_request(
+            "router", "get_rules", "success", latency=0.05
+        )
 
     def test_record_api_request(self):
         """Test record_api_request records counter and histogram."""
@@ -461,7 +467,6 @@ class TestGlobalMetricsCollector:
         """Test get_metrics_collector creates singleton."""
         # Reset global
         import sentinel.core.metrics as metrics_module
-
         metrics_module._metrics_collector = None
 
         collector1 = get_metrics_collector()
@@ -473,7 +478,6 @@ class TestGlobalMetricsCollector:
         """Test configure_metrics sets engine on collector."""
         # Reset global
         import sentinel.core.metrics as metrics_module
-
         metrics_module._metrics_collector = None
 
         mock_engine = MagicMock()

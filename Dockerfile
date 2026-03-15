@@ -28,7 +28,7 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
 # =============================================================================
 FROM python:3.11-slim as production
 
-LABEL maintainer="GozerAI"
+LABEL maintainer="1450 Enterprises"
 LABEL description="Sentinel AI-Native Security Platform"
 LABEL version="0.1.0"
 

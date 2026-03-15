@@ -5,7 +5,6 @@ This module provides integration with TrueNAS SCALE/CORE via REST API.
 Supports pool monitoring, dataset management, snapshot operations,
 and system health monitoring.
 """
-
 import asyncio
 import logging
 from datetime import datetime
@@ -72,14 +71,21 @@ class TrueNASIntegration(StorageIntegration):
             headers["Authorization"] = f"Bearer {self.api_key}"
 
         self._client = httpx.AsyncClient(
-            base_url=self._base_url, headers=headers, verify=self.verify_ssl, timeout=30.0
+            base_url=self._base_url,
+            headers=headers,
+            verify=self.verify_ssl,
+            timeout=30.0
         )
 
         # If using username/password, we need to get a token
         if not self.api_key and self.username:
             try:
                 response = await self._client.post(
-                    "/auth/login", json={"username": self.username, "password": self.password}
+                    "/auth/login",
+                    json={
+                        "username": self.username,
+                        "password": self.password
+                    }
                 )
                 response.raise_for_status()
                 # TrueNAS SCALE uses session cookies after login
@@ -167,22 +173,20 @@ class TrueNASIntegration(StorageIntegration):
                 # Get pool status details
                 status = pool.get("status", "UNKNOWN")
 
-                result.append(
-                    {
-                        "id": pool.get("id"),
-                        "name": pool.get("name"),
-                        "path": pool.get("path"),
-                        "status": status,
-                        "healthy": status == "ONLINE",
-                        "size": pool.get("size"),
-                        "allocated": pool.get("allocated"),
-                        "free": pool.get("free"),
-                        "fragmentation": pool.get("fragmentation"),
-                        "capacity": pool.get("capacity"),
-                        "autotrim": pool.get("autotrim", {}).get("value") == "on",
-                        "topology": pool.get("topology", {}),
-                    }
-                )
+                result.append({
+                    "id": pool.get("id"),
+                    "name": pool.get("name"),
+                    "path": pool.get("path"),
+                    "status": status,
+                    "healthy": status == "ONLINE",
+                    "size": pool.get("size"),
+                    "allocated": pool.get("allocated"),
+                    "free": pool.get("free"),
+                    "fragmentation": pool.get("fragmentation"),
+                    "capacity": pool.get("capacity"),
+                    "autotrim": pool.get("autotrim", {}).get("value") == "on",
+                    "topology": pool.get("topology", {})
+                })
 
             return result
 
@@ -202,25 +206,23 @@ class TrueNASIntegration(StorageIntegration):
 
             result = []
             for ds in datasets:
-                result.append(
-                    {
-                        "id": ds.get("id"),
-                        "name": ds.get("name"),
-                        "pool": ds.get("pool"),
-                        "type": ds.get("type"),
-                        "mountpoint": ds.get("mountpoint"),
-                        "quota": ds.get("quota", {}).get("parsed"),
-                        "refquota": ds.get("refquota", {}).get("parsed"),
-                        "used": ds.get("used", {}).get("parsed"),
-                        "available": ds.get("available", {}).get("parsed"),
-                        "compression": ds.get("compression", {}).get("value"),
-                        "deduplication": ds.get("deduplication", {}).get("value"),
-                        "sync": ds.get("sync", {}).get("value"),
-                        "readonly": ds.get("readonly", {}).get("parsed", False),
-                        "encrypted": ds.get("encrypted", False),
-                        "key_loaded": ds.get("key_loaded", True),
-                    }
-                )
+                result.append({
+                    "id": ds.get("id"),
+                    "name": ds.get("name"),
+                    "pool": ds.get("pool"),
+                    "type": ds.get("type"),
+                    "mountpoint": ds.get("mountpoint"),
+                    "quota": ds.get("quota", {}).get("parsed"),
+                    "refquota": ds.get("refquota", {}).get("parsed"),
+                    "used": ds.get("used", {}).get("parsed"),
+                    "available": ds.get("available", {}).get("parsed"),
+                    "compression": ds.get("compression", {}).get("value"),
+                    "deduplication": ds.get("deduplication", {}).get("value"),
+                    "sync": ds.get("sync", {}).get("value"),
+                    "readonly": ds.get("readonly", {}).get("parsed", False),
+                    "encrypted": ds.get("encrypted", False),
+                    "key_loaded": ds.get("key_loaded", True)
+                })
 
             return result
 
@@ -240,9 +242,11 @@ class TrueNASIntegration(StorageIntegration):
             True if successful
         """
         try:
-            await self._api_post(
-                "/zfs/snapshot", {"dataset": dataset, "name": name, "recursive": False}
-            )
+            await self._api_post("/zfs/snapshot", {
+                "dataset": dataset,
+                "name": name,
+                "recursive": False
+            })
 
             logger.info(f"Created snapshot {dataset}@{name}")
             return True
@@ -276,7 +280,9 @@ class TrueNASIntegration(StorageIntegration):
             failed_disks = [d for d in disks if d.get("status") == "FAILED"]
 
             healthy = (
-                len(critical_alerts) == 0 and len(unhealthy_pools) == 0 and len(failed_disks) == 0
+                len(critical_alerts) == 0 and
+                len(unhealthy_pools) == 0 and
+                len(failed_disks) == 0
             )
 
             return {
@@ -290,7 +296,7 @@ class TrueNASIntegration(StorageIntegration):
                 "unhealthy_pools": len(unhealthy_pools),
                 "failed_disks": len(failed_disks),
                 "pool_count": len(pools),
-                "disk_count": len(disks),
+                "disk_count": len(disks)
             }
 
         except Exception as e:
@@ -327,7 +333,7 @@ class TrueNASIntegration(StorageIntegration):
                     "type": snap.get("type"),
                     "properties": snap.get("properties", {}),
                     "holds": snap.get("holds", {}),
-                    "created": snap.get("properties", {}).get("creation", {}).get("parsed"),
+                    "created": snap.get("properties", {}).get("creation", {}).get("parsed")
                 }
                 for snap in snapshots
             ]
@@ -377,7 +383,7 @@ class TrueNASIntegration(StorageIntegration):
                     "pool": disk.get("pool"),
                     "status": disk.get("status", "UNKNOWN"),
                     "temperature": disk.get("temperature"),
-                    "smart_enabled": disk.get("togglesmart", False),
+                    "smart_enabled": disk.get("togglesmart", False)
                 }
                 for disk in disks
             ]
@@ -397,7 +403,9 @@ class TrueNASIntegration(StorageIntegration):
             SMART data dictionary
         """
         try:
-            data = await self._api_post(f"/disk/smart_attributes", {"name": disk_name})
+            data = await self._api_post(f"/disk/smart_attributes", {
+                "name": disk_name
+            })
             return data
 
         except Exception as e:
@@ -423,7 +431,7 @@ class TrueNASIntegration(StorageIntegration):
                     "text": alert.get("text"),
                     "klass": alert.get("klass"),
                     "dismissed": alert.get("dismissed", False),
-                    "datetime": alert.get("datetime", {}).get("$date"),
+                    "datetime": alert.get("datetime", {}).get("$date")
                 }
                 for alert in alerts
             ]
@@ -471,7 +479,7 @@ class TrueNASIntegration(StorageIntegration):
                     "enabled": task.get("enabled", False),
                     "state": task.get("state", {}).get("state"),
                     "last_snapshot": task.get("state", {}).get("last_snapshot"),
-                    "schedule": task.get("schedule"),
+                    "schedule": task.get("schedule")
                 }
                 for task in tasks
             ]
@@ -496,7 +504,7 @@ class TrueNASIntegration(StorageIntegration):
                     "pool": task.get("pool"),
                     "pool_name": task.get("pool_name"),
                     "enabled": task.get("enabled", False),
-                    "schedule": task.get("schedule"),
+                    "schedule": task.get("schedule")
                 }
                 for task in tasks
             ]
@@ -516,7 +524,9 @@ class TrueNASIntegration(StorageIntegration):
             True if successful
         """
         try:
-            await self._api_post(f"/pool/id/{pool_name}/scrub", {"action": "START"})
+            await self._api_post(f"/pool/id/{pool_name}/scrub", {
+                "action": "START"
+            })
             logger.info(f"Started scrub on pool {pool_name}")
             return True
 
@@ -532,7 +542,11 @@ class TrueNASIntegration(StorageIntegration):
             Dictionary with share types and configurations
         """
         try:
-            result = {"smb": [], "nfs": [], "iscsi": []}
+            result = {
+                "smb": [],
+                "nfs": [],
+                "iscsi": []
+            }
 
             # SMB shares
             try:
@@ -545,7 +559,7 @@ class TrueNASIntegration(StorageIntegration):
                         "enabled": share.get("enabled", True),
                         "comment": share.get("comment", ""),
                         "ro": share.get("ro", False),
-                        "browsable": share.get("browsable", True),
+                        "browsable": share.get("browsable", True)
                     }
                     for share in smb
                 ]
@@ -564,7 +578,7 @@ class TrueNASIntegration(StorageIntegration):
                         "networks": share.get("networks", []),
                         "maproot_user": share.get("maproot_user"),
                         "mapall_user": share.get("mapall_user"),
-                        "comment": share.get("comment", ""),
+                        "comment": share.get("comment", "")
                     }
                     for share in nfs
                 ]
@@ -579,7 +593,7 @@ class TrueNASIntegration(StorageIntegration):
                         "id": target.get("id"),
                         "name": target.get("name"),
                         "alias": target.get("alias"),
-                        "mode": target.get("mode"),
+                        "mode": target.get("mode")
                     }
                     for target in iscsi
                 ]
@@ -611,7 +625,7 @@ class TrueNASIntegration(StorageIntegration):
                 "serial": info.get("system_serial"),
                 "cores": info.get("cores"),
                 "physical_cores": info.get("physical_cores"),
-                "memory": info.get("physmem"),
+                "memory": info.get("physmem")
             }
 
         except Exception as e:

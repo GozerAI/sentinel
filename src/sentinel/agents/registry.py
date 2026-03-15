@@ -4,7 +4,6 @@ Agent Registry for centralized agent management and communication.
 This module provides a central registry for all agents in the Sentinel platform,
 enabling discovery, communication, and coordination between agents.
 """
-
 import asyncio
 import logging
 from collections import defaultdict
@@ -36,7 +35,7 @@ class AgentCapability:
         description: str,
         handler: Callable[..., Awaitable[Any]],
         input_schema: dict = None,
-        output_schema: dict = None,
+        output_schema: dict = None
     ):
         self.name = name
         self.description = description
@@ -49,7 +48,7 @@ class AgentCapability:
             "name": self.name,
             "description": self.description,
             "input_schema": self.input_schema,
-            "output_schema": self.output_schema,
+            "output_schema": self.output_schema
         }
 
 
@@ -68,7 +67,7 @@ class AgentMessage:
         message_type: str,
         payload: dict,
         reply_to: Optional[UUID] = None,
-        timeout: float = 30.0,
+        timeout: float = 30.0
     ):
         self.id = uuid4()
         self.from_agent = from_agent
@@ -91,7 +90,7 @@ class AgentMessage:
             "payload": self.payload,
             "reply_to": str(self.reply_to) if self.reply_to else None,
             "created_at": self.created_at.isoformat(),
-            "delivered_at": self.delivered_at.isoformat() if self.delivered_at else None,
+            "delivered_at": self.delivered_at.isoformat() if self.delivered_at else None
         }
 
 
@@ -100,7 +99,13 @@ class AgentRegistration:
     Registration record for an agent in the registry.
     """
 
-    def __init__(self, agent_id: UUID, agent_name: str, agent_description: str, agent: "BaseAgent"):
+    def __init__(
+        self,
+        agent_id: UUID,
+        agent_name: str,
+        agent_description: str,
+        agent: "BaseAgent"
+    ):
         self.agent_id = agent_id
         self.agent_name = agent_name
         self.agent_description = agent_description
@@ -121,7 +126,9 @@ class AgentRegistration:
         self.capabilities[capability.name] = capability
 
     def register_message_handler(
-        self, message_type: str, handler: Callable[[AgentMessage], Awaitable[dict]]
+        self,
+        message_type: str,
+        handler: Callable[[AgentMessage], Awaitable[dict]]
     ) -> None:
         """Register a handler for a message type."""
         self.message_handlers[message_type] = handler
@@ -142,8 +149,8 @@ class AgentRegistration:
             "metrics": {
                 "messages_sent": self.messages_sent,
                 "messages_received": self.messages_received,
-                "capability_invocations": self.capability_invocations,
-            },
+                "capability_invocations": self.capability_invocations
+            }
         }
 
 
@@ -211,6 +218,7 @@ class AgentRegistry:
         # Message queues
         self._message_queues: dict[UUID, asyncio.Queue] = {}
         self._pending_responses: dict[UUID, asyncio.Future] = {}
+        self._processor_tasks: dict[UUID, asyncio.Task] = {}
 
         # Capability index
         self._capabilities: dict[str, list[UUID]] = defaultdict(list)
@@ -263,7 +271,7 @@ class AgentRegistry:
             agent_id=agent.id,
             agent_name=agent.agent_name,
             agent_description=agent.agent_description,
-            agent=agent,
+            agent=agent
         )
 
         self._agents[agent.id] = registration
@@ -273,20 +281,18 @@ class AgentRegistry:
         self._message_queues[agent.id] = asyncio.Queue()
 
         # Start message processor
-        asyncio.create_task(self._message_processor(agent.id))
+        self._processor_tasks[agent.id] = asyncio.create_task(self._message_processor(agent.id))
 
         # Publish registration event
-        await self.engine.event_bus.publish(
-            Event(
-                category=EventCategory.AGENT,
-                event_type="agent.registered",
-                severity=EventSeverity.INFO,
-                source="sentinel.agents.registry",
-                title=f"Agent Registered: {agent.agent_name}",
-                description=f"Agent {agent.id} registered with registry",
-                data=registration.to_dict(),
-            )
-        )
+        await self.engine.event_bus.publish(Event(
+            category=EventCategory.AGENT,
+            event_type="agent.registered",
+            severity=EventSeverity.INFO,
+            source="sentinel.agents.registry",
+            title=f"Agent Registered: {agent.agent_name}",
+            description=f"Agent {agent.id} registered with registry",
+            data=registration.to_dict()
+        ))
 
         logger.info(f"Registered agent: {agent.agent_name} ({agent.id})")
         return registration
@@ -321,6 +327,15 @@ class AgentRegistry:
 
     async def _cleanup_agent(self, agent_id: UUID) -> None:
         """Clean up resources for an agent."""
+        # Cancel message processor task
+        task = self._processor_tasks.pop(agent_id, None)
+        if task and not task.done():
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+
         # Cancel any pending responses
         for msg_id, future in list(self._pending_responses.items()):
             if not future.done():
@@ -330,7 +345,11 @@ class AgentRegistry:
         if agent_id in self._message_queues:
             del self._message_queues[agent_id]
 
-    def register_capability(self, agent_id: UUID, capability: AgentCapability) -> bool:
+    def register_capability(
+        self,
+        agent_id: UUID,
+        capability: AgentCapability
+    ) -> bool:
         """
         Register a capability for an agent.
 
@@ -352,7 +371,10 @@ class AgentRegistry:
         return True
 
     def register_message_handler(
-        self, agent_id: UUID, message_type: str, handler: Callable[[AgentMessage], Awaitable[dict]]
+        self,
+        agent_id: UUID,
+        message_type: str,
+        handler: Callable[[AgentMessage], Awaitable[dict]]
     ) -> bool:
         """
         Register a message handler for an agent.
@@ -393,8 +415,7 @@ class AgentRegistry:
         """
         agent_ids = self._capabilities.get(capability_name, [])
         return [
-            self._agents[aid]
-            for aid in agent_ids
+            self._agents[aid] for aid in agent_ids
             if aid in self._agents and self._agents[aid].status == "active"
         ]
 
@@ -408,7 +429,9 @@ class AgentRegistry:
         result = {}
         for capability_name, agent_ids in self._capabilities.items():
             result[capability_name] = [
-                self._agents[aid].agent_name for aid in agent_ids if aid in self._agents
+                self._agents[aid].agent_name
+                for aid in agent_ids
+                if aid in self._agents
             ]
         return result
 
@@ -419,7 +442,7 @@ class AgentRegistry:
         message_type: str,
         payload: dict,
         timeout: float = 30.0,
-        wait_response: bool = True,
+        wait_response: bool = True
     ) -> Optional[dict]:
         """
         Send a message from one agent to another.
@@ -447,7 +470,7 @@ class AgentRegistry:
             to_agent=to_agent,
             message_type=message_type,
             payload=payload,
-            timeout=timeout,
+            timeout=timeout
         )
 
         # Update metrics
@@ -482,7 +505,7 @@ class AgentRegistry:
         message_type: str,
         payload: dict,
         target_capability: Optional[str] = None,
-        target_agents: Optional[list[str]] = None,
+        target_agents: Optional[list[str]] = None
     ) -> int:
         """
         Broadcast a message to multiple agents.
@@ -517,7 +540,7 @@ class AgentRegistry:
                     to_agent=target,
                     message_type=message_type,
                     payload=payload,
-                    wait_response=False,
+                    wait_response=False
                 )
             except Exception as e:
                 logger.warning(f"Failed to broadcast to {target}: {e}")
@@ -525,7 +548,11 @@ class AgentRegistry:
         return len(targets)
 
     async def invoke_capability(
-        self, agent_name: str, capability_name: str, parameters: dict, timeout: float = 30.0
+        self,
+        agent_name: str,
+        capability_name: str,
+        parameters: dict,
+        timeout: float = 30.0
     ) -> Any:
         """
         Invoke a capability on an agent.
@@ -547,7 +574,8 @@ class AgentRegistry:
             agents = self.find_by_capability(capability_name)
         else:
             agents = [
-                r for r in self.get_agents_by_name(agent_name) if capability_name in r.capabilities
+                r for r in self.get_agents_by_name(agent_name)
+                if capability_name in r.capabilities
             ]
 
         if not agents:
@@ -562,7 +590,10 @@ class AgentRegistry:
 
         # Invoke capability
         try:
-            return await asyncio.wait_for(capability.handler(**parameters), timeout)
+            return await asyncio.wait_for(
+                capability.handler(**parameters),
+                timeout
+            )
         except asyncio.TimeoutError:
             logger.warning(f"Capability {capability_name} timed out")
             raise
@@ -635,17 +666,15 @@ class AgentRegistry:
                                 f"marked unhealthy (no heartbeat for {time_since_heartbeat:.0f}s)"
                             )
 
-                            await self.engine.event_bus.publish(
-                                Event(
-                                    category=EventCategory.AGENT,
-                                    event_type="agent.unhealthy",
-                                    severity=EventSeverity.WARNING,
-                                    source="sentinel.agents.registry",
-                                    title=f"Agent Unhealthy: {registration.agent_name}",
-                                    description=f"No heartbeat for {time_since_heartbeat:.0f} seconds",
-                                    data={"agent_id": str(agent_id)},
-                                )
-                            )
+                            await self.engine.event_bus.publish(Event(
+                                category=EventCategory.AGENT,
+                                event_type="agent.unhealthy",
+                                severity=EventSeverity.WARNING,
+                                source="sentinel.agents.registry",
+                                title=f"Agent Unhealthy: {registration.agent_name}",
+                                description=f"No heartbeat for {time_since_heartbeat:.0f} seconds",
+                                data={"agent_id": str(agent_id)}
+                            ))
 
             except asyncio.CancelledError:
                 break
@@ -723,5 +752,5 @@ class AgentRegistry:
             "total_capabilities": len(self._capabilities),
             "total_messages_sent": sum(a.messages_sent for a in agents),
             "total_messages_received": sum(a.messages_received for a in agents),
-            "total_capability_invocations": sum(a.capability_invocations for a in agents),
+            "total_capability_invocations": sum(a.capability_invocations for a in agents)
         }

@@ -9,7 +9,6 @@ These tests achieve full coverage including:
 - MetricEvent model
 - AuditLogEntry model
 """
-
 import pytest
 from uuid import uuid4
 from datetime import datetime, timezone
@@ -23,7 +22,7 @@ from sentinel.core.models.event import (
     AgentDecision,
     MetricEvent,
     AuditLogEntry,
-    _utc_now,
+    _utc_now
 )
 
 
@@ -57,7 +56,7 @@ class TestEvent:
             category=EventCategory.SYSTEM,
             event_type="test.event",
             source="test",
-            title="Test Event",
+            title="Test Event"
         )
 
         assert event.id is not None
@@ -90,7 +89,7 @@ class TestEvent:
             description="Suspicious activity detected",
             data={"ip": "192.168.1.100"},
             correlation_id=correlation_id,
-            parent_event_id=parent_id,
+            parent_event_id=parent_id
         )
 
         assert event.id == event_id
@@ -104,7 +103,12 @@ class TestEvent:
 
     def test_acknowledge(self):
         """Test acknowledge method."""
-        event = Event(category=EventCategory.SYSTEM, event_type="test", source="test", title="Test")
+        event = Event(
+            category=EventCategory.SYSTEM,
+            event_type="test",
+            source="test",
+            title="Test"
+        )
 
         assert event.acknowledged is False
         assert event.acknowledged_by is None
@@ -124,11 +128,12 @@ class TestEvent:
             severity=EventSeverity.INFO,
             source="network_monitor",
             source_device_id=uuid4(),
-            title="Connection Established",
+            title="Connection Established"
         )
 
         child = parent.create_child(
-            event_type="network.data_transfer", title="Data Transfer Started"
+            event_type="network.data_transfer",
+            title="Data Transfer Started"
         )
 
         # Child inherits from parent
@@ -152,7 +157,7 @@ class TestEvent:
             event_type="network.connection",
             severity=EventSeverity.INFO,
             source="network_monitor",
-            title="Connection",
+            title="Connection"
         )
 
         child = parent.create_child(
@@ -162,7 +167,7 @@ class TestEvent:
             severity=EventSeverity.ERROR,
             source="guardian",
             description="Connection failed",
-            data={"error": "timeout"},
+            data={"error": "timeout"}
         )
 
         # Overridden values
@@ -180,10 +185,13 @@ class TestEvent:
             event_type="test",
             source="test",
             title="Test",
-            correlation_id=correlation,
+            correlation_id=correlation
         )
 
-        child = parent.create_child(event_type="child", title="Child")
+        child = parent.create_child(
+            event_type="child",
+            title="Child"
+        )
 
         assert child.correlation_id == correlation
 
@@ -194,7 +202,9 @@ class TestSecurityAlert:
     def test_default_values(self):
         """Test default values."""
         alert = SecurityAlert(
-            event_type="threat.detected", source="guardian", title="Threat Detected"
+            event_type="threat.detected",
+            source="guardian",
+            title="Threat Detected"
         )
 
         assert alert.category == EventCategory.SECURITY
@@ -225,7 +235,7 @@ class TestSecurityAlert:
             affected_user_ids=["user1"],
             auto_response_taken=True,
             auto_response_action="Device quarantined",
-            requires_investigation=False,
+            requires_investigation=False
         )
 
         assert alert.threat_type == "malware"
@@ -241,28 +251,49 @@ class TestSecurityAlert:
 
     def test_is_high_risk_true(self):
         """Test is_high_risk returns True for high risk scores."""
-        alert = SecurityAlert(event_type="threat", source="test", title="Test", risk_score=7.0)
+        alert = SecurityAlert(
+            event_type="threat",
+            source="test",
+            title="Test",
+            risk_score=7.0
+        )
         assert alert.is_high_risk is True
 
-        alert2 = SecurityAlert(event_type="threat", source="test", title="Test", risk_score=9.5)
+        alert2 = SecurityAlert(
+            event_type="threat",
+            source="test",
+            title="Test",
+            risk_score=9.5
+        )
         assert alert2.is_high_risk is True
 
     def test_is_high_risk_false(self):
         """Test is_high_risk returns False for low risk scores."""
-        alert = SecurityAlert(event_type="threat", source="test", title="Test", risk_score=6.9)
+        alert = SecurityAlert(
+            event_type="threat",
+            source="test",
+            title="Test",
+            risk_score=6.9
+        )
         assert alert.is_high_risk is False
 
     def test_is_actionable_true(self):
         """Test is_actionable when requires investigation and not acknowledged."""
         alert = SecurityAlert(
-            event_type="threat", source="test", title="Test", requires_investigation=True
+            event_type="threat",
+            source="test",
+            title="Test",
+            requires_investigation=True
         )
         assert alert.is_actionable is True
 
     def test_is_actionable_false_acknowledged(self):
         """Test is_actionable False when acknowledged."""
         alert = SecurityAlert(
-            event_type="threat", source="test", title="Test", requires_investigation=True
+            event_type="threat",
+            source="test",
+            title="Test",
+            requires_investigation=True
         )
         alert.acknowledge("admin")
 
@@ -271,7 +302,10 @@ class TestSecurityAlert:
     def test_is_actionable_false_no_investigation(self):
         """Test is_actionable False when no investigation required."""
         alert = SecurityAlert(
-            event_type="threat", source="test", title="Test", requires_investigation=False
+            event_type="threat",
+            source="test",
+            title="Test",
+            requires_investigation=False
         )
         assert alert.is_actionable is False
 
@@ -287,7 +321,7 @@ class TestAgentAction:
             reasoning="Suspicious activity",
             confidence=0.9,
             target_type="ip",
-            target_id="192.168.1.100",
+            target_id="192.168.1.100"
         )
 
         assert action.id is not None
@@ -312,7 +346,7 @@ class TestAgentAction:
             reasoning="test",
             confidence=0.9,
             target_type="test",
-            target_id="test",
+            target_id="test"
         )
         assert action.is_complete is False
 
@@ -325,7 +359,7 @@ class TestAgentAction:
             confidence=0.9,
             target_type="test",
             target_id="test",
-            status="executed",
+            status="executed"
         )
         assert action.is_complete is True
 
@@ -338,7 +372,7 @@ class TestAgentAction:
             confidence=0.9,
             target_type="test",
             target_id="test",
-            status="failed",
+            status="failed"
         )
         assert action.is_complete is True
 
@@ -351,7 +385,7 @@ class TestAgentAction:
             confidence=0.9,
             target_type="test",
             target_id="test",
-            status="rolled_back",
+            status="rolled_back"
         )
         assert action.is_complete is True
 
@@ -366,7 +400,7 @@ class TestAgentAction:
             target_id="test",
             reversible=True,
             rollback_data={"previous": "state"},
-            status="executed",
+            status="executed"
         )
         assert action.can_rollback is True
 
@@ -381,7 +415,7 @@ class TestAgentAction:
             target_id="test",
             reversible=False,
             rollback_data={"previous": "state"},
-            status="executed",
+            status="executed"
         )
         assert action.can_rollback is False
 
@@ -396,7 +430,7 @@ class TestAgentAction:
             target_id="test",
             reversible=True,
             rollback_data=None,
-            status="executed",
+            status="executed"
         )
         assert action.can_rollback is False
 
@@ -411,7 +445,7 @@ class TestAgentAction:
             target_id="test",
             reversible=True,
             rollback_data={"previous": "state"},
-            status="pending",
+            status="pending"
         )
         assert action.can_rollback is False
 
@@ -427,7 +461,7 @@ class TestAgentAction:
             reversible=True,
             rollback_data={"previous": "state"},
             status="executed",
-            rolled_back_at=_utc_now(),
+            rolled_back_at=_utc_now()
         )
         assert action.can_rollback is False
 
@@ -439,7 +473,7 @@ class TestAgentAction:
             reasoning="test",
             confidence=0.9,
             target_type="test",
-            target_id="test",
+            target_id="test"
         )
 
         action.mark_executed({"success": True, "details": "Done"})
@@ -455,7 +489,7 @@ class TestAgentAction:
             reasoning="test",
             confidence=0.9,
             target_type="test",
-            target_id="test",
+            target_id="test"
         )
 
         action.mark_failed("Connection timeout")
@@ -472,7 +506,7 @@ class TestAgentAction:
             confidence=0.9,
             target_type="test",
             target_id="test",
-            status="executed",
+            status="executed"
         )
 
         action.mark_rolled_back()
@@ -490,7 +524,7 @@ class TestAgentDecision:
             agent_name="planner",
             decision_type="vlan_assignment",
             analysis="Device analysis complete",
-            confidence=0.9,
+            confidence=0.9
         )
 
         assert decision.id is not None
@@ -512,14 +546,17 @@ class TestAgentDecision:
             decision_type="test",
             analysis="test",
             confidence=0.9,
-            llm_model="llama3.1:8b",
+            llm_model="llama3.1:8b"
         )
         assert decision.used_llm is True
 
     def test_used_llm_false(self):
         """Test used_llm returns False when no LLM model."""
         decision = AgentDecision(
-            agent_name="test", decision_type="test", analysis="test", confidence=0.9
+            agent_name="test",
+            decision_type="test",
+            analysis="test",
+            confidence=0.9
         )
         assert decision.used_llm is False
 
@@ -531,7 +568,7 @@ class TestAgentDecision:
             analysis="test",
             confidence=0.9,
             llm_prompt_tokens=100,
-            llm_completion_tokens=50,
+            llm_completion_tokens=50
         )
         assert decision.total_tokens == 150
 
@@ -542,7 +579,7 @@ class TestAgentDecision:
             decision_type="test",
             analysis="test",
             confidence=0.9,
-            llm_prompt_tokens=100,
+            llm_prompt_tokens=100
         )
         assert decision.total_tokens == 100
 
@@ -553,14 +590,17 @@ class TestAgentDecision:
             decision_type="test",
             analysis="test",
             confidence=0.9,
-            llm_completion_tokens=50,
+            llm_completion_tokens=50
         )
         assert decision.total_tokens == 50
 
     def test_total_tokens_none(self):
         """Test total_tokens returns 0 when no tokens."""
         decision = AgentDecision(
-            agent_name="test", decision_type="test", analysis="test", confidence=0.9
+            agent_name="test",
+            decision_type="test",
+            analysis="test",
+            confidence=0.9
         )
         assert decision.total_tokens == 0
 
@@ -570,7 +610,11 @@ class TestMetricEvent:
 
     def test_default_values(self):
         """Test default values."""
-        event = MetricEvent(event_type="metric", source="metrics", title="CPU Usage")
+        event = MetricEvent(
+            event_type="metric",
+            source="metrics",
+            title="CPU Usage"
+        )
 
         assert event.category == EventCategory.SYSTEM
         assert event.metric_name == ""
@@ -587,7 +631,7 @@ class TestMetricEvent:
             metric_name="cpu_usage_percent",
             metric_value=75.5,
             metric_unit="%",
-            tags={"host": "server1", "core": "all"},
+            tags={"host": "server1", "core": "all"}
         )
 
         assert event.metric_name == "cpu_usage_percent"
@@ -607,7 +651,7 @@ class TestAuditLogEntry:
             actor_name="John Doe",
             action="create",
             resource_type="device",
-            resource_id="device-123",
+            resource_id="device-123"
         )
 
         assert entry.id is not None
@@ -632,7 +676,7 @@ class TestAuditLogEntry:
             context={"trigger_event": "suspicious_traffic"},
             success=True,
             source_ip="127.0.0.1",
-            user_agent="Sentinel/1.0",
+            user_agent="Sentinel/1.0"
         )
 
         assert entry.actor_type == "agent"
@@ -652,7 +696,7 @@ class TestAuditLogEntry:
             resource_type="device",
             resource_id="device-123",
             success=False,
-            error_message="Permission denied",
+            error_message="Permission denied"
         )
 
         assert entry.success is False

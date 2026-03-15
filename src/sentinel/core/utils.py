@@ -7,7 +7,6 @@ Provides common helpers used across the codebase:
 - Input validation
 - Security helpers
 """
-
 import asyncio
 import functools
 import ipaddress
@@ -72,7 +71,7 @@ async def retry_async(
     jitter: bool = True,
     retryable_exceptions: tuple = (Exception,),
     on_retry: Optional[Callable[[int, Exception, float], None]] = None,
-    **kwargs,
+    **kwargs
 ) -> T:
     """
     Retry an async function with exponential backoff.
@@ -114,7 +113,9 @@ async def retry_async(
             last_exception = e
 
             if attempt == max_attempts:
-                logger.warning(f"Retry exhausted after {max_attempts} attempts: {e}")
+                logger.warning(
+                    f"Retry exhausted after {max_attempts} attempts: {e}"
+                )
                 break
 
             # Calculate delay with exponential backoff
@@ -125,7 +126,8 @@ async def retry_async(
                 delay = delay * (0.75 + random.random() * 0.5)
 
             logger.debug(
-                f"Attempt {attempt}/{max_attempts} failed: {e}. " f"Retrying in {delay:.2f}s..."
+                f"Attempt {attempt}/{max_attempts} failed: {e}. "
+                f"Retrying in {delay:.2f}s..."
             )
 
             if on_retry:
@@ -133,7 +135,10 @@ async def retry_async(
 
             await asyncio.sleep(delay)
 
-    raise RetryError(f"All {max_attempts} attempts failed", last_exception=last_exception)
+    raise RetryError(
+        f"All {max_attempts} attempts failed",
+        last_exception=last_exception
+    )
 
 
 def retry(
@@ -162,7 +167,6 @@ def retry(
             ...
         ```
     """
-
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
@@ -175,11 +179,9 @@ def retry(
                 exponential_base=exponential_base,
                 jitter=jitter,
                 retryable_exceptions=retryable_exceptions,
-                **kwargs,
+                **kwargs
             )
-
         return wrapper
-
     return decorator
 
 
@@ -260,9 +262,9 @@ def validate_mac_address(mac: str) -> bool:
     """
     # Accept formats: AA:BB:CC:DD:EE:FF, AA-BB-CC-DD-EE-FF, AABBCCDDEEFF
     mac_patterns = [
-        r"^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$",  # Colon separated
-        r"^([0-9A-Fa-f]{2}-){5}[0-9A-Fa-f]{2}$",  # Hyphen separated
-        r"^[0-9A-Fa-f]{12}$",  # No separator
+        r'^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$',  # Colon separated
+        r'^([0-9A-Fa-f]{2}-){5}[0-9A-Fa-f]{2}$',  # Hyphen separated
+        r'^[0-9A-Fa-f]{12}$',  # No separator
     ]
     return any(re.match(pattern, mac) for pattern in mac_patterns)
 
@@ -281,12 +283,12 @@ def validate_hostname(hostname: str) -> bool:
         return False
 
     # Remove trailing dot if present (FQDN)
-    if hostname.endswith("."):
+    if hostname.endswith('.'):
         hostname = hostname[:-1]
 
     # Each label must be 1-63 characters
-    labels = hostname.split(".")
-    label_pattern = re.compile(r"^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$")
+    labels = hostname.split('.')
+    label_pattern = re.compile(r'^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$')
 
     return all(label_pattern.match(label) for label in labels)
 
@@ -302,13 +304,12 @@ def validate_url(url: str) -> bool:
         True if valid, False otherwise
     """
     url_pattern = re.compile(
-        r"^https?://"  # http:// or https://
-        r"(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|"  # domain
-        r"localhost|"  # localhost
-        r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"  # or ip
-        r"(?::\d+)?"  # optional port
-        r"(?:/?|[/?]\S+)$",
-        re.IGNORECASE,
+        r'^https?://'  # http:// or https://
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'  # domain
+        r'localhost|'  # localhost
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # or ip
+        r'(?::\d+)?'  # optional port
+        r'(?:/?|[/?]\S+)$', re.IGNORECASE
     )
     return bool(url_pattern.match(url))
 
@@ -364,18 +365,9 @@ def safe_log_dict(data: dict, sensitive_keys: set = None) -> dict:
     """
     if sensitive_keys is None:
         sensitive_keys = {
-            "password",
-            "api_key",
-            "token",
-            "secret",
-            "credential",
-            "private_key",
-            "ssh_key",
-            "auth",
-            "authorization",
-            "token_value",
-            "api_secret",
-            "client_secret",
+            "password", "api_key", "token", "secret", "credential",
+            "private_key", "ssh_key", "auth", "authorization",
+            "token_value", "api_secret", "client_secret",
         }
 
     def _sanitize(obj: Any, depth: int = 0) -> Any:
@@ -384,11 +376,7 @@ def safe_log_dict(data: dict, sensitive_keys: set = None) -> dict:
 
         if isinstance(obj, dict):
             return {
-                k: (
-                    mask_sensitive(str(v))
-                    if k.lower() in sensitive_keys
-                    else _sanitize(v, depth + 1)
-                )
+                k: (mask_sensitive(str(v)) if k.lower() in sensitive_keys else _sanitize(v, depth + 1))
                 for k, v in obj.items()
             }
         elif isinstance(obj, (list, tuple)):
@@ -412,7 +400,7 @@ class ConnectionState:
         name: str,
         max_failures: int = 5,
         backoff_base: float = 5.0,
-        backoff_max: float = 300.0,
+        backoff_max: float = 300.0
     ):
         """
         Initialize connection state tracker.
@@ -446,7 +434,10 @@ class ConnectionState:
         """Calculate next retry delay with exponential backoff."""
         if self._consecutive_failures == 0:
             return 0
-        delay = min(self.backoff_base * (2 ** (self._consecutive_failures - 1)), self.backoff_max)
+        delay = min(
+            self.backoff_base * (2 ** (self._consecutive_failures - 1)),
+            self.backoff_max
+        )
         # Add jitter
         return delay * (0.75 + random.random() * 0.5)
 
@@ -468,7 +459,9 @@ class ConnectionState:
                 f"{self.name}: Connection failure #{self._consecutive_failures}: {error}"
             )
         else:
-            logger.warning(f"{self.name}: Connection failure #{self._consecutive_failures}")
+            logger.warning(
+                f"{self.name}: Connection failure #{self._consecutive_failures}"
+            )
 
         if not self.healthy:
             logger.error(

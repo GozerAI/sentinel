@@ -3,7 +3,6 @@ Tests for network visualization module.
 
 Tests cover topology generation, layout algorithms, and export formats.
 """
-
 import json
 import pytest
 from datetime import datetime
@@ -95,51 +94,43 @@ def sample_graph():
     graph.nodes.append(iot)
 
     # Add edges
-    graph.edges.append(
-        GraphEdge(
-            id="gateway-internet",
-            source="gateway",
-            target="internet",
-            edge_type=EdgeType.UPLINK,
-            status="up",
-            color=EDGE_COLORS["up"],
-        )
-    )
+    graph.edges.append(GraphEdge(
+        id="gateway-internet",
+        source="gateway",
+        target="internet",
+        edge_type=EdgeType.UPLINK,
+        status="up",
+        color=EDGE_COLORS["up"],
+    ))
 
-    graph.edges.append(
-        GraphEdge(
-            id="gateway-server1",
-            source="gateway",
-            target="server1",
-            edge_type=EdgeType.ETHERNET,
-            status="up",
-            bandwidth_mbps=1000,
-            color=EDGE_COLORS["up"],
-        )
-    )
+    graph.edges.append(GraphEdge(
+        id="gateway-server1",
+        source="gateway",
+        target="server1",
+        edge_type=EdgeType.ETHERNET,
+        status="up",
+        bandwidth_mbps=1000,
+        color=EDGE_COLORS["up"],
+    ))
 
-    graph.edges.append(
-        GraphEdge(
-            id="gateway-nas1",
-            source="gateway",
-            target="nas1",
-            edge_type=EdgeType.ETHERNET,
-            status="up",
-            bandwidth_mbps=10000,
-            color=EDGE_COLORS["up"],
-        )
-    )
+    graph.edges.append(GraphEdge(
+        id="gateway-nas1",
+        source="gateway",
+        target="nas1",
+        edge_type=EdgeType.ETHERNET,
+        status="up",
+        bandwidth_mbps=10000,
+        color=EDGE_COLORS["up"],
+    ))
 
-    graph.edges.append(
-        GraphEdge(
-            id="gateway-iot1",
-            source="gateway",
-            target="iot1",
-            edge_type=EdgeType.WIFI,
-            status="up",
-            color=EDGE_COLORS["up"],
-        )
-    )
+    graph.edges.append(GraphEdge(
+        id="gateway-iot1",
+        source="gateway",
+        target="iot1",
+        edge_type=EdgeType.WIFI,
+        status="up",
+        color=EDGE_COLORS["up"],
+    ))
 
     return graph
 
@@ -316,13 +307,11 @@ class TestTopologyVisualizer:
 
     def test_visualizer_custom_config(self):
         """Test visualizer with custom config."""
-        visualizer = TopologyVisualizer(
-            {
-                "default_layout": "circular",
-                "include_offline": False,
-                "group_by_vlan": False,
-            }
-        )
+        visualizer = TopologyVisualizer({
+            "default_layout": "circular",
+            "include_offline": False,
+            "group_by_vlan": False,
+        })
         assert visualizer.default_layout == GraphLayout.CIRCULAR
         assert visualizer.include_offline is False
         assert visualizer.group_by_vlan is False
@@ -627,7 +616,7 @@ class TestSVGExporter:
         exporter = SVGExporter(width=800, height=600)
         result = exporter.export(sample_graph)
 
-        assert 'viewBox="0 0 800 600"' in result
+        assert "viewBox=\"0 0 800 600\"" in result
 
     def test_svg_background(self, sample_graph):
         """Test SVG background color."""
@@ -811,7 +800,10 @@ class TestEdgeCases:
     def test_special_characters_in_labels(self):
         """Test handling special characters in labels."""
         graph = TopologyGraph(name="Special")
-        graph.nodes.append(GraphNode(id="test", label='Node "with" <special> & chars'))
+        graph.nodes.append(GraphNode(
+            id="test",
+            label='Node "with" <special> & chars'
+        ))
 
         # DOT export should escape properly
         exporter = DOTExporter()

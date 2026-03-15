@@ -5,7 +5,6 @@ This module provides integration with Ubiquiti UniFi network equipment
 via the UniFi Controller API. Supports switch port management, VLAN
 assignment, client tracking, and network statistics.
 """
-
 import asyncio
 import logging
 from datetime import datetime
@@ -70,12 +69,16 @@ class UnifiIntegration(SwitchIntegration):
             base_url=self.controller_url,
             verify=self.verify_ssl,
             timeout=30.0,
-            follow_redirects=True,
+            follow_redirects=True
         )
 
         # Login to controller
         try:
-            login_data = {"username": self.username, "password": self.password, "remember": True}
+            login_data = {
+                "username": self.username,
+                "password": self.password,
+                "remember": True
+            }
 
             response = await self._client.post("/api/login", json=login_data)
             response.raise_for_status()
@@ -115,7 +118,8 @@ class UnifiIntegration(SwitchIntegration):
 
         try:
             response = await self._client.get(
-                f"/api/s/{self.site}/stat/health", cookies=self._cookies
+                f"/api/s/{self.site}/stat/health",
+                cookies=self._cookies
             )
             return response.status_code == 200
         except Exception as e:
@@ -132,7 +136,9 @@ class UnifiIntegration(SwitchIntegration):
             headers["x-csrf-token"] = self._csrf_token
 
         response = await self._client.get(
-            f"/api/s/{self.site}/{endpoint}", headers=headers, cookies=self._cookies
+            f"/api/s/{self.site}/{endpoint}",
+            headers=headers,
+            cookies=self._cookies
         )
         response.raise_for_status()
         return response.json()
@@ -150,7 +156,7 @@ class UnifiIntegration(SwitchIntegration):
             f"/api/s/{self.site}/{endpoint}",
             json=data or {},
             headers=headers,
-            cookies=self._cookies,
+            cookies=self._cookies
         )
         response.raise_for_status()
         return response.json()
@@ -168,7 +174,7 @@ class UnifiIntegration(SwitchIntegration):
             f"/api/s/{self.site}/{endpoint}",
             json=data or {},
             headers=headers,
-            cookies=self._cookies,
+            cookies=self._cookies
         )
         response.raise_for_status()
         return response.json()
@@ -199,27 +205,25 @@ class UnifiIntegration(SwitchIntegration):
 
                 port_table = device.get("port_table", [])
                 for port in port_table:
-                    ports.append(
-                        {
-                            "switch_mac": device_mac,
-                            "switch_name": device_name,
-                            "port_idx": port.get("port_idx"),
-                            "name": port.get("name", f"Port {port.get('port_idx')}"),
-                            "enabled": port.get("enable", True),
-                            "up": port.get("up", False),
-                            "speed": port.get("speed", 0),
-                            "full_duplex": port.get("full_duplex", True),
-                            "poe_enable": port.get("poe_enable", False),
-                            "poe_mode": port.get("poe_mode", "off"),
-                            "poe_power": port.get("poe_power", 0),
-                            "tx_bytes": port.get("tx_bytes", 0),
-                            "rx_bytes": port.get("rx_bytes", 0),
-                            "tx_packets": port.get("tx_packets", 0),
-                            "rx_packets": port.get("rx_packets", 0),
-                            "native_vlan": port.get("native_networkconf_id"),
-                            "tagged_vlans": port.get("tagged_networkconf_ids", []),
-                        }
-                    )
+                    ports.append({
+                        "switch_mac": device_mac,
+                        "switch_name": device_name,
+                        "port_idx": port.get("port_idx"),
+                        "name": port.get("name", f"Port {port.get('port_idx')}"),
+                        "enabled": port.get("enable", True),
+                        "up": port.get("up", False),
+                        "speed": port.get("speed", 0),
+                        "full_duplex": port.get("full_duplex", True),
+                        "poe_enable": port.get("poe_enable", False),
+                        "poe_mode": port.get("poe_mode", "off"),
+                        "poe_power": port.get("poe_power", 0),
+                        "tx_bytes": port.get("tx_bytes", 0),
+                        "rx_bytes": port.get("rx_bytes", 0),
+                        "tx_packets": port.get("tx_packets", 0),
+                        "rx_packets": port.get("rx_packets", 0),
+                        "native_vlan": port.get("native_networkconf_id"),
+                        "tagged_vlans": port.get("tagged_networkconf_ids", [])
+                    })
 
             return ports
 
@@ -227,7 +231,12 @@ class UnifiIntegration(SwitchIntegration):
             logger.error(f"Failed to get ports: {e}")
             return []
 
-    async def set_port_vlan(self, port: str = None, mac: str = None, vlan_id: int = None) -> bool:
+    async def set_port_vlan(
+        self,
+        port: str = None,
+        mac: str = None,
+        vlan_id: int = None
+    ) -> bool:
         """
         Set VLAN for a port or client.
 
@@ -272,11 +281,15 @@ class UnifiIntegration(SwitchIntegration):
                     return False
 
                 # Override client to specific network
-                override_data = {"mac": mac, "network_id": network_id}
-                await self._api_post(
-                    "cmd/stamgr",
-                    {"cmd": "set-sta-note", "mac": mac, "note": f"VLAN override to {vlan_id}"},
-                )
+                override_data = {
+                    "mac": mac,
+                    "network_id": network_id
+                }
+                await self._api_post("cmd/stamgr", {
+                    "cmd": "set-sta-note",
+                    "mac": mac,
+                    "note": f"VLAN override to {vlan_id}"
+                })
 
                 # For actual VLAN change, may need to use port profile
                 logger.info(f"Set client {mac} to VLAN {vlan_id}")
@@ -310,13 +323,15 @@ class UnifiIntegration(SwitchIntegration):
                                 break
 
                         if not override_found:
-                            port_overrides.append(
-                                {"port_idx": port_idx, "native_networkconf_id": network_id}
-                            )
+                            port_overrides.append({
+                                "port_idx": port_idx,
+                                "native_networkconf_id": network_id
+                            })
 
                         # Apply update
                         await self._api_put(
-                            f"rest/device/{device_id}", {"port_overrides": port_overrides}
+                            f"rest/device/{device_id}",
+                            {"port_overrides": port_overrides}
                         )
 
                         logger.info(f"Set port {port} to VLAN {vlan_id}")
@@ -350,17 +365,15 @@ class UnifiIntegration(SwitchIntegration):
                 lldp_table = device.get("lldp_table", [])
 
                 for entry in lldp_table:
-                    neighbors.append(
-                        {
-                            "local_switch": device_mac,
-                            "local_port": entry.get("local_port_idx"),
-                            "chassis_id": entry.get("chassis_id"),
-                            "port_id": entry.get("port_id"),
-                            "port_description": entry.get("port_desc", ""),
-                            "system_name": entry.get("chassis_descr", ""),
-                            "is_wired": entry.get("is_wired", True),
-                        }
-                    )
+                    neighbors.append({
+                        "local_switch": device_mac,
+                        "local_port": entry.get("local_port_idx"),
+                        "chassis_id": entry.get("chassis_id"),
+                        "port_id": entry.get("port_id"),
+                        "port_description": entry.get("port_desc", ""),
+                        "system_name": entry.get("chassis_descr", ""),
+                        "is_wired": entry.get("is_wired", True)
+                    })
 
             return neighbors
 
@@ -415,7 +428,7 @@ class UnifiIntegration(SwitchIntegration):
                             "poe_enable": p.get("poe_enable", False),
                             "poe_power": p.get("poe_power", 0),
                             "poe_voltage": p.get("poe_voltage", 0),
-                            "poe_current": p.get("poe_current", 0),
+                            "poe_current": p.get("poe_current", 0)
                         }
 
             return {}
@@ -440,25 +453,23 @@ class UnifiIntegration(SwitchIntegration):
 
             clients = []
             for client in data.get("data", []):
-                clients.append(
-                    {
-                        "mac": client.get("mac"),
-                        "ip": client.get("ip"),
-                        "hostname": client.get("hostname", client.get("name", "")),
-                        "oui": client.get("oui", ""),
-                        "is_wired": client.get("is_wired", True),
-                        "switch_mac": client.get("sw_mac"),
-                        "switch_port": client.get("sw_port"),
-                        "network": client.get("network"),
-                        "vlan": client.get("vlan"),
-                        "signal": client.get("signal"),  # For wireless
-                        "tx_bytes": client.get("tx_bytes", 0),
-                        "rx_bytes": client.get("rx_bytes", 0),
-                        "uptime": client.get("uptime", 0),
-                        "last_seen": client.get("last_seen", 0),
-                        "first_seen": client.get("first_seen", 0),
-                    }
-                )
+                clients.append({
+                    "mac": client.get("mac"),
+                    "ip": client.get("ip"),
+                    "hostname": client.get("hostname", client.get("name", "")),
+                    "oui": client.get("oui", ""),
+                    "is_wired": client.get("is_wired", True),
+                    "switch_mac": client.get("sw_mac"),
+                    "switch_port": client.get("sw_port"),
+                    "network": client.get("network"),
+                    "vlan": client.get("vlan"),
+                    "signal": client.get("signal"),  # For wireless
+                    "tx_bytes": client.get("tx_bytes", 0),
+                    "rx_bytes": client.get("rx_bytes", 0),
+                    "uptime": client.get("uptime", 0),
+                    "last_seen": client.get("last_seen", 0),
+                    "first_seen": client.get("first_seen", 0)
+                })
 
             return clients
 
@@ -478,21 +489,19 @@ class UnifiIntegration(SwitchIntegration):
 
             networks = []
             for net in data.get("data", []):
-                networks.append(
-                    {
-                        "id": net.get("_id"),
-                        "name": net.get("name"),
-                        "purpose": net.get("purpose"),
-                        "vlan": net.get("vlan"),
-                        "subnet": net.get("ip_subnet"),
-                        "gateway": net.get("gateway_ip"),
-                        "dhcp_enabled": net.get("dhcpd_enabled", False),
-                        "dhcp_start": net.get("dhcpd_start"),
-                        "dhcp_stop": net.get("dhcpd_stop"),
-                        "domain_name": net.get("domain_name"),
-                        "enabled": net.get("enabled", True),
-                    }
-                )
+                networks.append({
+                    "id": net.get("_id"),
+                    "name": net.get("name"),
+                    "purpose": net.get("purpose"),
+                    "vlan": net.get("vlan"),
+                    "subnet": net.get("ip_subnet"),
+                    "gateway": net.get("gateway_ip"),
+                    "dhcp_enabled": net.get("dhcpd_enabled", False),
+                    "dhcp_start": net.get("dhcpd_start"),
+                    "dhcp_stop": net.get("dhcpd_stop"),
+                    "domain_name": net.get("domain_name"),
+                    "enabled": net.get("enabled", True)
+                })
 
             return networks
 
@@ -512,22 +521,20 @@ class UnifiIntegration(SwitchIntegration):
 
             devices = []
             for device in data.get("data", []):
-                devices.append(
-                    {
-                        "id": device.get("_id"),
-                        "mac": device.get("mac"),
-                        "ip": device.get("ip"),
-                        "name": device.get("name", device.get("mac")),
-                        "model": device.get("model"),
-                        "type": device.get("type"),
-                        "version": device.get("version"),
-                        "adopted": device.get("adopted", False),
-                        "state": device.get("state"),
-                        "uptime": device.get("uptime", 0),
-                        "last_seen": device.get("last_seen", 0),
-                        "port_count": len(device.get("port_table", [])),
-                    }
-                )
+                devices.append({
+                    "id": device.get("_id"),
+                    "mac": device.get("mac"),
+                    "ip": device.get("ip"),
+                    "name": device.get("name", device.get("mac")),
+                    "model": device.get("model"),
+                    "type": device.get("type"),
+                    "version": device.get("version"),
+                    "adopted": device.get("adopted", False),
+                    "state": device.get("state"),
+                    "uptime": device.get("uptime", 0),
+                    "last_seen": device.get("last_seen", 0),
+                    "port_count": len(device.get("port_table", []))
+                })
 
             return devices
 
@@ -546,7 +553,10 @@ class UnifiIntegration(SwitchIntegration):
             True if successful
         """
         try:
-            await self._api_post("cmd/stamgr", {"cmd": "block-sta", "mac": mac})
+            await self._api_post("cmd/stamgr", {
+                "cmd": "block-sta",
+                "mac": mac
+            })
             logger.info(f"Blocked client: {mac}")
             return True
 
@@ -565,7 +575,10 @@ class UnifiIntegration(SwitchIntegration):
             True if successful
         """
         try:
-            await self._api_post("cmd/stamgr", {"cmd": "unblock-sta", "mac": mac})
+            await self._api_post("cmd/stamgr", {
+                "cmd": "unblock-sta",
+                "mac": mac
+            })
             logger.info(f"Unblocked client: {mac}")
             return True
 
@@ -584,7 +597,10 @@ class UnifiIntegration(SwitchIntegration):
             True if successful
         """
         try:
-            await self._api_post("cmd/stamgr", {"cmd": "kick-sta", "mac": mac})
+            await self._api_post("cmd/stamgr", {
+                "cmd": "kick-sta",
+                "mac": mac
+            })
             logger.info(f"Kicked client: {mac}")
             return True
 
@@ -627,10 +643,14 @@ class UnifiIntegration(SwitchIntegration):
                             break
 
                     if not override_found:
-                        port_overrides.append({"port_idx": port_idx, "poe_mode": mode})
+                        port_overrides.append({
+                            "port_idx": port_idx,
+                            "poe_mode": mode
+                        })
 
                     await self._api_put(
-                        f"rest/device/{device_id}", {"port_overrides": port_overrides}
+                        f"rest/device/{device_id}",
+                        {"port_overrides": port_overrides}
                     )
 
                     logger.info(f"Set port {port} PoE mode to {mode}")

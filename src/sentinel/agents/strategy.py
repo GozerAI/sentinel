@@ -5,7 +5,6 @@ This agent provides high-level strategic reasoning for the Sentinel platform.
 It analyzes the overall state of the network, identifies opportunities and threats,
 and decides what agents should be created, modified, or retired.
 """
-
 import asyncio
 import logging
 from datetime import datetime, timedelta
@@ -15,11 +14,8 @@ from uuid import UUID
 from sentinel.agents.base import BaseAgent
 from sentinel.core.utils import utc_now
 from sentinel.core.models.event import (
-    Event,
-    EventCategory,
-    EventSeverity,
-    AgentAction,
-    AgentDecision,
+    Event, EventCategory, EventSeverity,
+    AgentAction, AgentDecision
 )
 
 if TYPE_CHECKING:
@@ -46,7 +42,7 @@ class StrategicGoal:
         description: str,
         priority: int = 5,
         metrics: list[str] = None,
-        target_values: dict = None,
+        target_values: dict = None
     ):
         self.id = UUID(int=hash(name) % (2**128))
         self.name = name
@@ -67,7 +63,7 @@ class StrategicGoal:
             "metrics": self.metrics,
             "target_values": self.target_values,
             "achieved": self.achieved,
-            "progress": self.progress,
+            "progress": self.progress
         }
 
 
@@ -82,7 +78,12 @@ class StrategicPlan:
     - Timeline and checkpoints
     """
 
-    def __init__(self, name: str, goals: list[StrategicGoal], actions: list[dict] = None):
+    def __init__(
+        self,
+        name: str,
+        goals: list[StrategicGoal],
+        actions: list[dict] = None
+    ):
         self.id = UUID(int=hash(name + str(utc_now())) % (2**128))
         self.name = name
         self.goals = goals
@@ -100,7 +101,7 @@ class StrategicPlan:
             "actions": self.actions,
             "status": self.status,
             "executed_actions": self.executed_actions,
-            "spawned_agents": [str(a) for a in self.spawned_agents],
+            "spawned_agents": [str(a) for a in self.spawned_agents]
         }
 
 
@@ -127,7 +128,7 @@ class StrategyAgent(BaseAgent):
         "agent_orchestration",
         "threat_assessment",
         "capability_analysis",
-        "resource_allocation",
+        "resource_allocation"
     ]
 
     def __init__(self, engine: "SentinelEngine", config: dict):
@@ -136,10 +137,7 @@ class StrategyAgent(BaseAgent):
         # Strategic configuration
         self.planning_interval = config.get("planning_interval", 300)  # 5 minutes
         self.review_interval = config.get("review_interval", 3600)  # 1 hour
-        self.max_concurrent_agents = config.get("max_concurrent_agents", 5)  # Reduced from 20
-        self._spawning_disabled = config.get(
-            "disable_auto_spawn", True
-        )  # DISABLED by default for safety
+        self.max_concurrent_agents = config.get("max_concurrent_agents", 20)
 
         # Strategic state
         self._goals: list[StrategicGoal] = []
@@ -162,50 +160,57 @@ class StrategyAgent(BaseAgent):
                 description="Maintain zero-trust network security posture",
                 priority=10,
                 metrics=["threats_blocked", "unauthorized_access_attempts", "compliance_score"],
-                target_values={"compliance_score": 0.95},
+                target_values={"compliance_score": 0.95}
             ),
             StrategicGoal(
                 name="network_visibility",
                 description="Complete visibility into all network devices and traffic",
                 priority=9,
                 metrics=["devices_discovered", "unknown_devices", "coverage_percentage"],
-                target_values={"coverage_percentage": 1.0, "unknown_devices": 0},
+                target_values={"coverage_percentage": 1.0, "unknown_devices": 0}
             ),
             StrategicGoal(
                 name="service_availability",
                 description="Ensure critical services remain available",
                 priority=9,
                 metrics=["uptime_percentage", "failed_health_checks", "recovery_time"],
-                target_values={"uptime_percentage": 0.999},
+                target_values={"uptime_percentage": 0.999}
             ),
             StrategicGoal(
                 name="network_efficiency",
                 description="Optimize network resource utilization",
                 priority=7,
                 metrics=["bandwidth_utilization", "latency_p95", "packet_loss"],
-                target_values={"bandwidth_utilization": 0.7, "packet_loss": 0.001},
+                target_values={"bandwidth_utilization": 0.7, "packet_loss": 0.001}
             ),
             StrategicGoal(
                 name="segmentation_compliance",
                 description="Proper VLAN segmentation for all device types",
                 priority=8,
                 metrics=["devices_segmented", "vlan_violations", "policy_adherence"],
-                target_values={"policy_adherence": 1.0},
-            ),
+                target_values={"policy_adherence": 1.0}
+            )
         ]
 
     async def _subscribe_events(self) -> None:
         """Subscribe to strategic-level events."""
         # Subscribe to all agent events
-        self.engine.event_bus.subscribe(self._handle_agent_event, category=EventCategory.AGENT)
+        self.engine.event_bus.subscribe(
+            self._handle_agent_event,
+            category=EventCategory.AGENT
+        )
 
         # Subscribe to security events
         self.engine.event_bus.subscribe(
-            self._handle_security_event, category=EventCategory.SECURITY
+            self._handle_security_event,
+            category=EventCategory.SECURITY
         )
 
         # Subscribe to system events
-        self.engine.event_bus.subscribe(self._handle_system_event, category=EventCategory.SYSTEM)
+        self.engine.event_bus.subscribe(
+            self._handle_system_event,
+            category=EventCategory.SYSTEM
+        )
 
     async def _main_loop(self) -> None:
         """Main strategic planning loop."""
@@ -247,14 +252,12 @@ class StrategyAgent(BaseAgent):
 
     async def _handle_security_event(self, event: Event) -> None:
         """Handle security events."""
-        self._threat_history.append(
-            {
-                "timestamp": event.timestamp.isoformat(),
-                "type": event.event_type,
-                "severity": event.severity.value,
-                "data": event.data,
-            }
-        )
+        self._threat_history.append({
+            "timestamp": event.timestamp.isoformat(),
+            "type": event.event_type,
+            "severity": event.severity.value,
+            "data": event.data
+        })
 
         # Keep only recent history
         if len(self._threat_history) > 1000:
@@ -298,22 +301,20 @@ class StrategyAgent(BaseAgent):
             "agents": {
                 "total": len(factory.get_all_instances()) if factory else 0,
                 "running": len(factory.get_running_instances()) if factory else 0,
-                "by_type": {},
+                "by_type": {}
             },
             "threats": {
-                "recent_count": len(
-                    [
-                        t
-                        for t in self._threat_history
-                        if datetime.fromisoformat(t["timestamp"]) > utc_now() - timedelta(hours=1)
-                    ]
-                ),
-                "critical_count": len(
-                    [t for t in self._threat_history if t["severity"] in ["critical", "high"]]
-                ),
+                "recent_count": len([
+                    t for t in self._threat_history
+                    if datetime.fromisoformat(t["timestamp"]) > utc_now() - timedelta(hours=1)
+                ]),
+                "critical_count": len([
+                    t for t in self._threat_history
+                    if t["severity"] in ["critical", "high"]
+                ])
             },
             "integrations": {},
-            "goals": [g.to_dict() for g in self._goals],
+            "goals": [g.to_dict() for g in self._goals]
         }
 
         # Count agents by type
@@ -330,7 +331,7 @@ class StrategyAgent(BaseAgent):
             if integration:
                 state["integrations"][name] = {
                     "connected": integration.connected,
-                    "healthy": await integration.health_check() if integration.connected else False,
+                    "healthy": await integration.health_check() if integration.connected else False
                 }
 
         return state
@@ -345,7 +346,7 @@ class StrategyAgent(BaseAgent):
                 "priority": goal.priority,
                 "progress": 0.0,
                 "blockers": [],
-                "recommendations": [],
+                "recommendations": []
             }
 
             # Evaluate based on goal type
@@ -391,54 +392,46 @@ class StrategyAgent(BaseAgent):
         core_agents = ["discovery", "guardian", "planner", "healer"]
         for agent_type in core_agents:
             if state["agents"]["by_type"].get(agent_type, 0) == 0:
-                gaps.append(
-                    {
-                        "type": "missing_agent",
-                        "agent_type": agent_type,
-                        "priority": 10,
-                        "reason": f"Core agent '{agent_type}' is not running",
-                    }
-                )
+                gaps.append({
+                    "type": "missing_agent",
+                    "agent_type": agent_type,
+                    "priority": 10,
+                    "reason": f"Core agent '{agent_type}' is not running"
+                })
 
         # Check for overwhelmed agents
         for agent_type, count in state["agents"]["by_type"].items():
             # If we have threats and only one guardian, might need more
             if agent_type == "guardian" and count == 1:
                 if state["threats"]["recent_count"] > 10:
-                    gaps.append(
-                        {
-                            "type": "insufficient_capacity",
-                            "agent_type": agent_type,
-                            "priority": 8,
-                            "reason": f"High threat volume ({state['threats']['recent_count']}) with single guardian",
-                        }
-                    )
+                    gaps.append({
+                        "type": "insufficient_capacity",
+                        "agent_type": agent_type,
+                        "priority": 8,
+                        "reason": f"High threat volume ({state['threats']['recent_count']}) with single guardian"
+                    })
 
         # Check integration coverage
         critical_integrations = ["router", "switch"]
         for integration in critical_integrations:
             if integration not in state["integrations"]:
-                gaps.append(
-                    {
-                        "type": "missing_integration",
-                        "integration": integration,
-                        "priority": 9,
-                        "reason": f"Critical integration '{integration}' not configured",
-                    }
-                )
+                gaps.append({
+                    "type": "missing_integration",
+                    "integration": integration,
+                    "priority": 9,
+                    "reason": f"Critical integration '{integration}' not configured"
+                })
 
         # Check goal blockers
         for goal_name, status in goal_status.items():
             for blocker in status["blockers"]:
-                gaps.append(
-                    {
-                        "type": "goal_blocker",
-                        "goal": goal_name,
-                        "blocker": blocker,
-                        "priority": self._goals[0].priority if self._goals else 5,
-                        "recommendations": status["recommendations"],
-                    }
-                )
+                gaps.append({
+                    "type": "goal_blocker",
+                    "goal": goal_name,
+                    "blocker": blocker,
+                    "priority": self._goals[0].priority if self._goals else 5,
+                    "recommendations": status["recommendations"]
+                })
 
         return sorted(gaps, key=lambda x: x["priority"], reverse=True)
 
@@ -448,10 +441,12 @@ class StrategyAgent(BaseAgent):
             if gap["type"] == "missing_agent":
                 plan = StrategicPlan(
                     name=f"Deploy {gap['agent_type']} agent",
-                    goals=[g for g in self._goals if gap["agent_type"] in g.name.lower()],
-                    actions=[
-                        {"action": "spawn_agent", "template": gap["agent_type"], "config": {}}
-                    ],
+                    goals=[g for g in self._goals if gap['agent_type'] in g.name.lower()],
+                    actions=[{
+                        "action": "spawn_agent",
+                        "template": gap["agent_type"],
+                        "config": {}
+                    }]
                 )
                 self._active_plans.append(plan)
                 logger.info(f"Created plan to deploy {gap['agent_type']} agent")
@@ -460,25 +455,16 @@ class StrategyAgent(BaseAgent):
                 plan = StrategicPlan(
                     name=f"Scale {gap['agent_type']} capacity",
                     goals=[],
-                    actions=[
-                        {
-                            "action": "spawn_agent",
-                            "template": gap["agent_type"],
-                            "config": {"focus": "overflow"},
-                        }
-                    ],
+                    actions=[{
+                        "action": "spawn_agent",
+                        "template": gap["agent_type"],
+                        "config": {"focus": "overflow"}
+                    }]
                 )
                 self._active_plans.append(plan)
 
     async def _execute_active_plans(self) -> None:
         """Execute active strategic plans."""
-        # SAFETY: Auto-spawning is disabled by default to prevent runaway agent creation
-        if self._spawning_disabled:
-            logger.debug("Auto-spawning disabled, skipping plan execution")
-            # Clear pending plans to prevent buildup
-            self._active_plans = [p for p in self._active_plans if p.status != "pending"]
-            return
-
         factory = self._get_factory()
         if not factory:
             return
@@ -493,17 +479,16 @@ class StrategyAgent(BaseAgent):
             for action in plan.actions:
                 if action["action"] == "spawn_agent":
                     try:
-                        # Check capacity - strict limit
+                        # Check capacity
                         if len(factory.get_running_instances()) >= self.max_concurrent_agents:
                             logger.warning("Max concurrent agents reached, deferring spawn")
-                            plan.status = "deferred"
                             continue
 
                         instance = await factory.create_agent(
                             template_name=action["template"],
                             config=action.get("config", {}),
                             parent_id=self.id,
-                            auto_start=True,
+                            auto_start=True
                         )
                         plan.spawned_agents.append(instance.id)
                         plan.executed_actions.append(f"spawned:{action['template']}")
@@ -548,7 +533,8 @@ class StrategyAgent(BaseAgent):
 
         # Clean up completed plans
         self._active_plans = [
-            p for p in self._active_plans if p.status not in ["completed", "failed"]
+            p for p in self._active_plans
+            if p.status not in ["completed", "failed"]
         ]
 
     async def _assess_threat_response(self, event: Event) -> None:
@@ -568,14 +554,18 @@ class StrategyAgent(BaseAgent):
             # No guardians, spawn one
             logger.warning("No guardian agents available for threat response")
             await factory.spawn_for_threat(
-                threat_type=threat_type, threat_data=event.data, parent_agent=self.id
+                threat_type=threat_type,
+                threat_data=event.data,
+                parent_agent=self.id
             )
 
         elif event.severity == EventSeverity.CRITICAL:
             # Critical threat, might need specialized response
             if len(active_guardians) < 3:
                 await factory.spawn_for_threat(
-                    threat_type=threat_type, threat_data=event.data, parent_agent=self.id
+                    threat_type=threat_type,
+                    threat_data=event.data,
+                    parent_agent=self.id
                 )
 
     async def _handle_resource_crisis(self, event: Event) -> None:
@@ -586,20 +576,20 @@ class StrategyAgent(BaseAgent):
             healers = factory.get_instances_by_template("healer")
             if len([h for h in healers if h.status == "running"]) == 0:
                 await factory.create_agent(
-                    template_name="healer", config={"crisis_mode": True}, parent_id=self.id
+                    template_name="healer",
+                    config={"crisis_mode": True},
+                    parent_id=self.id
                 )
 
     async def _record_agent_action(self, event: Event) -> None:
         """Record agent action for learning."""
-        self._performance_history.append(
-            {
-                "timestamp": event.timestamp.isoformat(),
-                "agent": event.data.get("agent_name"),
-                "action": event.data.get("action_type"),
-                "success": event.data.get("status") == "executed",
-                "confidence": event.data.get("confidence"),
-            }
-        )
+        self._performance_history.append({
+            "timestamp": event.timestamp.isoformat(),
+            "agent": event.data.get("agent_name"),
+            "action": event.data.get("action_type"),
+            "success": event.data.get("status") == "executed",
+            "confidence": event.data.get("confidence")
+        })
 
         # Keep history bounded
         if len(self._performance_history) > 10000:
@@ -611,7 +601,7 @@ class StrategyAgent(BaseAgent):
             "agent": event.data.get("agent_name"),
             "action": event.data.get("action_type"),
             "error": event.data.get("error"),
-            "timestamp": event.timestamp.isoformat(),
+            "timestamp": event.timestamp.isoformat()
         }
 
         logger.warning(f"Agent failure recorded: {failure_data}")
@@ -629,7 +619,7 @@ class StrategyAgent(BaseAgent):
 
     def _get_factory(self) -> Optional["AgentFactory"]:
         """Get the agent factory from engine."""
-        return getattr(self.engine, "agent_factory", None)
+        return getattr(self.engine, 'agent_factory', None)
 
     async def analyze(self, event: Event) -> Optional[AgentDecision]:
         """Analyze events for strategic decisions."""
@@ -644,7 +634,7 @@ class StrategyAgent(BaseAgent):
                 instance = await factory.create_agent(
                     template_name=action.parameters["template"],
                     config=action.parameters.get("config", {}),
-                    parent_id=self.id,
+                    parent_id=self.id
                 )
                 return {"spawned_agent_id": str(instance.id)}
 
@@ -652,7 +642,8 @@ class StrategyAgent(BaseAgent):
             factory = self._get_factory()
             if factory:
                 success = await factory.retire_agent(
-                    UUID(action.parameters["agent_id"]), action.reasoning
+                    UUID(action.parameters["agent_id"]),
+                    action.reasoning
                 )
                 return {"success": success}
 
@@ -714,13 +705,11 @@ Provide strategic analysis and specific recommendations."""
     def stats(self) -> dict:
         """Get strategy agent statistics."""
         base_stats = super().stats
-        base_stats.update(
-            {
-                "goals": len(self._goals),
-                "active_plans": len(self._active_plans),
-                "threat_history_size": len(self._threat_history),
-                "performance_history_size": len(self._performance_history),
-                "agent_assignments": len(self._agent_assignments),
-            }
-        )
+        base_stats.update({
+            "goals": len(self._goals),
+            "active_plans": len(self._active_plans),
+            "threat_history_size": len(self._threat_history),
+            "performance_history_size": len(self._performance_history),
+            "agent_assignments": len(self._agent_assignments)
+        })
         return base_stats

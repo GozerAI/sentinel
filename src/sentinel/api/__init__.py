@@ -1,5 +1,4 @@
 """Sentinel API package."""
-
 from sentinel.api.app import app, create_app
 from sentinel.api.auth import (
     configure_auth,

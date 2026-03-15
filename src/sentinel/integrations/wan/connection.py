@@ -4,17 +4,17 @@ WAN Connection models for Sentinel.
 Represents individual ISP/WAN connections with their properties,
 bandwidth metrics, and quality measurements.
 """
-
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime
 from enum import Enum
 from typing import Optional
 from uuid import UUID, uuid4
 
+from sentinel.core.utils import utc_now
+
 
 class ConnectionType(Enum):
     """Type of WAN connection."""
-
     FIBER = "fiber"
     CABLE = "cable"
     DSL = "dsl"
@@ -29,20 +29,18 @@ class ConnectionType(Enum):
 
 class ConnectionStatus(Enum):
     """Status of a WAN connection."""
-
     UP = "up"
     DOWN = "down"
     DEGRADED = "degraded"
     TESTING = "testing"
     FAILOVER = "failover"  # Acting as backup
-    STANDBY = "standby"  # Ready but not active
+    STANDBY = "standby"    # Ready but not active
     UNKNOWN = "unknown"
 
 
 @dataclass
 class BandwidthMetrics:
     """Current bandwidth metrics for a connection."""
-
     # Contracted/advertised rates (Mbps)
     contracted_download_mbps: float = 0.0
     contracted_upload_mbps: float = 0.0
@@ -117,9 +115,7 @@ class BandwidthMetrics:
             "peak_upload_mbps_24h": self.peak_upload_mbps_24h,
             "last_speedtest_download": self.last_speedtest_download,
             "last_speedtest_upload": self.last_speedtest_upload,
-            "last_speedtest_time": (
-                self.last_speedtest_time.isoformat() if self.last_speedtest_time else None
-            ),
+            "last_speedtest_time": self.last_speedtest_time.isoformat() if self.last_speedtest_time else None,
         }
 
     @classmethod
@@ -151,7 +147,6 @@ class BandwidthMetrics:
 @dataclass
 class ConnectionQuality:
     """Quality metrics for a WAN connection."""
-
     # Latency measurements (ms)
     latency_ms: float = 0.0
     jitter_ms: float = 0.0
@@ -224,9 +219,7 @@ class ConnectionQuality:
             "max_latency_24h": self.max_latency_24h,
             "avg_packet_loss_24h": self.avg_packet_loss_24h,
             "uptime_percent_30d": self.uptime_percent_30d,
-            "last_outage_start": (
-                self.last_outage_start.isoformat() if self.last_outage_start else None
-            ),
+            "last_outage_start": self.last_outage_start.isoformat() if self.last_outage_start else None,
             "last_outage_duration_seconds": self.last_outage_duration_seconds,
             "outages_30d": self.outages_30d,
             "quality_score": self.quality_score,
@@ -264,7 +257,6 @@ class WANConnection:
     - Quality metrics and SLA tracking
     - Failover configuration
     """
-
     # Identity
     id: UUID = field(default_factory=uuid4)
     name: str = ""  # Human-friendly name like "Primary Fiber"
@@ -289,7 +281,7 @@ class WANConnection:
 
     # Failover configuration
     priority: int = 100  # Lower = higher priority (100 is default)
-    weight: int = 1  # For load balancing
+    weight: int = 1      # For load balancing
     failover_enabled: bool = True
     is_primary: bool = False
     is_backup: bool = False
@@ -303,8 +295,8 @@ class WANConnection:
     cost_per_gb_overage: float = 0.0
 
     # Timestamps
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(default_factory=utc_now)
+    updated_at: datetime = field(default_factory=utc_now)
 
     # Labels for organization
     labels: dict[str, str] = field(default_factory=dict)
@@ -313,8 +305,8 @@ class WANConnection:
         """Update connection status with timestamp."""
         if self.status != status:
             self.status = status
-            self.last_status_change = datetime.now(timezone.utc)
-            self.updated_at = datetime.now(timezone.utc)
+            self.last_status_change = utc_now()
+            self.updated_at = utc_now()
 
     @property
     def is_up(self) -> bool:
@@ -350,15 +342,13 @@ class WANConnection:
 
         # Use speed test results for accuracy
         if self.bandwidth.last_speedtest_download > 0:
-            return (
-                self.bandwidth.last_speedtest_download / self.bandwidth.contracted_download_mbps
-            ) * 100
+            return (self.bandwidth.last_speedtest_download /
+                    self.bandwidth.contracted_download_mbps) * 100
 
         # Fall back to average measurements
         if self.bandwidth.avg_download_mbps_24h > 0:
-            return (
-                self.bandwidth.avg_download_mbps_24h / self.bandwidth.contracted_download_mbps
-            ) * 100
+            return (self.bandwidth.avg_download_mbps_24h /
+                    self.bandwidth.contracted_download_mbps) * 100
 
         return 100.0
 
@@ -371,18 +361,14 @@ class WANConnection:
             "account_number": self.account_number,
             "support_phone": self.support_phone,
             "support_email": self.support_email,
-            "contract_end_date": (
-                self.contract_end_date.isoformat() if self.contract_end_date else None
-            ),
+            "contract_end_date": self.contract_end_date.isoformat() if self.contract_end_date else None,
             "connection_type": self.connection_type.value,
             "interface_name": self.interface_name,
             "gateway_ip": self.gateway_ip,
             "public_ip": self.public_ip,
             "dns_servers": self.dns_servers,
             "status": self.status.value,
-            "last_status_change": (
-                self.last_status_change.isoformat() if self.last_status_change else None
-            ),
+            "last_status_change": self.last_status_change.isoformat() if self.last_status_change else None,
             "priority": self.priority,
             "weight": self.weight,
             "failover_enabled": self.failover_enabled,

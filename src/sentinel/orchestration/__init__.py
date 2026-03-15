@@ -1,8 +1,21 @@
 """
-This module is available in the commercial edition.
-Visit https://gozerai.com/pricing for licensing options.
+Orchestration module for Sentinel.
+
+Provides integration bridges and coordination between components:
+- Discovery → Compute Cluster auto-registration
+- Infrastructure → Integration auto-configuration
+- Event-driven automation pipelines
 """
-raise ImportError(
-    "This module requires a commercial license. "
-    "Visit https://gozerai.com/pricing for details."
+from sentinel.orchestration.bridges import (
+    BridgeAction,
+    IntegrationBridge,
+    DiscoveryComputeBridge,
+    InfrastructureIntegrationBridge,
 )
+
+__all__ = [
+    "BridgeAction",
+    "IntegrationBridge",
+    "DiscoveryComputeBridge",
+    "InfrastructureIntegrationBridge",
+]

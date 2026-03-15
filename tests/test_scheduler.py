@@ -3,7 +3,6 @@ Tests for the Scheduler module.
 
 Tests cover task scheduling, execution, state management, and error handling.
 """
-
 import asyncio
 import pytest
 from unittest.mock import AsyncMock, patch
@@ -54,7 +53,6 @@ class TestTask:
 
     def test_task_custom_values(self):
         """Test task with custom values."""
-
         async def my_callback():
             pass
 
@@ -63,7 +61,7 @@ class TestTask:
             callback=my_callback,
             interval_seconds=30,
             run_immediately=True,
-            enabled=False,
+            enabled=False
         )
 
         assert task.name == "custom_task"
@@ -98,7 +96,11 @@ class TestSchedulerBasic:
         async def my_task():
             pass
 
-        task = scheduler.add_task(name="test_task", callback=my_task, interval_seconds=60)
+        task = scheduler.add_task(
+            name="test_task",
+            callback=my_task,
+            interval_seconds=60
+        )
 
         assert task.name == "test_task"
         assert task.callback is my_task
@@ -117,7 +119,7 @@ class TestSchedulerBasic:
             callback=my_task,
             interval_seconds=120,
             run_immediately=True,
-            enabled=False,
+            enabled=False
         )
 
         assert task.run_immediately is True
@@ -518,9 +520,7 @@ class TestSchedulerConcurrency:
 
         # Fast task should complete before slow task ends
         # (if they run concurrently)
-        slow_start_idx = next(
-            i for i, (name, _) in enumerate(execution_order) if name == "slow_start"
-        )
+        slow_start_idx = next(i for i, (name, _) in enumerate(execution_order) if name == "slow_start")
         slow_end_idx = next(i for i, (name, _) in enumerate(execution_order) if name == "slow_end")
         fast_end_idx = next(i for i, (name, _) in enumerate(execution_order) if name == "fast_end")
 

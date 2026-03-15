@@ -8,14 +8,15 @@ Provides REST API endpoints for:
 - Event streaming
 - Configuration
 """
-
 import logging
+import os
 from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from fastapi import FastAPI, HTTPException, Depends, Query
+import httpx
+from fastapi import FastAPI, HTTPException, Depends, Query, Request
 
 from sentinel.core.utils import utc_now
 from sentinel.core.metrics import get_metrics_collector, configure_metrics
@@ -32,6 +33,8 @@ from sentinel.api.auth import (
 from sentinel.core.models.device import DeviceStatus
 
 logger = logging.getLogger(__name__)
+
+ZUULTIMATE_BASE_URL = os.environ.get("ZUULTIMATE_BASE_URL", "http://localhost:8000")
 
 # Global engine reference (set during startup)
 _engine = None
@@ -83,31 +86,56 @@ def configure_cors(origins: list[str]) -> None:
     logger.info(f"CORS configured with {len(origins)} allowed origins")
 
 
+# ── Zuultimate tenant auth ─────────────────────────────────────────────────
+
+async def get_tenant(request: Request) -> dict:
+    """Validate bearer token against Zuultimate and return tenant context."""
+    auth = request.headers.get("Authorization", "")
+    if not auth.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+
+    token = auth[7:]
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            resp = await client.get(
+                f"{ZUULTIMATE_BASE_URL}/v1/identity/auth/validate",
+                headers={"Authorization": f"Bearer {token}"},
+            )
+    except httpx.RequestError as e:
+        logger.error("Zuultimate unreachable: %s", e)
+        raise HTTPException(status_code=503, detail="Auth service unavailable")
+
+    if resp.status_code == 401:
+        raise HTTPException(status_code=401, detail="Invalid or expired credentials")
+    if resp.status_code != 200:
+        raise HTTPException(status_code=502, detail="Auth service error")
+
+    return resp.json()
+
+
+def require_entitlement(entitlement: str):
+    """Dependency factory: blocks if tenant lacks the required entitlement."""
+    async def _check(tenant: dict = Depends(get_tenant)) -> dict:
+        if entitlement not in tenant.get("entitlements", []):
+            raise HTTPException(
+                status_code=403,
+                detail=f"Your plan does not include '{entitlement}'. Upgrade to access this feature.",
+            )
+        return tenant
+    return _check
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager."""
     # Configure auth from engine config if available
-    if _engine and hasattr(_engine, "config"):
-        engine_config = _engine.config
+    if _engine and hasattr(_engine, 'config'):
+        configure_auth(_engine.config)
 
-        # Handle both dict and SentinelConfig object
-        if hasattr(engine_config, "api"):
-            # SentinelConfig pydantic model
-            configure_auth(engine_config)
-            cors_origins = engine_config.api.cors_origins
-        elif isinstance(engine_config, dict):
-            # Dict config
-            configure_auth(engine_config)
-            api_config = engine_config.get("api", {})
-            cors_origins = api_config.get("cors_origins", [])
-        else:
-            cors_origins = []
-
+        # Configure CORS from config
+        api_config = _engine.config.get("api", {})
+        cors_origins = api_config.get("cors_origins", [])
         configure_cors(cors_origins)
-    else:
-        # No engine config - disable auth for development
-        logger.warning("No engine config available - authentication disabled")
-        configure_auth({"enabled": False})
 
     yield
 
@@ -116,7 +144,7 @@ app = FastAPI(
     title="Sentinel API",
     description="AI-Native Security Platform API",
     version="0.1.0",
-    lifespan=lifespan,
+    lifespan=lifespan
 )
 
 # CORS middleware - uses secure defaults, configured via lifespan
@@ -137,10 +165,8 @@ app.add_middleware(AuthMiddleware)
 # Schemas
 # =============================================================================
 
-
 class StatusResponse(BaseModel):
     """Engine status response."""
-
     status: str
     uptime_seconds: float
     agents: dict[str, dict]
@@ -149,7 +175,6 @@ class StatusResponse(BaseModel):
 
 class DeviceResponse(BaseModel):
     """Device information response."""
-
     id: str
     mac: str
     hostname: Optional[str] = None
@@ -164,14 +189,12 @@ class DeviceResponse(BaseModel):
 
 class DeviceListResponse(BaseModel):
     """List of devices response."""
-
     devices: list[DeviceResponse]
     total: int
 
 
 class VLANResponse(BaseModel):
     """VLAN information response."""
-
     id: int
     name: str
     subnet: Optional[str] = None
@@ -183,7 +206,6 @@ class VLANResponse(BaseModel):
 
 class AgentResponse(BaseModel):
     """Agent information response."""
-
     name: str
     enabled: bool
     actions_taken: int
@@ -193,7 +215,6 @@ class AgentResponse(BaseModel):
 
 class EventResponse(BaseModel):
     """Event information response."""
-
     id: str
     category: str
     event_type: str
@@ -207,7 +228,6 @@ class EventResponse(BaseModel):
 
 class ActionRequest(BaseModel):
     """Request to perform an action."""
-
     action_type: str
     target_type: str
     target_id: str
@@ -217,7 +237,6 @@ class ActionRequest(BaseModel):
 
 class ActionResponse(BaseModel):
     """Action result response."""
-
     id: str
     status: str
     message: str
@@ -228,11 +247,14 @@ class ActionResponse(BaseModel):
 # Routes - Status
 # =============================================================================
 
-
 @app.get("/", tags=["Status"])
 async def root():
     """API root - basic info."""
-    return {"name": "Sentinel API", "version": "0.1.0", "status": "running"}
+    return {
+        "name": "Sentinel API",
+        "version": "0.1.0",
+        "status": "running"
+    }
 
 
 @app.get("/health", tags=["Status"])
@@ -242,21 +264,23 @@ async def health():
 
 
 @app.get("/status", response_model=StatusResponse, tags=["Status"])
-async def get_status(engine=Depends(get_engine), user: dict = Depends(get_current_user)):
-    """Get engine status. Requires authentication."""
+async def get_status(
+    engine=Depends(get_engine),
+    tenant: dict = Depends(require_entitlement("sentinel:basic")),
+):
+    """Get engine status. Requires sentinel:basic entitlement."""
     status = await engine.get_status()
     return StatusResponse(
         status=status["status"],
         uptime_seconds=status["uptime_seconds"],
         agents=status["agents"],
-        integrations=status["integrations"],
+        integrations=status["integrations"]
     )
 
 
 # =============================================================================
 # Routes - Devices
 # =============================================================================
-
 
 @app.get("/devices", response_model=DeviceListResponse, tags=["Devices"])
 async def list_devices(
@@ -265,8 +289,8 @@ async def list_devices(
     online: Optional[bool] = Query(None, description="Filter by online status"),
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0),
-    user: dict = Depends(get_current_user),
     engine=Depends(get_engine),
+    tenant: dict = Depends(require_entitlement("sentinel:basic")),
 ):
     """List all discovered devices."""
     # Get devices from discovery agent
@@ -286,7 +310,7 @@ async def list_devices(
         devices = [d for d in devices if (d.status == DeviceStatus.ONLINE) == online]
 
     total = len(devices)
-    devices = devices[offset : offset + limit]
+    devices = devices[offset:offset + limit]
 
     return DeviceListResponse(
         devices=[
@@ -298,21 +322,18 @@ async def list_devices(
                 vendor=d.fingerprint.vendor if d.fingerprint else None,
                 ip_addresses=[str(ip) for iface in d.interfaces for ip in iface.ip_addresses],
                 vlan=d.assigned_vlan,
-                trust_level=(
-                    d.trust_level.value if hasattr(d.trust_level, "value") else d.trust_level
-                ),
+                trust_level=d.trust_level.value if hasattr(d.trust_level, 'value') else d.trust_level,
                 last_seen=d.last_seen,
-                online=d.status == DeviceStatus.ONLINE if hasattr(d, "status") else True,
+                online=d.status == DeviceStatus.ONLINE if hasattr(d, 'status') else True
             )
             for d in devices
         ],
-        total=total,
+        total=total
     )
 
 
 @app.get("/devices/{device_id}", response_model=DeviceResponse, tags=["Devices"])
-async def get_device(device_id: str, user: dict = Depends(get_current_user),
-                                     engine=Depends(get_engine)):
+async def get_device(device_id: str, engine=Depends(get_engine), tenant: dict = Depends(require_entitlement("sentinel:basic"))):
     """Get device by ID."""
     from uuid import UUID
 
@@ -340,17 +361,14 @@ async def get_device(device_id: str, user: dict = Depends(get_current_user),
         vendor=device.fingerprint.vendor if device.fingerprint else None,
         ip_addresses=[str(ip) for iface in device.interfaces for ip in iface.ip_addresses],
         vlan=device.assigned_vlan,
-        trust_level=(
-            device.trust_level.value if hasattr(device.trust_level, "value") else device.trust_level
-        ),
+        trust_level=device.trust_level.value if hasattr(device.trust_level, 'value') else device.trust_level,
         last_seen=device.last_seen,
-        online=device.status == DeviceStatus.ONLINE if hasattr(device, "status") else True,
+        online=device.status == DeviceStatus.ONLINE if hasattr(device, 'status') else True
     )
 
 
 @app.post("/devices/{device_id}/scan", tags=["Devices"])
-async def scan_device(device_id: str, user: dict = Depends(get_current_user),
-                                      engine=Depends(get_engine)):
+async def scan_device(device_id: str, engine=Depends(get_engine), tenant: dict = Depends(require_entitlement("sentinel:basic"))):
     """Trigger rescan of a specific device."""
     from uuid import UUID
 
@@ -381,10 +399,8 @@ async def scan_device(device_id: str, user: dict = Depends(get_current_user),
 # Routes - VLANs
 # =============================================================================
 
-
 @app.get("/vlans", response_model=list[VLANResponse], tags=["VLANs"])
-async def list_vlans(user: dict = Depends(get_current_user),
-                     engine=Depends(get_engine)):
+async def list_vlans(engine=Depends(get_engine), tenant: dict = Depends(require_entitlement("sentinel:full"))):
     """List all configured VLANs."""
     planner = engine.agents.get("planner")
     if not planner:
@@ -397,27 +413,25 @@ async def list_vlans(user: dict = Depends(get_current_user),
         device_count = 0
         if discovery:
             device_count = sum(
-                1 for d in discovery._inventory.devices.values() if d.assigned_vlan == vlan_id
+                1 for d in discovery._inventory.devices.values()
+                if d.assigned_vlan == vlan_id
             )
 
-        vlans.append(
-            VLANResponse(
-                id=vlan_id,
-                name=vlan.get("name", f"VLAN {vlan_id}"),
-                subnet=vlan.get("subnet"),
-                gateway=vlan.get("gateway"),
-                purpose=vlan.get("purpose"),
-                device_count=device_count,
-                isolated=vlan.get("isolated", False),
-            )
-        )
+        vlans.append(VLANResponse(
+            id=vlan_id,
+            name=vlan.get("name", f"VLAN {vlan_id}"),
+            subnet=vlan.get("subnet"),
+            gateway=vlan.get("gateway"),
+            purpose=vlan.get("purpose"),
+            device_count=device_count,
+            isolated=vlan.get("isolated", False)
+        ))
 
     return vlans
 
 
 @app.get("/vlans/{vlan_id}", response_model=VLANResponse, tags=["VLANs"])
-async def get_vlan(vlan_id: int, user: dict = Depends(get_current_user),
-                                 engine=Depends(get_engine)):
+async def get_vlan(vlan_id: int, engine=Depends(get_engine), tenant: dict = Depends(require_entitlement("sentinel:full"))):
     """Get VLAN by ID."""
     planner = engine.agents.get("planner")
     if not planner:
@@ -431,7 +445,8 @@ async def get_vlan(vlan_id: int, user: dict = Depends(get_current_user),
     device_count = 0
     if discovery:
         device_count = sum(
-            1 for d in discovery._inventory.devices.values() if d.assigned_vlan == vlan_id
+            1 for d in discovery._inventory.devices.values()
+            if d.assigned_vlan == vlan_id
         )
 
     return VLANResponse(
@@ -441,13 +456,12 @@ async def get_vlan(vlan_id: int, user: dict = Depends(get_current_user),
         gateway=vlan.get("gateway"),
         purpose=vlan.get("purpose"),
         device_count=device_count,
-        isolated=vlan.get("isolated", False),
+        isolated=vlan.get("isolated", False)
     )
 
 
 class VLANCreateRequest(BaseModel):
     """Request to create a VLAN."""
-
     id: int
     name: str
     subnet: Optional[str] = None
@@ -457,8 +471,7 @@ class VLANCreateRequest(BaseModel):
 
 
 @app.post("/vlans", response_model=VLANResponse, tags=["VLANs"])
-async def create_vlan(request: VLANCreateRequest, user: dict = Depends(get_current_user),
-                                                  engine=Depends(get_engine)):
+async def create_vlan(request: VLANCreateRequest, engine=Depends(get_engine), tenant: dict = Depends(require_entitlement("sentinel:full"))):
     """Create a new VLAN."""
     planner = engine.agents.get("planner")
     if not planner:
@@ -484,7 +497,7 @@ async def create_vlan(request: VLANCreateRequest, user: dict = Depends(get_curre
         gateway=request.gateway,
         purpose=request.purpose,
         device_count=0,
-        isolated=request.isolated,
+        isolated=request.isolated
     )
 
 
@@ -492,10 +505,8 @@ async def create_vlan(request: VLANCreateRequest, user: dict = Depends(get_curre
 # Routes - Policies
 # =============================================================================
 
-
 class PolicyResponse(BaseModel):
     """Segmentation policy response."""
-
     id: str
     name: str
     source_vlan: int
@@ -507,7 +518,6 @@ class PolicyResponse(BaseModel):
 
 class FirewallRuleResponse(BaseModel):
     """Firewall rule response."""
-
     id: str
     name: str
     description: Optional[str] = None
@@ -521,8 +531,7 @@ class FirewallRuleResponse(BaseModel):
 
 
 @app.get("/policies", response_model=list[PolicyResponse], tags=["Policies"])
-async def list_policies(user: dict = Depends(get_current_user),
-                        engine=Depends(get_engine)):
+async def list_policies(engine=Depends(get_engine), tenant: dict = Depends(require_entitlement("sentinel:full"))):
     """List all segmentation policies."""
     planner = engine.agents.get("planner")
     if not planner:
@@ -536,15 +545,14 @@ async def list_policies(user: dict = Depends(get_current_user),
             destination_vlan=p.get("destination_vlan"),
             allowed_services=p.get("allowed_services", []),
             denied_services=p.get("denied_services", []),
-            default_action=p.get("default_action", "deny"),
+            default_action=p.get("default_action", "deny")
         )
         for policy_id, p in planner._segmentation_policies.items()
     ]
 
 
 @app.get("/policies/{policy_id}", response_model=PolicyResponse, tags=["Policies"])
-async def get_policy(policy_id: str, user: dict = Depends(get_current_user),
-                                     engine=Depends(get_engine)):
+async def get_policy(policy_id: str, engine=Depends(get_engine), tenant: dict = Depends(require_entitlement("sentinel:full"))):
     """Get a specific segmentation policy."""
     planner = engine.agents.get("planner")
     if not planner:
@@ -561,13 +569,12 @@ async def get_policy(policy_id: str, user: dict = Depends(get_current_user),
         destination_vlan=policy.get("destination_vlan"),
         allowed_services=policy.get("allowed_services", []),
         denied_services=policy.get("denied_services", []),
-        default_action=policy.get("default_action", "deny"),
+        default_action=policy.get("default_action", "deny")
     )
 
 
 @app.get("/firewall-rules", response_model=list[FirewallRuleResponse], tags=["Policies"])
-async def list_firewall_rules(user: dict = Depends(get_current_user),
-                              engine=Depends(get_engine)):
+async def list_firewall_rules(engine=Depends(get_engine), tenant: dict = Depends(require_entitlement("sentinel:full"))):
     """List all firewall rules."""
     planner = engine.agents.get("planner")
     if not planner:
@@ -584,7 +591,7 @@ async def list_firewall_rules(user: dict = Depends(get_current_user),
             destination_port=r.get("destination_port"),
             protocol=r.get("protocol"),
             auto_generated=r.get("auto_generated", False),
-            priority=r.get("priority", 500),
+            priority=r.get("priority", 500)
         )
         for rule_id, r in planner._firewall_rules.items()
     ]
@@ -594,33 +601,28 @@ async def list_firewall_rules(user: dict = Depends(get_current_user),
 # Routes - Agents
 # =============================================================================
 
-
 @app.get("/agents", response_model=list[AgentResponse], tags=["Agents"])
-async def list_agents(user: dict = Depends(get_current_user),
-                      engine=Depends(get_engine)):
+async def list_agents(engine=Depends(get_engine), tenant: dict = Depends(require_entitlement("sentinel:full"))):
     """List all agents."""
     agents = []
     for name, agent in engine.agents.items():
         stats = agent.stats
         # Support both _enabled (mock) and _running (real agents)
-        enabled = getattr(agent, "_enabled", None)
+        enabled = getattr(agent, '_enabled', None)
         if enabled is None:
-            enabled = getattr(agent, "_running", True)
-        agents.append(
-            AgentResponse(
-                name=name,
-                enabled=enabled,
-                actions_taken=stats.get("actions_taken", 0),
-                last_action=None,
-                stats=stats,
-            )
-        )
+            enabled = getattr(agent, '_running', True)
+        agents.append(AgentResponse(
+            name=name,
+            enabled=enabled,
+            actions_taken=stats.get("actions_taken", 0),
+            last_action=None,
+            stats=stats
+        ))
     return agents
 
 
 @app.get("/agents/{agent_name}", response_model=AgentResponse, tags=["Agents"])
-async def get_agent(agent_name: str, user: dict = Depends(get_current_user),
-                                     engine=Depends(get_engine)):
+async def get_agent(agent_name: str, engine=Depends(get_engine), tenant: dict = Depends(require_entitlement("sentinel:full"))):
     """Get agent by name."""
     agent = engine.agents.get(agent_name)
     if not agent:
@@ -628,38 +630,36 @@ async def get_agent(agent_name: str, user: dict = Depends(get_current_user),
 
     stats = agent.stats
     # Support both _enabled (mock) and _running (real agents)
-    enabled = getattr(agent, "_enabled", None)
+    enabled = getattr(agent, '_enabled', None)
     if enabled is None:
-        enabled = getattr(agent, "_running", True)
+        enabled = getattr(agent, '_running', True)
     return AgentResponse(
         name=agent_name,
         enabled=enabled,
         actions_taken=stats.get("actions_taken", 0),
         last_action=None,
-        stats=stats,
+        stats=stats
     )
 
 
 @app.post("/agents/{agent_name}/enable", tags=["Agents"])
-async def enable_agent(agent_name: str, user: dict = Depends(get_current_user),
-                                        engine=Depends(get_engine)):
+async def enable_agent(agent_name: str, engine=Depends(get_engine), tenant: dict = Depends(require_entitlement("sentinel:full"))):
     """Enable an agent."""
     agent = engine.agents.get(agent_name)
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found")
-
+    
     agent._enabled = True
     return {"status": "enabled", "agent": agent_name}
 
 
 @app.post("/agents/{agent_name}/disable", tags=["Agents"])
-async def disable_agent(agent_name: str, user: dict = Depends(get_current_user),
-                                         engine=Depends(get_engine)):
+async def disable_agent(agent_name: str, engine=Depends(get_engine), tenant: dict = Depends(require_entitlement("sentinel:full"))):
     """Disable an agent."""
     agent = engine.agents.get(agent_name)
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found")
-
+    
     agent._enabled = False
     return {"status": "disabled", "agent": agent_name}
 
@@ -668,25 +668,24 @@ async def disable_agent(agent_name: str, user: dict = Depends(get_current_user),
 # Routes - Events
 # =============================================================================
 
-
 @app.get("/events", response_model=list[EventResponse], tags=["Events"])
 async def list_events(
     category: Optional[str] = Query(None, description="Filter by category"),
     severity: Optional[str] = Query(None, description="Filter by severity"),
     limit: int = Query(100, ge=1, le=1000),
-    user: dict = Depends(get_current_user),
     engine=Depends(get_engine),
+    tenant: dict = Depends(require_entitlement("sentinel:full")),
 ):
     """List recent events."""
     events = engine.event_bus.get_recent_events(limit * 2)  # Get more for filtering
-
+    
     if category:
         events = [e for e in events if e.category.value == category]
     if severity:
         events = [e for e in events if e.severity.value == severity]
-
+    
     events = events[:limit]
-
+    
     return [
         EventResponse(
             id=str(e.id),
@@ -697,15 +696,14 @@ async def list_events(
             description=e.description,
             created_at=e.timestamp,
             source=e.source,
-            acknowledged=e.acknowledged,
+            acknowledged=e.acknowledged
         )
         for e in events
     ]
 
 
 @app.post("/events/{event_id}/acknowledge", tags=["Events"])
-async def acknowledge_event(event_id: str, user: dict = Depends(get_current_user),
-                                           engine=Depends(get_engine)):
+async def acknowledge_event(event_id: str, engine=Depends(get_engine), tenant: dict = Depends(require_entitlement("sentinel:full"))):
     """Acknowledge an event."""
     # Find and acknowledge event
     for event in engine.event_bus._event_history:
@@ -713,7 +711,7 @@ async def acknowledge_event(event_id: str, user: dict = Depends(get_current_user
             event.acknowledged = True
             event.acknowledged_at = utc_now()
             return {"status": "acknowledged", "event_id": event_id}
-
+    
     raise HTTPException(status_code=404, detail="Event not found")
 
 
@@ -721,10 +719,8 @@ async def acknowledge_event(event_id: str, user: dict = Depends(get_current_user
 # Routes - Actions
 # =============================================================================
 
-
 @app.post("/actions", response_model=ActionResponse, tags=["Actions"])
-async def execute_action(request: ActionRequest, user: dict = Depends(get_current_user),
-                                                 engine=Depends(get_engine)):
+async def execute_action(request: ActionRequest, engine=Depends(get_engine), tenant: dict = Depends(require_entitlement("sentinel:full"))):
     """Execute an action through an agent."""
     # Route to appropriate agent based on action type
     agent_mapping = {
@@ -736,19 +732,25 @@ async def execute_action(request: ActionRequest, user: dict = Depends(get_curren
         "quarantine": "guardian",
         "restart_service": "healer",
     }
-
+    
     agent_name = agent_mapping.get(request.action_type)
     if not agent_name:
-        raise HTTPException(status_code=400, detail=f"Unknown action type: {request.action_type}")
-
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Unknown action type: {request.action_type}"
+        )
+    
     agent = engine.agents.get(agent_name)
     if not agent:
-        raise HTTPException(status_code=503, detail=f"Agent {agent_name} not available")
-
+        raise HTTPException(
+            status_code=503, 
+            detail=f"Agent {agent_name} not available"
+        )
+    
     # Create and execute action
     from sentinel.core.models.event import AgentAction
     from uuid import uuid4
-
+    
     action = AgentAction(
         agent_name=agent_name,
         action_type=request.action_type,
@@ -757,7 +759,7 @@ async def execute_action(request: ActionRequest, user: dict = Depends(get_curren
         parameters=request.parameters,
         reasoning="Manual API request",
         confidence=1.0 if request.confirm else 0.5,
-        required_confirmation=not request.confirm,
+        required_confirmation=not request.confirm
     )
 
     if action.required_confirmation and not request.confirm:
@@ -765,7 +767,7 @@ async def execute_action(request: ActionRequest, user: dict = Depends(get_curren
             id=str(action.id),
             status="pending_confirmation",
             message="Action requires confirmation. Set confirm=true to execute.",
-            requires_confirmation=True,
+            requires_confirmation=True
         )
 
     success = await agent._execute_action(action)
@@ -774,7 +776,7 @@ async def execute_action(request: ActionRequest, user: dict = Depends(get_curren
         id=str(action.id),
         status="success" if success else "failed",
         message="Action executed" if success else "Action failed",
-        requires_confirmation=False,
+        requires_confirmation=False
     )
 
 
@@ -782,10 +784,8 @@ async def execute_action(request: ActionRequest, user: dict = Depends(get_curren
 # Routes - Scan
 # =============================================================================
 
-
 @app.post("/scan/quick", tags=["Scan"])
-async def quick_scan(user: dict = Depends(get_current_user),
-                     engine=Depends(get_engine)):
+async def quick_scan(engine=Depends(get_engine), tenant: dict = Depends(require_entitlement("sentinel:basic"))):
     """Trigger a quick network scan."""
     discovery = engine.agents.get("discovery")
     if not discovery:
@@ -796,8 +796,7 @@ async def quick_scan(user: dict = Depends(get_current_user),
 
 
 @app.post("/scan/full", tags=["Scan"])
-async def full_scan(user: dict = Depends(get_current_user),
-                    engine=Depends(get_engine)):
+async def full_scan(engine=Depends(get_engine), tenant: dict = Depends(require_entitlement("sentinel:basic"))):
     """Trigger a full network scan."""
     discovery = engine.agents.get("discovery")
     if not discovery:
@@ -811,40 +810,39 @@ async def full_scan(user: dict = Depends(get_current_user),
 # Routes - Security
 # =============================================================================
 
-
 @app.get("/security/blocked", tags=["Security"])
-async def list_blocked_ips(user: dict = Depends(get_current_user),
-                           engine=Depends(get_engine)):
+async def list_blocked_ips(engine=Depends(get_engine), tenant: dict = Depends(require_entitlement("sentinel:basic"))):
     """List blocked IP addresses."""
     guardian = engine.agents.get("guardian")
     if not guardian:
         raise HTTPException(status_code=503, detail="Guardian agent not available")
-
-    return {"blocked_ips": list(guardian._blocked_ips), "count": len(guardian._blocked_ips)}
+    
+    return {
+        "blocked_ips": list(guardian._blocked_ips),
+        "count": len(guardian._blocked_ips)
+    }
 
 
 @app.get("/security/quarantined", tags=["Security"])
-async def list_quarantined(user: dict = Depends(get_current_user),
-                           engine=Depends(get_engine)):
+async def list_quarantined(engine=Depends(get_engine), tenant: dict = Depends(require_entitlement("sentinel:basic"))):
     """List quarantined devices."""
     guardian = engine.agents.get("guardian")
     if not guardian:
         raise HTTPException(status_code=503, detail="Guardian agent not available")
-
+    
     return {
         "quarantined": list(guardian._quarantined_devices),
-        "count": len(guardian._quarantined_devices),
+        "count": len(guardian._quarantined_devices)
     }
 
 
 @app.post("/security/unblock/{ip}", tags=["Security"])
-async def unblock_ip(ip: str, user: dict = Depends(get_current_user),
-                              engine=Depends(get_engine)):
+async def unblock_ip(ip: str, engine=Depends(get_engine), tenant: dict = Depends(require_entitlement("sentinel:basic"))):
     """Unblock an IP address."""
     guardian = engine.agents.get("guardian")
     if not guardian:
         raise HTTPException(status_code=503, detail="Guardian agent not available")
-
+    
     success = await guardian.unblock_ip(ip)
     return {"status": "unblocked" if success else "failed", "ip": ip}
 
@@ -856,7 +854,6 @@ async def unblock_ip(ip: str, user: dict = Depends(get_current_user),
 
 class TopologyRequest(BaseModel):
     """Request for topology generation."""
-
     layout: str = "hierarchical"  # hierarchical, force_directed, circular, radial, grid
     include_offline: bool = True
     include_infrastructure: bool = True
@@ -865,7 +862,6 @@ class TopologyRequest(BaseModel):
 
 class TopologyResponse(BaseModel):
     """Topology graph response."""
-
     name: str
     description: str
     generated_at: str
@@ -879,7 +875,6 @@ class TopologyResponse(BaseModel):
 
 class ExportRequest(BaseModel):
     """Request for topology export."""
-
     format: str = "json"  # json, dot, d3, svg, mermaid, cytoscape
     layout: str = "hierarchical"
     include_positions: bool = True
@@ -891,8 +886,8 @@ async def get_topology(
     include_offline: bool = Query(True, description="Include offline devices"),
     include_infrastructure: bool = Query(True, description="Include infrastructure"),
     group_by_vlan: bool = Query(True, description="Group nodes by VLAN"),
-    user: dict = Depends(get_current_user),
     engine=Depends(get_engine),
+    tenant: dict = Depends(require_entitlement("sentinel:full")),
 ):
     """
     Get network topology graph.
@@ -907,17 +902,16 @@ async def get_topology(
         raise HTTPException(status_code=503, detail="Discovery agent not available")
 
     # Create visualizer with config
-    visualizer = TopologyVisualizer(
-        {
-            "default_layout": layout,
-            "include_offline": include_offline,
-            "group_by_vlan": group_by_vlan,
-        }
-    )
+    visualizer = TopologyVisualizer({
+        "default_layout": layout,
+        "include_offline": include_offline,
+        "group_by_vlan": group_by_vlan,
+    })
 
     # Build graph from discovery data
     graph = await visualizer.build_from_discovery(
-        discovery, include_infrastructure=include_infrastructure
+        discovery,
+        include_infrastructure=include_infrastructure
     )
 
     # Apply layout
@@ -943,8 +937,7 @@ async def get_topology(
 
 
 @app.get("/topology/summary", tags=["Visualization"])
-async def get_topology_summary(user: dict = Depends(get_current_user),
-                               engine=Depends(get_engine)):
+async def get_topology_summary(engine=Depends(get_engine), tenant: dict = Depends(require_entitlement("sentinel:full"))):
     """
     Get topology summary with VLAN breakdown.
 
@@ -990,8 +983,11 @@ def _count_edge_types(graph) -> dict:
 
 
 @app.post("/topology/export", tags=["Visualization"])
-async def export_topology(request: ExportRequest, user: dict = Depends(get_current_user),
-                                                  engine=Depends(get_engine)):
+async def export_topology(
+    request: ExportRequest,
+    engine=Depends(get_engine),
+    tenant: dict = Depends(require_entitlement("sentinel:full")),
+):
     """
     Export topology in various formats.
 
@@ -1042,7 +1038,7 @@ async def export_topology(request: ExportRequest, user: dict = Depends(get_curre
     if not exporter:
         raise HTTPException(
             status_code=400,
-            detail=f"Unknown format: {request.format}. Supported: {list(format_map.keys())}",
+            detail=f"Unknown format: {request.format}. Supported: {list(format_map.keys())}"
         )
 
     content = exporter.export(graph)
@@ -1058,13 +1054,13 @@ async def export_topology(request: ExportRequest, user: dict = Depends(get_curre
     }
 
     return Response(
-        content=content, media_type=content_types.get(request.format.lower(), "text/plain")
+        content=content,
+        media_type=content_types.get(request.format.lower(), "text/plain")
     )
 
 
 @app.get("/topology/d3", tags=["Visualization"])
-async def get_d3_visualization(user: dict = Depends(get_current_user),
-                               engine=Depends(get_engine)):
+async def get_d3_visualization(engine=Depends(get_engine), tenant: dict = Depends(require_entitlement("sentinel:full"))):
     """
     Get complete D3.js HTML visualization.
 
@@ -1087,8 +1083,7 @@ async def get_d3_visualization(user: dict = Depends(get_current_user),
 
 
 @app.get("/topology/node/{node_id}", tags=["Visualization"])
-async def get_node_connections(node_id: str, user: dict = Depends(get_current_user),
-                                             engine=Depends(get_engine)):
+async def get_node_connections(node_id: str, engine=Depends(get_engine), tenant: dict = Depends(require_entitlement("sentinel:full"))):
     """
     Get connection details for a specific node.
 
@@ -1119,7 +1114,6 @@ async def get_node_connections(node_id: str, user: dict = Depends(get_current_us
 # Routes - Metrics
 # =============================================================================
 
-
 @app.get("/metrics", tags=["Monitoring"])
 async def metrics():
     """
@@ -1129,13 +1123,15 @@ async def metrics():
     This endpoint is typically scraped by Prometheus.
     """
     collector = get_metrics_collector()
-    return Response(content=collector.generate_metrics(), media_type=collector.get_content_type())
+    return Response(
+        content=collector.generate_metrics(),
+        media_type=collector.get_content_type()
+    )
 
 
 # =============================================================================
 # Application Factory
 # =============================================================================
-
 
 def create_app(engine) -> FastAPI:
     """Create FastAPI app with engine reference."""

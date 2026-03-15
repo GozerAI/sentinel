@@ -9,7 +9,6 @@ This package contains the core components of the Sentinel platform:
 - Config: Configuration management
 - MetricsCollector: Prometheus metrics
 """
-
 from sentinel.core.engine import SentinelEngine
 from sentinel.core.event_bus import EventBus
 from sentinel.core.state import StateManager

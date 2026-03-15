@@ -14,7 +14,6 @@ Requires:
 - Root/sudo access for rule management
 - Optional: SSH access for remote management
 """
-
 import asyncio
 import json
 import logging
@@ -53,7 +52,7 @@ class FirewallRule:
         comment: str = "",
         enabled: bool = True,
         created_by: str = "sentinel",
-        expires_at: datetime = None,
+        expires_at: datetime = None
     ):
         self.rule_id = rule_id
         self.action = action.lower()
@@ -95,16 +94,16 @@ class FirewallRule:
         # Interface
         if self.interface:
             if self.direction == "input":
-                parts.append(f'iifname "{self.interface}"')
+                parts.append(f"iifname \"{self.interface}\"")
             else:
-                parts.append(f'oifname "{self.interface}"')
+                parts.append(f"oifname \"{self.interface}\"")
 
         # Action
         parts.append(self.action)
 
         # Comment
         if self.comment:
-            parts.append(f'comment "{self.comment}"')
+            parts.append(f"comment \"{self.comment}\"")
 
         return " ".join(parts)
 
@@ -166,7 +165,7 @@ class FirewallRule:
             "enabled": self.enabled,
             "created_by": self.created_by,
             "created_at": self.created_at.isoformat(),
-            "expires_at": self.expires_at.isoformat() if self.expires_at else None,
+            "expires_at": self.expires_at.isoformat() if self.expires_at else None
         }
 
     @classmethod
@@ -183,7 +182,7 @@ class FirewallRule:
             interface=data.get("interface"),
             comment=data.get("comment", ""),
             enabled=data.get("enabled", True),
-            created_by=data.get("created_by", "sentinel"),
+            created_by=data.get("created_by", "sentinel")
         )
         if data.get("expires_at"):
             rule.expires_at = datetime.fromisoformat(data["expires_at"])
@@ -237,9 +236,10 @@ class NativeFirewall(RouterIntegration):
         # Configuration
         self.backend = config.get("backend", "auto")  # auto, nftables, iptables
         self.table_name = config.get("table_name", "sentinel")
-        self.persistence_path = Path(
-            config.get("persistence_path", "/var/lib/sentinel/firewall.json")
-        )
+        self.persistence_path = Path(config.get(
+            "persistence_path",
+            "/var/lib/sentinel/firewall.json"
+        ))
         self.sudo = config.get("sudo", True)
         self.dry_run = config.get("dry_run", False)  # For testing
 
@@ -339,26 +339,24 @@ class NativeFirewall(RouterIntegration):
     async def _init_nftables(self) -> None:
         """Initialize nftables table and chains."""
         # Create table
-        await self._run_command(["nft", "add", "table", "inet", self.table_name], check=False)
+        await self._run_command([
+            "nft", "add", "table", "inet", self.table_name
+        ], check=False)
 
         # Create chains
         for chain in ["input", "forward", "output"]:
-            await self._run_command(
-                [
-                    "nft",
-                    "add",
-                    "chain",
-                    "inet",
-                    self.table_name,
-                    chain,
-                    f"{{ type filter hook {chain} priority 0; policy accept; }}",
-                ],
-                check=False,
-            )
+            await self._run_command([
+                "nft", "add", "chain", "inet", self.table_name, chain,
+                f"{{ type filter hook {chain} priority 0; policy accept; }}"
+            ], check=False)
 
         logger.debug(f"Initialized nftables table: {self.table_name}")
 
-    async def _run_command(self, cmd: list[str], check: bool = True) -> Optional[str]:
+    async def _run_command(
+        self,
+        cmd: list[str],
+        check: bool = True
+    ) -> Optional[str]:
         """Run a command with optional sudo."""
         if self.dry_run:
             logger.debug(f"[DRY RUN] Would execute: {' '.join(cmd)}")
@@ -369,7 +367,9 @@ class NativeFirewall(RouterIntegration):
 
         try:
             process = await asyncio.create_subprocess_exec(
-                *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
             )
             stdout, stderr = await process.communicate()
 
@@ -407,9 +407,12 @@ class NativeFirewall(RouterIntegration):
             for line in content.strip().split("\n")[1:]:  # Skip header
                 parts = line.split()
                 if len(parts) >= 6:
-                    entries.append(
-                        {"ip": parts[0], "mac": parts[3], "interface": parts[5], "flags": parts[2]}
-                    )
+                    entries.append({
+                        "ip": parts[0],
+                        "mac": parts[3],
+                        "interface": parts[5],
+                        "flags": parts[2]
+                    })
 
             return entries
 
@@ -424,14 +427,12 @@ class NativeFirewall(RouterIntegration):
             parts = line.split()
             if len(parts) >= 5 and "lladdr" in parts:
                 mac_idx = parts.index("lladdr") + 1
-                entries.append(
-                    {
-                        "ip": parts[0],
-                        "mac": parts[mac_idx] if mac_idx < len(parts) else "unknown",
-                        "interface": parts[2] if "dev" in parts else "unknown",
-                        "state": parts[-1] if parts else "unknown",
-                    }
-                )
+                entries.append({
+                    "ip": parts[0],
+                    "mac": parts[mac_idx] if mac_idx < len(parts) else "unknown",
+                    "interface": parts[2] if "dev" in parts else "unknown",
+                    "state": parts[-1] if parts else "unknown"
+                })
         return entries
 
     async def get_dhcp_leases(self) -> list[dict]:
@@ -465,15 +466,13 @@ class NativeFirewall(RouterIntegration):
             for line in content.strip().split("\n"):
                 parts = line.split()
                 if len(parts) >= 4:
-                    leases.append(
-                        {
-                            "expires": int(parts[0]),
-                            "mac": parts[1],
-                            "ip": parts[2],
-                            "hostname": parts[3] if parts[3] != "*" else "",
-                            "source": "dnsmasq",
-                        }
-                    )
+                    leases.append({
+                        "expires": int(parts[0]),
+                        "mac": parts[1],
+                        "ip": parts[2],
+                        "hostname": parts[3] if parts[3] != "*" else "",
+                        "source": "dnsmasq"
+                    })
         else:
             # ISC DHCP format (basic parsing)
             current_lease = {}
@@ -507,22 +506,7 @@ class NativeFirewall(RouterIntegration):
 
         Returns:
             Rule ID
-
-        Raises:
-            ValueError: If source or destination IP/CIDR is invalid
         """
-        # Validate IP addresses before they reach subprocess commands
-        if rule.get("source"):
-            try:
-                ip_network(rule["source"], strict=False)
-            except ValueError:
-                ip_address(rule["source"])  # Raises ValueError if invalid
-        if rule.get("destination"):
-            try:
-                ip_network(rule["destination"], strict=False)
-            except ValueError:
-                ip_address(rule["destination"])  # Raises ValueError if invalid
-
         self._rule_counter += 1
         rule_id = f"sentinel_{self._rule_counter}"
 
@@ -537,7 +521,7 @@ class NativeFirewall(RouterIntegration):
             dest_port=rule.get("dest_port"),
             interface=rule.get("interface"),
             comment=rule.get("comment", f"Sentinel rule {rule_id}"),
-            expires_at=rule.get("expires_at"),
+            expires_at=rule.get("expires_at")
         )
 
         # Apply to system
@@ -580,7 +564,10 @@ class NativeFirewall(RouterIntegration):
             if self._backend_detected == "nftables":
                 chain_map = {"input": "input", "output": "output", "forward": "forward"}
                 chain = chain_map.get(rule.direction, "input")
-                cmd = ["nft", "add", "rule", "inet", self.table_name, chain, rule.to_nftables()]
+                cmd = [
+                    "nft", "add", "rule", "inet", self.table_name, chain,
+                    rule.to_nftables()
+                ]
                 # nft needs the rule as a single argument after chain
                 cmd = ["nft", "add", "rule", "inet", self.table_name, chain]
                 cmd.extend(rule.to_nftables().split())
@@ -608,26 +595,18 @@ class NativeFirewall(RouterIntegration):
                 chain = chain_map.get(rule.direction, "input")
 
                 # List rules to find handle
-                result = await self._run_command(
-                    ["nft", "-a", "list", "chain", "inet", self.table_name, chain]
-                )
+                result = await self._run_command([
+                    "nft", "-a", "list", "chain", "inet", self.table_name, chain
+                ])
                 if result:
                     # Find rule by comment and get handle
                     for line in result.split("\n"):
                         if rule.comment in line and "handle" in line:
                             handle = line.split("handle")[-1].strip()
-                            await self._run_command(
-                                [
-                                    "nft",
-                                    "delete",
-                                    "rule",
-                                    "inet",
-                                    self.table_name,
-                                    chain,
-                                    "handle",
-                                    handle,
-                                ]
-                            )
+                            await self._run_command([
+                                "nft", "delete", "rule", "inet",
+                                self.table_name, chain, "handle", handle
+                            ])
                             return True
 
             else:  # iptables
@@ -644,7 +623,12 @@ class NativeFirewall(RouterIntegration):
     # Convenience Methods
     # =========================================================================
 
-    async def block_ip(self, ip: str, duration: int = 3600, reason: str = "") -> str:
+    async def block_ip(
+        self,
+        ip: str,
+        duration: int = 3600,
+        reason: str = ""
+    ) -> str:
         """
         Block an IP address temporarily.
 
@@ -664,14 +648,12 @@ class NativeFirewall(RouterIntegration):
 
         expires_at = utc_now() + timedelta(seconds=duration)
 
-        rule_id = await self.add_firewall_rule(
-            {
-                "action": "drop",
-                "source": ip,
-                "comment": f"Blocked: {reason}" if reason else f"Blocked by Sentinel",
-                "expires_at": expires_at,
-            }
-        )
+        rule_id = await self.add_firewall_rule({
+            "action": "drop",
+            "source": ip,
+            "comment": f"Blocked: {reason}" if reason else f"Blocked by Sentinel",
+            "expires_at": expires_at
+        })
 
         self._blocked_ips[ip] = expires_at
         logger.info(f"Blocked IP {ip} for {duration}s: {reason}")
@@ -681,7 +663,10 @@ class NativeFirewall(RouterIntegration):
     async def unblock_ip(self, ip: str) -> bool:
         """Unblock a previously blocked IP."""
         # Find rule(s) for this IP
-        rules_to_delete = [rule_id for rule_id, rule in self._rules.items() if rule.source == ip]
+        rules_to_delete = [
+            rule_id for rule_id, rule in self._rules.items()
+            if rule.source == ip
+        ]
 
         success = True
         for rule_id in rules_to_delete:
@@ -715,13 +700,11 @@ class NativeFirewall(RouterIntegration):
 
         for ip, expires_at in self._blocked_ips.items():
             if expires_at > now:
-                blocked.append(
-                    {
-                        "ip": ip,
-                        "expires_at": expires_at.isoformat(),
-                        "remaining_seconds": (expires_at - now).total_seconds(),
-                    }
-                )
+                blocked.append({
+                    "ip": ip,
+                    "expires_at": expires_at.isoformat(),
+                    "remaining_seconds": (expires_at - now).total_seconds()
+                })
 
         return blocked
 
@@ -736,12 +719,15 @@ class NativeFirewall(RouterIntegration):
 
             data = {
                 "rules": {rid: rule.to_dict() for rid, rule in self._rules.items()},
-                "blocked_ips": {ip: exp.isoformat() for ip, exp in self._blocked_ips.items()},
+                "blocked_ips": {
+                    ip: exp.isoformat()
+                    for ip, exp in self._blocked_ips.items()
+                },
                 "rule_counter": self._rule_counter,
-                "persisted_at": utc_now().isoformat(),
+                "persisted_at": utc_now().isoformat()
             }
 
-            with open(self.persistence_path, "w") as f:
+            with open(self.persistence_path, 'w') as f:
                 json.dump(data, f, indent=2)
 
         except Exception as e:
@@ -753,7 +739,7 @@ class NativeFirewall(RouterIntegration):
             if not self.persistence_path.exists():
                 return
 
-            with open(self.persistence_path, "r") as f:
+            with open(self.persistence_path, 'r') as f:
                 data = json.load(f)
 
             self._rule_counter = data.get("rule_counter", 0)
@@ -799,7 +785,10 @@ class NativeFirewall(RouterIntegration):
                     await self.delete_firewall_rule(rule_id)
 
                 # Clean up blocked IPs
-                expired_ips = [ip for ip, exp in self._blocked_ips.items() if exp < now]
+                expired_ips = [
+                    ip for ip, exp in self._blocked_ips.items()
+                    if exp < now
+                ]
                 for ip in expired_ips:
                     del self._blocked_ips[ip]
 

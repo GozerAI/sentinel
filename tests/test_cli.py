@@ -3,7 +3,6 @@ Comprehensive tests for CLI modules.
 
 Tests cover both cli/main.py and cli/commands.py.
 """
-
 import pytest
 from pathlib import Path
 from unittest.mock import MagicMock, patch, AsyncMock
@@ -43,7 +42,7 @@ class TestCLIMainApp:
                 "status": "running",
                 "uptime_seconds": 3600,
                 "agents": {"discovery": {"enabled": True, "actions_taken": 10}},
-                "integrations": {"router": True},
+                "integrations": {"router": True}
             }
             mock_response.raise_for_status = MagicMock()
             mock_instance = MagicMock()
@@ -71,9 +70,9 @@ class TestCLIDevicesCommands:
                         "device_type": "workstation",
                         "vlan": 10,
                         "online": True,
-                        "vendor": "Dell",
+                        "vendor": "Dell"
                     }
-                ],
+                ]
             }
             mock_response.raise_for_status = MagicMock()
             mock_instance = MagicMock()
@@ -93,9 +92,12 @@ class TestCLIDevicesCommands:
             mock_instance.get.return_value = mock_response
             mock_client.return_value = mock_instance
 
-            result = runner.invoke(
-                main_app, ["devices", "list", "--type", "workstation", "--vlan", "10", "--online"]
-            )
+            result = runner.invoke(main_app, [
+                "devices", "list",
+                "--type", "workstation",
+                "--vlan", "10",
+                "--online"
+            ])
             assert result.exit_code == 0
 
     def test_devices_list_error(self):
@@ -122,7 +124,7 @@ class TestCLIDevicesCommands:
                 "vlan": 10,
                 "trust_level": 0.8,
                 "online": True,
-                "last_seen": "2024-01-15T10:30:00",
+                "last_seen": "2024-01-15T10:30:00"
             }
             mock_response.raise_for_status = MagicMock()
             mock_instance = MagicMock()
@@ -180,7 +182,7 @@ class TestCLIVLANCommands:
                     "subnet": "192.168.10.0/24",
                     "purpose": "User workstations",
                     "device_count": 5,
-                    "isolated": False,
+                    "isolated": False
                 }
             ]
             mock_response.raise_for_status = MagicMock()
@@ -210,20 +212,12 @@ class TestCLIVLANCommands:
             mock_instance.post.return_value = mock_response
             mock_client.return_value = mock_instance
 
-            result = runner.invoke(
-                main_app,
-                [
-                    "vlans",
-                    "create",
-                    "100",
-                    "NewVLAN",
-                    "--subnet",
-                    "192.168.100.0/24",
-                    "--purpose",
-                    "Testing",
-                    "--isolated",
-                ],
-            )
+            result = runner.invoke(main_app, [
+                "vlans", "create", "100", "NewVLAN",
+                "--subnet", "192.168.100.0/24",
+                "--purpose", "Testing",
+                "--isolated"
+            ])
             assert result.exit_code == 0
             assert "Created VLAN" in result.stdout
 
@@ -250,7 +244,10 @@ class TestCLIAgentCommands:
                     "name": "discovery",
                     "enabled": True,
                     "actions_taken": 100,
-                    "stats": {"events_processed": 500, "decisions_made": 50},
+                    "stats": {
+                        "events_processed": 500,
+                        "decisions_made": 50
+                    }
                 }
             ]
             mock_response.raise_for_status = MagicMock()
@@ -331,7 +328,7 @@ class TestCLIEventCommands:
                     "severity": "warning",
                     "category": "security",
                     "title": "Test Event",
-                    "source": "guardian",
+                    "source": "guardian"
                 }
             ]
             mock_response.raise_for_status = MagicMock()
@@ -352,19 +349,12 @@ class TestCLIEventCommands:
             mock_instance.get.return_value = mock_response
             mock_client.return_value = mock_instance
 
-            result = runner.invoke(
-                main_app,
-                [
-                    "events",
-                    "list",
-                    "--category",
-                    "security",
-                    "--severity",
-                    "warning",
-                    "--limit",
-                    "10",
-                ],
-            )
+            result = runner.invoke(main_app, [
+                "events", "list",
+                "--category", "security",
+                "--severity", "warning",
+                "--limit", "10"
+            ])
             assert result.exit_code == 0
 
     def test_events_list_error(self):
@@ -456,9 +446,10 @@ class TestCLIConfigCommands:
 
     def test_config_show_file_not_found(self, tmp_path):
         """Test config show with non-existent file."""
-        result = runner.invoke(
-            main_app, ["config", "show", "--config", str(tmp_path / "nonexistent.yaml")]
-        )
+        result = runner.invoke(main_app, [
+            "config", "show",
+            "--config", str(tmp_path / "nonexistent.yaml")
+        ])
         assert result.exit_code == 0
         assert "not found" in result.stdout
 
@@ -467,14 +458,16 @@ class TestCLIConfigCommands:
         config_file = tmp_path / "test.yaml"
         config_file.write_text("api:\n  host: localhost\n  port: 8000\n")
 
-        result = runner.invoke(main_app, ["config", "show", "--config", str(config_file)])
+        result = runner.invoke(main_app, [
+            "config", "show",
+            "--config", str(config_file)
+        ])
         assert result.exit_code == 0
 
     def test_config_validate_success(self, tmp_path):
         """Test config validate command."""
         config_file = tmp_path / "test.yaml"
-        config_file.write_text(
-            """
+        config_file.write_text("""
 api:
   host: localhost
   port: 8000
@@ -489,8 +482,7 @@ agents:
     enabled: true
   guardian:
     enabled: true
-"""
-        )
+""")
 
         # Patch inside sentinel.core.config where load_config is imported from
         with patch("sentinel.core.config.load_config") as mock_load:
@@ -498,7 +490,10 @@ agents:
             mock_config.agents = {"discovery": {}}
             mock_load.return_value = mock_config
 
-            result = runner.invoke(main_app, ["config", "validate", "--config", str(config_file)])
+            result = runner.invoke(main_app, [
+                "config", "validate",
+                "--config", str(config_file)
+            ])
             # Since we can't easily mock the inner import, test that it either succeeds
             # or fails with an expected error
             assert result.exit_code in [0, 1]
@@ -506,9 +501,10 @@ agents:
     def test_config_validate_error(self, tmp_path):
         """Test config validate with invalid file."""
         # Test with a file that doesn't exist
-        result = runner.invoke(
-            main_app, ["config", "validate", "--config", str(tmp_path / "nonexistent.yaml")]
-        )
+        result = runner.invoke(main_app, [
+            "config", "validate",
+            "--config", str(tmp_path / "nonexistent.yaml")
+        ])
         assert result.exit_code == 1
         assert "error" in result.stdout.lower()
 
@@ -553,7 +549,6 @@ class TestCLICommandsModule:
         # The function raises typer.Exit(1) which translates to SystemExit
         # We need to catch SystemExit or click.exceptions.Exit
         import click
-
         with pytest.raises((SystemExit, click.exceptions.Exit)):
             load_config(str(tmp_path / "nonexistent.yaml"))
 
@@ -567,9 +562,10 @@ class TestCLICommandsModule:
 
     def test_start_command_error(self, tmp_path):
         """Test start command with missing config."""
-        result = runner.invoke(
-            commands_app, ["start", "--config", str(tmp_path / "nonexistent.yaml")]
-        )
+        result = runner.invoke(commands_app, [
+            "start",
+            "--config", str(tmp_path / "nonexistent.yaml")
+        ])
         assert result.exit_code == 1
 
     def test_status_command(self):
@@ -637,7 +633,11 @@ class TestCLICommandsModule:
 
     def test_logs_command_with_options(self):
         """Test logs command with options."""
-        result = runner.invoke(commands_app, ["logs", "--lines", "10", "--level", "WARNING"])
+        result = runner.invoke(commands_app, [
+            "logs",
+            "--lines", "10",
+            "--level", "WARNING"
+        ])
         assert result.exit_code == 0
 
     def test_version_command(self):
@@ -653,22 +653,22 @@ class TestCLIStartCommand:
     def test_start_command_invocation(self, tmp_path):
         """Test start command can be invoked."""
         config_file = tmp_path / "test.yaml"
-        config_file.write_text(
-            """
+        config_file.write_text("""
 api:
   host: localhost
   port: 8000
 agents:
   discovery:
     enabled: true
-"""
-        )
+""")
 
         # uvicorn is imported inside the start function, so patch at module level
         with patch("uvicorn.run") as mock_run:
-            result = runner.invoke(
-                main_app,
-                ["start", "--config", str(config_file), "--host", "127.0.0.1", "--port", "9000"],
-            )
+            result = runner.invoke(main_app, [
+                "start",
+                "--config", str(config_file),
+                "--host", "127.0.0.1",
+                "--port", "9000"
+            ])
             # The command tries to run uvicorn
             mock_run.assert_called_once()

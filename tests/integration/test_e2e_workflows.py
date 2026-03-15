@@ -3,7 +3,6 @@ End-to-end workflow tests for the Sentinel platform.
 
 Tests complete user scenarios from start to finish across all components.
 """
-
 import asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -77,21 +76,19 @@ class TestDeviceDiscoveryWorkflow:
             discovery._inventory.add_device(new_device)
 
             # Step 3: Publish discovery event
-            await engine.event_bus.publish(
-                Event(
-                    category=EventCategory.DEVICE,
-                    event_type="device.discovered",
-                    severity=EventSeverity.INFO,
-                    source="discovery",
-                    title="New device discovered",
-                    data={
-                        "device_id": str(new_device.id),
-                        "mac": "DE:VI:CE:00:00:01",
-                        "ip": "192.168.1.50",
-                        "hostname": "discovered-ws-01",
-                    },
-                )
-            )
+            await engine.event_bus.publish(Event(
+                category=EventCategory.DEVICE,
+                event_type="device.discovered",
+                severity=EventSeverity.INFO,
+                source="discovery",
+                title="New device discovered",
+                data={
+                    "device_id": str(new_device.id),
+                    "mac": "DE:VI:CE:00:00:01",
+                    "ip": "192.168.1.50",
+                    "hostname": "discovered-ws-01",
+                },
+            ))
 
             await asyncio.sleep(0.2)
 
@@ -105,7 +102,7 @@ class TestDeviceDiscoveryWorkflow:
             assert discovered_events[0].data["mac"] == "DE:VI:CE:00:00:01"
 
             # Step 6: Test API access
-            original_auth = getattr(auth_module, "_auth_config", None)
+            original_auth = getattr(auth_module, '_auth_config', None)
             auth_module._auth_config = None
             app = create_app(engine)
 
@@ -178,20 +175,18 @@ class TestThreatDetectionWorkflow:
             # Step 1: Simulate threat detection
             threat_ip = "192.168.1.200"
 
-            await engine.event_bus.publish(
-                Event(
-                    category=EventCategory.SECURITY,
-                    event_type="security.port_scan_detected",
-                    severity=EventSeverity.WARNING,
-                    source="guardian",
-                    title="Port scan detected",
-                    data={
-                        "source_ip": threat_ip,
-                        "ports_scanned": 100,
-                        "duration_seconds": 30,
-                    },
-                )
-            )
+            await engine.event_bus.publish(Event(
+                category=EventCategory.SECURITY,
+                event_type="security.port_scan_detected",
+                severity=EventSeverity.WARNING,
+                source="guardian",
+                title="Port scan detected",
+                data={
+                    "source_ip": threat_ip,
+                    "ports_scanned": 100,
+                    "duration_seconds": 30,
+                },
+            ))
 
             await asyncio.sleep(0.1)
 
@@ -199,20 +194,18 @@ class TestThreatDetectionWorkflow:
             guardian._blocked_ips.add(threat_ip)
 
             # Step 3: Publish action event
-            await engine.event_bus.publish(
-                Event(
-                    category=EventCategory.AGENT,
-                    event_type="agent.action.executed",
-                    severity=EventSeverity.INFO,
-                    source="guardian",
-                    title="IP blocked",
-                    data={
-                        "action": "block_ip",
-                        "target_ip": threat_ip,
-                        "reason": "port_scan",
-                    },
-                )
-            )
+            await engine.event_bus.publish(Event(
+                category=EventCategory.AGENT,
+                event_type="agent.action.executed",
+                severity=EventSeverity.INFO,
+                source="guardian",
+                title="IP blocked",
+                data={
+                    "action": "block_ip",
+                    "target_ip": threat_ip,
+                    "reason": "port_scan",
+                },
+            ))
 
             await asyncio.sleep(0.2)
 
@@ -224,7 +217,7 @@ class TestThreatDetectionWorkflow:
             assert len(action_events) >= 1
 
             # Step 6: Verify via API
-            original_auth = getattr(auth_module, "_auth_config", None)
+            original_auth = getattr(auth_module, '_auth_config', None)
             auth_module._auth_config = None
             app = create_app(engine)
 
@@ -300,34 +293,30 @@ class TestVLANAssignmentWorkflow:
             discovery._inventory.add_device(device)
 
             # Step 2: Publish discovery event
-            await engine.event_bus.publish(
-                Event(
-                    category=EventCategory.DEVICE,
-                    event_type="device.discovered",
-                    severity=EventSeverity.INFO,
-                    source="discovery",
-                    title="New workstation discovered",
-                    data={"device_id": str(device.id)},
-                )
-            )
+            await engine.event_bus.publish(Event(
+                category=EventCategory.DEVICE,
+                event_type="device.discovered",
+                severity=EventSeverity.INFO,
+                source="discovery",
+                title="New workstation discovered",
+                data={"device_id": str(device.id)},
+            ))
 
             # Step 3: Simulate planner assigning VLAN
             device.assigned_vlan = 10  # Assign to workstations VLAN
 
             # Step 4: Publish assignment event
-            await engine.event_bus.publish(
-                Event(
-                    category=EventCategory.NETWORK,
-                    event_type="vlan.assigned",
-                    severity=EventSeverity.INFO,
-                    source="planner",
-                    title="VLAN assigned",
-                    data={
-                        "device_id": str(device.id),
-                        "vlan_id": 10,
-                    },
-                )
-            )
+            await engine.event_bus.publish(Event(
+                category=EventCategory.NETWORK,
+                event_type="vlan.assigned",
+                severity=EventSeverity.INFO,
+                source="planner",
+                title="VLAN assigned",
+                data={
+                    "device_id": str(device.id),
+                    "vlan_id": 10,
+                },
+            ))
 
             await asyncio.sleep(0.2)
 
@@ -336,7 +325,7 @@ class TestVLANAssignmentWorkflow:
             assert retrieved.assigned_vlan == 10
 
             # Step 6: Verify via API
-            original_auth = getattr(auth_module, "_auth_config", None)
+            original_auth = getattr(auth_module, '_auth_config', None)
             auth_module._auth_config = None
             app = create_app(engine)
 
@@ -383,7 +372,7 @@ class TestNetworkSegmentationWorkflow:
             planner = engine.get_agent("planner")
 
             # Set up test via API
-            original_auth = getattr(auth_module, "_auth_config", None)
+            original_auth = getattr(auth_module, '_auth_config', None)
             auth_module._auth_config = None
             app = create_app(engine)
 
@@ -391,26 +380,20 @@ class TestNetworkSegmentationWorkflow:
                 client = TestClient(app)
 
                 # Step 1: Create VLANs
-                response = client.post(
-                    "/vlans",
-                    json={
-                        "id": 10,
-                        "name": "Workstations",
-                        "subnet": "192.168.10.0/24",
-                        "purpose": "workstations",
-                    },
-                )
+                response = client.post("/vlans", json={
+                    "id": 10,
+                    "name": "Workstations",
+                    "subnet": "192.168.10.0/24",
+                    "purpose": "workstations",
+                })
                 assert response.status_code == 200
 
-                response = client.post(
-                    "/vlans",
-                    json={
-                        "id": 20,
-                        "name": "Servers",
-                        "subnet": "192.168.20.0/24",
-                        "purpose": "servers",
-                    },
-                )
+                response = client.post("/vlans", json={
+                    "id": 20,
+                    "name": "Servers",
+                    "subnet": "192.168.20.0/24",
+                    "purpose": "servers",
+                })
                 assert response.status_code == 200
 
                 # Verify VLANs created
@@ -508,42 +491,36 @@ class TestMultiAgentCoordinationWorkflow:
             )
             discovery._inventory.add_device(device)
 
-            await engine.event_bus.publish(
-                Event(
-                    category=EventCategory.DEVICE,
-                    event_type="device.discovered",
-                    severity=EventSeverity.INFO,
-                    source="discovery",
-                    title="Device discovered",
-                    data={"device_id": str(device.id)},
-                )
-            )
+            await engine.event_bus.publish(Event(
+                category=EventCategory.DEVICE,
+                event_type="device.discovered",
+                severity=EventSeverity.INFO,
+                source="discovery",
+                title="Device discovered",
+                data={"device_id": str(device.id)},
+            ))
 
             # Step 2: Planner assigns VLAN
             device.assigned_vlan = 10
 
-            await engine.event_bus.publish(
-                Event(
-                    category=EventCategory.NETWORK,
-                    event_type="vlan.assigned",
-                    severity=EventSeverity.INFO,
-                    source="planner",
-                    title="VLAN assigned",
-                    data={"device_id": str(device.id), "vlan": 10},
-                )
-            )
+            await engine.event_bus.publish(Event(
+                category=EventCategory.NETWORK,
+                event_type="vlan.assigned",
+                severity=EventSeverity.INFO,
+                source="planner",
+                title="VLAN assigned",
+                data={"device_id": str(device.id), "vlan": 10},
+            ))
 
             # Step 3: Guardian clears device
-            await engine.event_bus.publish(
-                Event(
-                    category=EventCategory.SECURITY,
-                    event_type="device.cleared",
-                    severity=EventSeverity.INFO,
-                    source="guardian",
-                    title="Device security cleared",
-                    data={"device_id": str(device.id)},
-                )
-            )
+            await engine.event_bus.publish(Event(
+                category=EventCategory.SECURITY,
+                event_type="device.cleared",
+                severity=EventSeverity.INFO,
+                source="guardian",
+                title="Device security cleared",
+                data={"device_id": str(device.id)},
+            ))
 
             await asyncio.sleep(0.3)
 
@@ -603,7 +580,7 @@ class TestFullSystemHealthCheck:
             assert len(status["agents"]) == 5
 
             # Test API health
-            original_auth = getattr(auth_module, "_auth_config", None)
+            original_auth = getattr(auth_module, '_auth_config', None)
             auth_module._auth_config = None
             app = create_app(engine)
 

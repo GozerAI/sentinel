@@ -4,7 +4,6 @@ Tests for the GuardianAgent class.
 Tests cover threat detection, anomaly detection, IP blocking,
 device quarantine, and security alert generation.
 """
-
 import asyncio
 import pytest
 from datetime import datetime, timedelta, timezone
@@ -14,11 +13,7 @@ from collections import defaultdict
 
 from sentinel.agents.guardian import GuardianAgent
 from sentinel.core.models.event import (
-    Event,
-    EventCategory,
-    EventSeverity,
-    AgentAction,
-    SecurityAlert,
+    Event, EventCategory, EventSeverity, AgentAction, SecurityAlert
 )
 from sentinel.core.utils import utc_now
 
@@ -44,9 +39,13 @@ def default_config():
     return {
         "auto_quarantine": True,
         "quarantine_vlan": 666,
-        "threat_thresholds": {"port_scan": 100, "failed_auth": 10, "bandwidth_spike": 500},
+        "threat_thresholds": {
+            "port_scan": 100,
+            "failed_auth": 10,
+            "bandwidth_spike": 500
+        },
         "auto_execute_threshold": 0.95,
-        "confirm_threshold": 0.60,
+        "confirm_threshold": 0.60
     }
 
 
@@ -75,7 +74,11 @@ class TestGuardianAgentInit:
         config = {
             "auto_quarantine": False,
             "quarantine_vlan": 999,
-            "threat_thresholds": {"port_scan": 50, "failed_auth": 5, "bandwidth_spike": 200},
+            "threat_thresholds": {
+                "port_scan": 50,
+                "failed_auth": 5,
+                "bandwidth_spike": 200
+            }
         }
         agent = GuardianAgent(mock_engine, config)
 
@@ -122,8 +125,8 @@ class TestGuardianAgentConnectionEvents:
             data={
                 "source_ip": "192.168.1.100",
                 "destination_ip": "8.8.8.8",
-                "destination_port": 443,
-            },
+                "destination_port": 443
+            }
         )
 
         await agent._handle_connection_event(event)
@@ -141,7 +144,7 @@ class TestGuardianAgentConnectionEvents:
             severity=EventSeverity.INFO,
             source="router",
             title="Connection",
-            data={"destination_ip": "8.8.8.8"},
+            data={"destination_ip": "8.8.8.8"}
         )
 
         await agent._handle_connection_event(event)
@@ -198,7 +201,7 @@ class TestGuardianAgentSuspiciousPortDetection:
         await agent._check_suspicious_port(
             "192.168.1.100",
             31337,  # Known C2 port (only in C2 list, not crypto mining)
-            {"protocol": "tcp"},
+            {"protocol": "tcp"}
         )
 
         # Should create alert
@@ -210,7 +213,9 @@ class TestGuardianAgentSuspiciousPortDetection:
     async def test_check_crypto_mining_port(self, agent, mock_engine):
         """Test detection of crypto mining port."""
         await agent._check_suspicious_port(
-            "192.168.1.100", 3333, {"protocol": "tcp"}  # Known mining port
+            "192.168.1.100",
+            3333,  # Known mining port
+            {"protocol": "tcp"}
         )
 
         # Should create alert
@@ -222,7 +227,9 @@ class TestGuardianAgentSuspiciousPortDetection:
     async def test_check_normal_port(self, agent, mock_engine):
         """Test no alert for normal port."""
         await agent._check_suspicious_port(
-            "192.168.1.100", 443, {"protocol": "tcp"}  # Normal HTTPS
+            "192.168.1.100",
+            443,  # Normal HTTPS
+            {"protocol": "tcp"}
         )
 
         # Should not create alert
@@ -231,7 +238,11 @@ class TestGuardianAgentSuspiciousPortDetection:
     @pytest.mark.asyncio
     async def test_check_suspicious_port_none(self, agent, mock_engine):
         """Test handling None port."""
-        await agent._check_suspicious_port("192.168.1.100", None, {})
+        await agent._check_suspicious_port(
+            "192.168.1.100",
+            None,
+            {}
+        )
 
         # Should not create alert
         mock_engine.event_bus.publish.assert_not_called()
@@ -249,7 +260,11 @@ class TestGuardianAgentAuthEvents:
             severity=EventSeverity.INFO,
             source="sshd",
             title="Auth",
-            data={"source_ip": "192.168.1.100", "success": True, "service": "ssh"},
+            data={
+                "source_ip": "192.168.1.100",
+                "success": True,
+                "service": "ssh"
+            }
         )
 
         await agent._handle_auth_event(event)
@@ -270,8 +285,8 @@ class TestGuardianAgentAuthEvents:
                 "source_ip": "192.168.1.100",
                 "success": False,
                 "service": "ssh",
-                "username": "root",
-            },
+                "username": "root"
+            }
         )
 
         await agent._handle_auth_event(event)
@@ -318,7 +333,10 @@ class TestGuardianAgentTrafficEvents:
             severity=EventSeverity.INFO,
             source="router",
             title="Traffic",
-            data={"source_ip": "192.168.1.100", "bytes": 1000},
+            data={
+                "source_ip": "192.168.1.100",
+                "bytes": 1000
+            }
         )
 
         await agent._handle_traffic_event(event)
@@ -338,7 +356,10 @@ class TestGuardianAgentTrafficEvents:
             severity=EventSeverity.INFO,
             source="router",
             title="Traffic",
-            data={"source_ip": "192.168.1.100", "bytes": 100000},  # 1000x baseline
+            data={
+                "source_ip": "192.168.1.100",
+                "bytes": 100000  # 1000x baseline
+            }
         )
 
         await agent._handle_traffic_event(event)
@@ -355,7 +376,7 @@ class TestGuardianAgentTrafficEvents:
             severity=EventSeverity.INFO,
             source="router",
             title="Traffic",
-            data={"bytes": 1000},
+            data={"bytes": 1000}
         )
 
         await agent._handle_traffic_event(event)
@@ -380,8 +401,8 @@ class TestGuardianAgentIDSAlerts:
                 "source_ip": "192.168.1.100",
                 "signature": "ET MALWARE Win32/Agent.VBS",
                 "severity": "high",
-                "description": "Malware detected",
-            },
+                "description": "Malware detected"
+            }
         )
 
         await agent._handle_ids_alert(event)
@@ -401,8 +422,8 @@ class TestGuardianAgentIDSAlerts:
             data={
                 "source_ip": "192.168.1.100",
                 "signature": "ET EXPLOIT CVE-2024-1234",
-                "severity": "critical",
-            },
+                "severity": "critical"
+            }
         )
 
         await agent._handle_ids_alert(event)
@@ -469,7 +490,7 @@ class TestGuardianAgentCreateAlert:
             severity=EventSeverity.WARNING,
             threat_type="port_scan",
             source_ip="192.168.1.100",
-            confidence=0.8,
+            confidence=0.8
         )
 
         assert alert is not None
@@ -485,7 +506,7 @@ class TestGuardianAgentCreateAlert:
             description="Test",
             severity=EventSeverity.ERROR,
             threat_type="brute_force",
-            confidence=0.9,
+            confidence=0.9
         )
 
         assert alert.mitre_technique == "T1110"
@@ -499,7 +520,7 @@ class TestGuardianAgentCreateAlert:
                 description="Test",
                 severity=EventSeverity.INFO,
                 threat_type="test",
-                confidence=0.5,
+                confidence=0.5
             )
 
         # Should limit to 500 after cleanup
@@ -578,9 +599,13 @@ class TestGuardianAgentDoExecute:
             action_type="block_ip",
             target_type="ip_address",
             target_id="192.168.1.100",
-            parameters={"ip": "192.168.1.100", "reason": "Test", "duration_hours": 24},
+            parameters={
+                "ip": "192.168.1.100",
+                "reason": "Test",
+                "duration_hours": 24
+            },
             reasoning="Test",
-            confidence=0.95,
+            confidence=0.95
         )
 
         result = await agent._do_execute(action)
@@ -600,9 +625,12 @@ class TestGuardianAgentDoExecute:
             action_type="block_ip",
             target_type="ip_address",
             target_id="192.168.1.100",
-            parameters={"ip": "192.168.1.100", "reason": "Test"},
+            parameters={
+                "ip": "192.168.1.100",
+                "reason": "Test"
+            },
             reasoning="Test",
-            confidence=0.95,
+            confidence=0.95
         )
 
         result = await agent._do_execute(action)
@@ -622,7 +650,7 @@ class TestGuardianAgentDoExecute:
             target_id="192.168.1.100",
             parameters={"ip": "192.168.1.100"},
             reasoning="Test",
-            confidence=1.0,
+            confidence=1.0
         )
 
         result = await agent._do_execute(action)
@@ -642,9 +670,12 @@ class TestGuardianAgentDoExecute:
             action_type="quarantine_device",
             target_type="device",
             target_id="00:11:22:33:44:55",
-            parameters={"identifier": "00:11:22:33:44:55", "quarantine_vlan": 666},
+            parameters={
+                "identifier": "00:11:22:33:44:55",
+                "quarantine_vlan": 666
+            },
             reasoning="Test",
-            confidence=0.95,
+            confidence=0.95
         )
 
         result = await agent._do_execute(action)
@@ -661,9 +692,12 @@ class TestGuardianAgentDoExecute:
             action_type="unquarantine_device",
             target_type="device",
             target_id="00:11:22:33:44:55",
-            parameters={"identifier": "00:11:22:33:44:55", "restore_vlan": 10},
+            parameters={
+                "identifier": "00:11:22:33:44:55",
+                "restore_vlan": 10
+            },
             reasoning="Test",
-            confidence=1.0,
+            confidence=1.0
         )
 
         result = await agent._do_execute(action)
@@ -681,7 +715,7 @@ class TestGuardianAgentDoExecute:
             target_id="123",
             parameters={},
             reasoning="Test",
-            confidence=0.95,
+            confidence=0.95
         )
 
         with pytest.raises(ValueError, match="Unknown action type"):
@@ -701,7 +735,7 @@ class TestGuardianAgentRollback:
             target_id="192.168.1.100",
             parameters={"ip": "192.168.1.100"},
             reasoning="Test",
-            confidence=0.95,
+            confidence=0.95
         )
 
         rollback_data = await agent._capture_rollback_data(action)
@@ -722,7 +756,7 @@ class TestGuardianAgentRollback:
             parameters={"ip": "192.168.1.100"},
             reasoning="Test",
             confidence=0.95,
-            rollback_data={"action": "unblock_ip", "ip": "192.168.1.100"},
+            rollback_data={"action": "unblock_ip", "ip": "192.168.1.100"}
         )
 
         await agent._do_rollback(action)
@@ -748,7 +782,7 @@ class TestGuardianAgentAnalyzeThreats:
                 title="Alert 1",
                 timestamp=now,
                 threat_type="port_scan",
-                data={"source_ip": "192.168.1.100"},
+                data={"source_ip": "192.168.1.100"}
             ),
             SecurityAlert(
                 category=EventCategory.SECURITY,
@@ -758,7 +792,7 @@ class TestGuardianAgentAnalyzeThreats:
                 title="Alert 2",
                 timestamp=now,
                 threat_type="brute_force",
-                data={"source_ip": "192.168.1.100"},
+                data={"source_ip": "192.168.1.100"}
             ),
             SecurityAlert(
                 category=EventCategory.SECURITY,
@@ -768,8 +802,8 @@ class TestGuardianAgentAnalyzeThreats:
                 title="Alert 3",
                 timestamp=now,
                 threat_type="c2_communication",
-                data={"source_ip": "192.168.1.100"},
-            ),
+                data={"source_ip": "192.168.1.100"}
+            )
         ]
 
         await agent._analyze_threats()
@@ -857,7 +891,7 @@ class TestGuardianAgentAnalyze:
             event_type="test",
             severity=EventSeverity.INFO,
             source="test",
-            title="Test",
+            title="Test"
         )
 
         result = await agent.analyze(event)

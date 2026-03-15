@@ -4,7 +4,6 @@ Compute Node representation for Sentinel.
 Represents a single compute node in a cluster, whether it's a
 Raspberry Pi, server, or virtual machine.
 """
-
 import asyncio
 import logging
 from enum import Enum
@@ -20,7 +19,6 @@ logger = logging.getLogger(__name__)
 
 class NodeRole(Enum):
     """Roles a compute node can fulfill."""
-
     CONTROLLER = "controller"  # k3s server, cluster management
     WORKER = "worker"  # k3s agent, workload execution
     STORAGE = "storage"  # Distributed storage (Longhorn, etc.)
@@ -32,7 +30,6 @@ class NodeRole(Enum):
 
 class NodeStatus(Enum):
     """Current status of a compute node."""
-
     UNKNOWN = "unknown"
     DISCOVERING = "discovering"
     ONLINE = "online"
@@ -46,7 +43,6 @@ class NodeStatus(Enum):
 @dataclass
 class NodeResources:
     """Resource information for a compute node."""
-
     cpu_cores: int = 0
     cpu_model: str = ""
     cpu_frequency_mhz: int = 0
@@ -61,7 +57,6 @@ class NodeResources:
 @dataclass
 class NodeMetrics:
     """Current metrics for a compute node."""
-
     cpu_usage_percent: float = 0.0
     memory_usage_percent: float = 0.0
     disk_usage_percent: float = 0.0
@@ -146,18 +141,18 @@ class ComputeNode:
                 "cpu_model": self.resources.cpu_model,
                 "memory_total_mb": self.resources.memory_total_mb,
                 "disk_total_gb": self.resources.disk_total_gb,
-                "gpu_model": self.resources.gpu_model,
+                "gpu_model": self.resources.gpu_model
             },
             "metrics": {
                 "cpu_usage_percent": self.metrics.cpu_usage_percent,
                 "memory_usage_percent": self.metrics.memory_usage_percent,
                 "temperature_celsius": self.metrics.temperature_celsius,
-                "uptime_seconds": self.metrics.uptime_seconds,
+                "uptime_seconds": self.metrics.uptime_seconds
             },
             "labels": self.labels,
             "last_seen": self.last_seen.isoformat(),
             "container_runtime": self.container_runtime,
-            "k8s_version": self.k8s_version,
+            "k8s_version": self.k8s_version
         }
 
     @classmethod
@@ -169,7 +164,7 @@ class ComputeNode:
             ip_address=data.get("ip_address", ""),
             mac_address=data.get("mac_address", ""),
             model=data.get("model", ""),
-            os_version=data.get("os_version", ""),
+            os_version=data.get("os_version", "")
         )
 
         if "roles" in data:

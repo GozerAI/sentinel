@@ -13,14 +13,16 @@ Tests cover:
 - Action execution
 - Rollback functionality
 """
-
 import asyncio
 import pytest
 from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, AsyncMock, patch
 
 from sentinel.agents.optimizer import OptimizerAgent
-from sentinel.core.models.event import Event, EventCategory, EventSeverity, AgentAction
+from sentinel.core.models.event import (
+    Event, EventCategory, EventSeverity,
+    AgentAction
+)
 
 
 @pytest.fixture
@@ -120,7 +122,7 @@ class TestOptimizerAgentInit:
 
         assert agent._dscp_map[1] == 46  # EF
         assert agent._dscp_map[2] == 34  # AF41
-        assert agent._dscp_map[3] == 0  # Best effort
+        assert agent._dscp_map[3] == 0   # Best effort
 
 
 class TestOptimizerAgentSubscriptions:
@@ -145,7 +147,10 @@ class TestOptimizerAgentClassifyApplication:
 
     def test_classify_streaming_netflix(self, agent):
         """Test classification of Netflix traffic."""
-        flow_data = {"destination_port": 443, "destination_host": "www.netflix.com"}
+        flow_data = {
+            "destination_port": 443,
+            "destination_host": "www.netflix.com"
+        }
 
         result = agent._classify_application(flow_data)
 
@@ -153,7 +158,10 @@ class TestOptimizerAgentClassifyApplication:
 
     def test_classify_streaming_youtube(self, agent):
         """Test classification of YouTube traffic."""
-        flow_data = {"destination_port": 443, "destination_host": "youtube.com"}
+        flow_data = {
+            "destination_port": 443,
+            "destination_host": "youtube.com"
+        }
 
         result = agent._classify_application(flow_data)
 
@@ -161,7 +169,10 @@ class TestOptimizerAgentClassifyApplication:
 
     def test_classify_gaming_xbox(self, agent):
         """Test classification of Xbox Live traffic."""
-        flow_data = {"destination_port": 3074, "destination_host": "unknown"}
+        flow_data = {
+            "destination_port": 3074,
+            "destination_host": "unknown"
+        }
 
         result = agent._classify_application(flow_data)
 
@@ -169,7 +180,10 @@ class TestOptimizerAgentClassifyApplication:
 
     def test_classify_voip(self, agent):
         """Test classification of VoIP traffic."""
-        flow_data = {"destination_port": 5060, "destination_host": "sip.provider.com"}
+        flow_data = {
+            "destination_port": 5060,
+            "destination_host": "sip.provider.com"
+        }
 
         result = agent._classify_application(flow_data)
 
@@ -177,7 +191,10 @@ class TestOptimizerAgentClassifyApplication:
 
     def test_classify_conferencing_zoom(self, agent):
         """Test classification of Zoom traffic."""
-        flow_data = {"destination_port": 443, "destination_host": "zoom.us"}
+        flow_data = {
+            "destination_port": 443,
+            "destination_host": "zoom.us"
+        }
 
         result = agent._classify_application(flow_data)
 
@@ -185,7 +202,10 @@ class TestOptimizerAgentClassifyApplication:
 
     def test_classify_web_default(self, agent):
         """Test classification of generic web traffic."""
-        flow_data = {"destination_port": 443, "destination_host": "example.com"}
+        flow_data = {
+            "destination_port": 443,
+            "destination_host": "example.com"
+        }
 
         result = agent._classify_application(flow_data)
 
@@ -193,7 +213,10 @@ class TestOptimizerAgentClassifyApplication:
 
     def test_classify_remote_access_ssh(self, agent):
         """Test classification of SSH traffic."""
-        flow_data = {"destination_port": 22, "destination_host": "server.local"}
+        flow_data = {
+            "destination_port": 22,
+            "destination_host": "server.local"
+        }
 
         result = agent._classify_application(flow_data)
 
@@ -201,7 +224,10 @@ class TestOptimizerAgentClassifyApplication:
 
     def test_classify_remote_access_rdp(self, agent):
         """Test classification of RDP traffic."""
-        flow_data = {"destination_port": 3389, "destination_host": "workstation"}
+        flow_data = {
+            "destination_port": 3389,
+            "destination_host": "workstation"
+        }
 
         result = agent._classify_application(flow_data)
 
@@ -209,7 +235,10 @@ class TestOptimizerAgentClassifyApplication:
 
     def test_classify_file_transfer_smb(self, agent):
         """Test classification of SMB traffic."""
-        flow_data = {"destination_port": 445, "destination_host": "nas"}
+        flow_data = {
+            "destination_port": 445,
+            "destination_host": "nas"
+        }
 
         result = agent._classify_application(flow_data)
 
@@ -217,7 +246,10 @@ class TestOptimizerAgentClassifyApplication:
 
     def test_classify_email_smtp(self, agent):
         """Test classification of SMTP traffic."""
-        flow_data = {"destination_port": 587, "destination_host": "mail.server.com"}
+        flow_data = {
+            "destination_port": 587,
+            "destination_host": "mail.server.com"
+        }
 
         result = agent._classify_application(flow_data)
 
@@ -225,7 +257,10 @@ class TestOptimizerAgentClassifyApplication:
 
     def test_classify_default_unknown_port(self, agent):
         """Test classification of unknown traffic."""
-        flow_data = {"destination_port": 12345, "destination_host": "unknown.host"}
+        flow_data = {
+            "destination_port": 12345,
+            "destination_host": "unknown.host"
+        }
 
         result = agent._classify_application(flow_data)
 
@@ -254,8 +289,8 @@ class TestOptimizerAgentFlowHandling:
                 "destination_host": "example.com",
                 "protocol": "tcp",
                 "bytes_sent": 1000,
-                "bytes_received": 5000,
-            },
+                "bytes_received": 5000
+            }
         )
 
         await agent._handle_flow_event(event)
@@ -284,8 +319,8 @@ class TestOptimizerAgentFlowHandling:
                 "source_port": 54321,
                 "destination_ip": "10.0.0.1",
                 "destination_port": 5060,
-                "protocol": "udp",
-            },
+                "protocol": "udp"
+            }
         )
 
         await agent._handle_flow_event(event)
@@ -312,8 +347,8 @@ class TestOptimizerAgentFlowHandling:
                 "destination_ip": "10.0.0.1",
                 "destination_port": 443,
                 "destination_host": "backblaze.com",
-                "protocol": "tcp",
-            },
+                "protocol": "tcp"
+            }
         )
 
         await agent._handle_flow_event(event)
@@ -327,7 +362,9 @@ class TestOptimizerAgentQoSPolicies:
 
     def test_find_matching_policy_exists(self, agent):
         """Test finding existing matching policy."""
-        agent._qos_policies = {"policy1": {"destination_port": 5060, "priority_queue": 1}}
+        agent._qos_policies = {
+            "policy1": {"destination_port": 5060, "priority_queue": 1}
+        }
 
         flow = {"destination_port": 5060}
         result = agent._find_matching_policy(flow)
@@ -337,7 +374,9 @@ class TestOptimizerAgentQoSPolicies:
 
     def test_find_matching_policy_not_found(self, agent):
         """Test finding policy when none exists."""
-        agent._qos_policies = {"policy1": {"destination_port": 5060, "priority_queue": 1}}
+        agent._qos_policies = {
+            "policy1": {"destination_port": 5060, "priority_queue": 1}
+        }
 
         flow = {"destination_port": 443}
         result = agent._find_matching_policy(flow)
@@ -347,7 +386,12 @@ class TestOptimizerAgentQoSPolicies:
     @pytest.mark.asyncio
     async def test_propose_qos_policy(self, agent, mock_engine):
         """Test QoS policy proposal."""
-        flow = {"id": "flow1", "application": "voip", "destination_port": 5060, "protocol": "udp"}
+        flow = {
+            "id": "flow1",
+            "application": "voip",
+            "destination_port": 5060,
+            "protocol": "udp"
+        }
 
         await agent._propose_qos_policy(flow, priority=1)
 
@@ -366,7 +410,7 @@ class TestOptimizerAgentQoSPolicies:
             "id": "voip1",
             "application": "voip",
             "destination_port": 5060,
-            "protocol": "udp",
+            "protocol": "udp"
         }
 
         await agent._propose_qos_policy(voip_flow, priority=1)
@@ -388,7 +432,11 @@ class TestOptimizerAgentCongestion:
             source="monitor",
             title="Congestion",
             description="Link congestion",
-            data={"link_id": "link1", "utilization": 85, "queue_depth": 100},
+            data={
+                "link_id": "link1",
+                "utilization": 85,
+                "queue_depth": 100
+            }
         )
 
         await agent._handle_congestion_event(event)
@@ -408,7 +456,11 @@ class TestOptimizerAgentCongestion:
             source="monitor",
             title="Critical Congestion",
             description="Critical link congestion",
-            data={"link_id": "link1", "utilization": 98, "queue_depth": 500},
+            data={
+                "link_id": "link1",
+                "utilization": 98,
+                "queue_depth": 500
+            }
         )
 
         await agent._handle_congestion_event(event)
@@ -427,7 +479,11 @@ class TestOptimizerAgentCongestion:
             source="monitor",
             title="Congestion",
             description="Link congestion",
-            data={"link_id": "link1", "utilization": 85, "queue_depth": 100},
+            data={
+                "link_id": "link1",
+                "utilization": 85,
+                "queue_depth": 100
+            }
         )
 
         await agent._handle_congestion_event(event)
@@ -437,7 +493,10 @@ class TestOptimizerAgentCongestion:
     @pytest.mark.asyncio
     async def test_handle_critical_congestion(self, agent, mock_engine):
         """Test critical congestion handler."""
-        congestion_data = {"link_id": "link1", "utilization": 98}
+        congestion_data = {
+            "link_id": "link1",
+            "utilization": 98
+        }
 
         await agent._handle_critical_congestion(congestion_data)
 
@@ -467,7 +526,7 @@ class TestOptimizerAgentLinkUtilization:
                 "destination_ip": "10.0.0.1",
                 "bytes_sent": 1_000_000,
                 "bytes_received": 5_000_000,
-                "last_seen": datetime.now(timezone.utc),
+                "last_seen": datetime.now(timezone.utc)
             }
         }
 
@@ -488,7 +547,7 @@ class TestOptimizerAgentLinkUtilization:
                 "destination_ip": "10.0.0.1",
                 "bytes_sent": 100_000_000,  # 100MB
                 "bytes_received": 200_000_000,
-                "last_seen": datetime.now(timezone.utc),
+                "last_seen": datetime.now(timezone.utc)
             }
         }
         agent.analysis_interval = 1  # 1 second for high rate
@@ -508,7 +567,7 @@ class TestOptimizerAgentLinkUtilization:
                 "destination_ip": "10.0.0.1",
                 "application": "backup",
                 "bytes_sent": 1_000_000,
-                "bytes_received": 5_000_000,
+                "bytes_received": 5_000_000
             }
         }
 
@@ -531,14 +590,14 @@ class TestOptimizerAgentRateLimiting:
                 "id": "flow1",
                 "application": "backup",
                 "bytes_sent": 10_000_000,
-                "bytes_received": 5_000_000,
+                "bytes_received": 5_000_000
             },
             {
                 "id": "flow2",
                 "application": "backup",
                 "bytes_sent": 8_000_000,
-                "bytes_received": 4_000_000,
-            },
+                "bytes_received": 4_000_000
+            }
         ]
 
         await agent._propose_rate_limit("link1", flows)
@@ -560,8 +619,14 @@ class TestOptimizerAgentTrafficAnalysis:
         recent_time = datetime.now(timezone.utc)
 
         agent._flows = {
-            "old_flow": {"source_ip": "192.168.1.100", "last_seen": old_time},
-            "recent_flow": {"source_ip": "192.168.1.101", "last_seen": recent_time},
+            "old_flow": {
+                "source_ip": "192.168.1.100",
+                "last_seen": old_time
+            },
+            "recent_flow": {
+                "source_ip": "192.168.1.101",
+                "last_seen": recent_time
+            }
         }
 
         await agent._analyze_traffic()
@@ -580,13 +645,20 @@ class TestOptimizerAgentTrafficAnalysis:
         mock_engine.state.set.assert_called()
 
     @pytest.mark.asyncio
-    async def test_check_optimization_opportunities_removes_stale_policies(
-        self, agent, mock_engine
-    ):
+    async def test_check_optimization_opportunities_removes_stale_policies(self, agent, mock_engine):
         """Test optimization check removes stale policies."""
         # Policy for port 5060 but no matching flow
-        agent._qos_policies = {"stale_policy": {"destination_port": 5060, "auto_generated": True}}
-        agent._flows = {"flow1": {"destination_port": 443}}  # Different port
+        agent._qos_policies = {
+            "stale_policy": {
+                "destination_port": 5060,
+                "auto_generated": True
+            }
+        }
+        agent._flows = {
+            "flow1": {
+                "destination_port": 443  # Different port
+            }
+        }
 
         await agent._check_optimization_opportunities()
 
@@ -597,7 +669,12 @@ class TestOptimizerAgentTrafficAnalysis:
     async def test_check_optimization_keeps_manual_policies(self, agent, mock_engine):
         """Test optimization check keeps manual policies."""
         # Manual policy (not auto_generated)
-        agent._qos_policies = {"manual_policy": {"destination_port": 5060, "auto_generated": False}}
+        agent._qos_policies = {
+            "manual_policy": {
+                "destination_port": 5060,
+                "auto_generated": False
+            }
+        }
         agent._flows = {}
 
         await agent._check_optimization_opportunities()
@@ -622,11 +699,11 @@ class TestOptimizerAgentDoExecute:
                     "id": "policy1",
                     "name": "VoIP QoS",
                     "priority_queue": 1,
-                    "destination_port": 5060,
+                    "destination_port": 5060
                 }
             },
             reasoning="VoIP traffic detected",
-            confidence=0.92,
+            confidence=0.92
         )
 
         result = await agent._do_execute(action)
@@ -648,11 +725,11 @@ class TestOptimizerAgentDoExecute:
                 "policy": {
                     "id": "ratelimit1",
                     "name": "Backup Rate Limit",
-                    "bandwidth_limit_mbps": 50,
+                    "bandwidth_limit_mbps": 50
                 }
             },
             reasoning="High utilization",
-            confidence=0.78,
+            confidence=0.78
         )
 
         result = await agent._do_execute(action)
@@ -663,7 +740,9 @@ class TestOptimizerAgentDoExecute:
     @pytest.mark.asyncio
     async def test_do_execute_remove_policy_exists(self, agent, mock_engine):
         """Test removing existing policy."""
-        agent._qos_policies = {"policy1": {"id": "policy1", "name": "Test"}}
+        agent._qos_policies = {
+            "policy1": {"id": "policy1", "name": "Test"}
+        }
 
         action = AgentAction(
             agent_name="optimizer",
@@ -672,7 +751,7 @@ class TestOptimizerAgentDoExecute:
             target_id="policy1",
             parameters={"policy_id": "policy1"},
             reasoning="Remove stale policy",
-            confidence=0.95,
+            confidence=0.95
         )
 
         result = await agent._do_execute(action)
@@ -690,7 +769,7 @@ class TestOptimizerAgentDoExecute:
             target_id="nonexistent",
             parameters={"policy_id": "nonexistent"},
             reasoning="Remove policy",
-            confidence=0.95,
+            confidence=0.95
         )
 
         result = await agent._do_execute(action)
@@ -708,7 +787,7 @@ class TestOptimizerAgentDoExecute:
             target_id="test",
             parameters={},
             reasoning="Test",
-            confidence=0.5,
+            confidence=0.5
         )
 
         with pytest.raises(ValueError, match="Unknown action type"):
@@ -728,7 +807,7 @@ class TestOptimizerAgentRollback:
             target_id="policy1",
             parameters={"policy": {"id": "policy1"}},
             reasoning="Test",
-            confidence=0.85,
+            confidence=0.85
         )
 
         rollback_data = await agent._capture_rollback_data(action)
@@ -746,7 +825,7 @@ class TestOptimizerAgentRollback:
             target_id="ratelimit1",
             parameters={"policy": {"id": "ratelimit1"}},
             reasoning="Test",
-            confidence=0.78,
+            confidence=0.78
         )
 
         rollback_data = await agent._capture_rollback_data(action)
@@ -764,7 +843,7 @@ class TestOptimizerAgentRollback:
             target_id="policy1",
             parameters={},
             reasoning="Test",
-            confidence=0.95,
+            confidence=0.95
         )
 
         rollback_data = await agent._capture_rollback_data(action)
@@ -784,7 +863,10 @@ class TestOptimizerAgentRollback:
             parameters={},
             reasoning="Test",
             confidence=0.85,
-            rollback_data={"action": "remove_policy", "policy_id": "policy1"},
+            rollback_data={
+                "action": "remove_policy",
+                "policy_id": "policy1"
+            }
         )
 
         await agent._do_rollback(action)
@@ -802,7 +884,7 @@ class TestOptimizerAgentRollback:
             target_id="policy1",
             parameters={},
             reasoning="Test",
-            confidence=0.85,
+            confidence=0.85
         )
 
         # Should not raise
@@ -854,7 +936,7 @@ class TestOptimizerAgentAnalyze:
             source="test",
             title="Test",
             description="Test event",
-            data={},
+            data={}
         )
 
         result = await agent.analyze(event)
@@ -868,7 +950,9 @@ class TestOptimizerAgentMainLoop:
     @pytest.mark.asyncio
     async def test_main_loop_loads_stored_policies(self, agent, mock_engine):
         """Test main loop loads stored policies."""
-        mock_engine.state.get = AsyncMock(return_value=[{"id": "stored_policy", "name": "Test"}])
+        mock_engine.state.get = AsyncMock(return_value=[
+            {"id": "stored_policy", "name": "Test"}
+        ])
 
         agent._running = True
         call_count = 0
@@ -946,7 +1030,11 @@ class TestOptimizerAgentEvaluateFlowQoS:
         """Test high priority flow gets QoS when no policy exists."""
         agent._propose_qos_policy = AsyncMock()
 
-        flow = {"id": "voip_flow", "application": "voip", "destination_port": 5060}
+        flow = {
+            "id": "voip_flow",
+            "application": "voip",
+            "destination_port": 5060
+        }
 
         await agent._evaluate_flow_qos(flow)
 
@@ -956,9 +1044,15 @@ class TestOptimizerAgentEvaluateFlowQoS:
     async def test_evaluate_flow_qos_high_priority_existing_policy(self, agent, mock_engine):
         """Test high priority flow with existing policy."""
         agent._propose_qos_policy = AsyncMock()
-        agent._qos_policies = {"existing": {"destination_port": 5060}}
+        agent._qos_policies = {
+            "existing": {"destination_port": 5060}
+        }
 
-        flow = {"id": "voip_flow", "application": "voip", "destination_port": 5060}
+        flow = {
+            "id": "voip_flow",
+            "application": "voip",
+            "destination_port": 5060
+        }
 
         await agent._evaluate_flow_qos(flow)
 
@@ -973,7 +1067,7 @@ class TestOptimizerAgentEvaluateFlowQoS:
         flow = {
             "id": "web_flow",
             "application": "web",  # Priority 3 (default)
-            "destination_port": 443,
+            "destination_port": 443
         }
 
         await agent._evaluate_flow_qos(flow)

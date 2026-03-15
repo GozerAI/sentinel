@@ -3,7 +3,6 @@ Tests for the EventBus module.
 
 Tests cover subscription, publishing, filtering, history, and error handling.
 """
-
 import asyncio
 import pytest
 from unittest.mock import AsyncMock, patch
@@ -21,7 +20,7 @@ def create_test_event(
     severity: EventSeverity = EventSeverity.INFO,
     source: str = "test",
     title: str = "Test Event",
-    **kwargs,
+    **kwargs
 ) -> Event:
     """Helper to create test events."""
     return Event(
@@ -30,7 +29,7 @@ def create_test_event(
         severity=severity,
         source=source,
         title=title,
-        **kwargs,
+        **kwargs
     )
 
 
@@ -624,15 +623,9 @@ class TestEventBusConcurrentHandlers:
             await asyncio.sleep(0.2)
 
             # Fast handler should complete while slow handler is still running
-            slow_start_idx = next(
-                i for i, (name, _) in enumerate(execution_times) if name == "slow_start"
-            )
-            slow_end_idx = next(
-                i for i, (name, _) in enumerate(execution_times) if name == "slow_end"
-            )
-            fast_end_idx = next(
-                i for i, (name, _) in enumerate(execution_times) if name == "fast_end"
-            )
+            slow_start_idx = next(i for i, (name, _) in enumerate(execution_times) if name == "slow_start")
+            slow_end_idx = next(i for i, (name, _) in enumerate(execution_times) if name == "slow_end")
+            fast_end_idx = next(i for i, (name, _) in enumerate(execution_times) if name == "fast_end")
 
             # Fast should finish before slow
             assert fast_end_idx < slow_end_idx
@@ -667,7 +660,10 @@ class TestEventBusDispatch:
         await bus.start()
 
         try:
-            event = create_test_event(category=EventCategory.SECURITY, event_type="security.alert")
+            event = create_test_event(
+                category=EventCategory.SECURITY,
+                event_type="security.alert"
+            )
             await bus.publish(event)
             await asyncio.sleep(0.1)
 

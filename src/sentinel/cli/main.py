@@ -8,7 +8,6 @@ Provides commands for:
 - Agent control
 - Configuration management
 """
-
 import asyncio
 import logging
 import sys
@@ -60,22 +59,42 @@ def get_api_client(base_url: str = "http://localhost:8000", api_key: Optional[st
 # Main Commands
 # =============================================================================
 
-
 @app.command()
 def start(
-    config: Path = typer.Option(None, "--config", "-c", help="Path to configuration file"),
-    host: str = typer.Option("0.0.0.0", "--host", "-h", help="API server host"),
-    port: int = typer.Option(8000, "--port", "-p", help="API server port"),
-    workers: int = typer.Option(1, "--workers", "-w", help="Number of worker processes"),
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose logging"),
+    config: Path = typer.Option(
+        None,
+        "--config", "-c",
+        help="Path to configuration file"
+    ),
+    host: str = typer.Option(
+        "0.0.0.0",
+        "--host", "-h",
+        help="API server host"
+    ),
+    port: int = typer.Option(
+        8000,
+        "--port", "-p",
+        help="API server port"
+    ),
+    workers: int = typer.Option(
+        1,
+        "--workers", "-w",
+        help="Number of worker processes"
+    ),
+    verbose: bool = typer.Option(
+        False,
+        "--verbose", "-v",
+        help="Enable verbose logging"
+    ),
 ):
     """Start the Sentinel engine and API server."""
     import uvicorn
     from sentinel.core.config import load_config
 
-    console.print(
-        Panel.fit("[bold blue]Sentinel[/] AI-Native Security Platform", subtitle="Starting...")
-    )
+    console.print(Panel.fit(
+        "[bold blue]Sentinel[/] AI-Native Security Platform",
+        subtitle="Starting..."
+    ))
 
     # Load configuration
     config_path = config or Path("config/sentinel.yaml")
@@ -115,12 +134,11 @@ def status(
         uptime = data.get("uptime_seconds", 0)
         uptime_str = f"{uptime // 3600:.0f}h {(uptime % 3600) // 60:.0f}m"
 
-        console.print(
-            Panel(
-                f"[{status_color}]Status: {data['status'].upper()}[/]\n" f"Uptime: {uptime_str}",
-                title="Sentinel Engine",
-            )
-        )
+        console.print(Panel(
+            f"[{status_color}]Status: {data['status'].upper()}[/]\n"
+            f"Uptime: {uptime_str}",
+            title="Sentinel Engine",
+        ))
 
         # Agents table
         agents_table = Table(title="Agents")
@@ -154,14 +172,12 @@ def status(
 def version():
     """Show version information."""
     from sentinel import __version__
-
     console.print(f"Sentinel version: [bold]{__version__}[/]")
 
 
 # =============================================================================
 # Device Commands
 # =============================================================================
-
 
 @devices_app.command("list")
 def devices_list(
@@ -229,20 +245,18 @@ def devices_show(
         response.raise_for_status()
         device = response.json()
 
-        console.print(
-            Panel(
-                f"[bold]MAC:[/] {device.get('mac')}\n"
-                f"[bold]Hostname:[/] {device.get('hostname') or 'Unknown'}\n"
-                f"[bold]Type:[/] {device.get('device_type')}\n"
-                f"[bold]Vendor:[/] {device.get('vendor') or 'Unknown'}\n"
-                f"[bold]IPs:[/] {', '.join(device.get('ip_addresses', []))}\n"
-                f"[bold]VLAN:[/] {device.get('vlan') or 'Unassigned'}\n"
-                f"[bold]Trust Level:[/] {device.get('trust_level', 0):.0%}\n"
-                f"[bold]Status:[/] {'Online' if device.get('online') else 'Offline'}\n"
-                f"[bold]Last Seen:[/] {device.get('last_seen') or 'Never'}",
-                title=f"Device: {device.get('id')}",
-            )
-        )
+        console.print(Panel(
+            f"[bold]MAC:[/] {device.get('mac')}\n"
+            f"[bold]Hostname:[/] {device.get('hostname') or 'Unknown'}\n"
+            f"[bold]Type:[/] {device.get('device_type')}\n"
+            f"[bold]Vendor:[/] {device.get('vendor') or 'Unknown'}\n"
+            f"[bold]IPs:[/] {', '.join(device.get('ip_addresses', []))}\n"
+            f"[bold]VLAN:[/] {device.get('vlan') or 'Unassigned'}\n"
+            f"[bold]Trust Level:[/] {device.get('trust_level', 0):.0%}\n"
+            f"[bold]Status:[/] {'Online' if device.get('online') else 'Offline'}\n"
+            f"[bold]Last Seen:[/] {device.get('last_seen') or 'Never'}",
+            title=f"Device: {device.get('id')}",
+        ))
 
     except Exception as e:
         console.print(f"[red]Error: {e}[/]")
@@ -269,7 +283,6 @@ def devices_scan(
 # =============================================================================
 # VLAN Commands
 # =============================================================================
-
 
 @vlans_app.command("list")
 def vlans_list(
@@ -313,9 +326,7 @@ def vlans_list(
 def vlans_create(
     vlan_id: int = typer.Argument(..., help="VLAN ID"),
     name: str = typer.Argument(..., help="VLAN name"),
-    subnet: Optional[str] = typer.Option(
-        None, "--subnet", "-s", help="Subnet (e.g., 192.168.10.0/24)"
-    ),
+    subnet: Optional[str] = typer.Option(None, "--subnet", "-s", help="Subnet (e.g., 192.168.10.0/24)"),
     purpose: Optional[str] = typer.Option(None, "--purpose", "-p", help="VLAN purpose"),
     isolated: bool = typer.Option(False, "--isolated", "-i", help="Isolate this VLAN"),
     url: str = typer.Option("http://localhost:8000", "--url", "-u"),
@@ -324,16 +335,13 @@ def vlans_create(
     """Create a new VLAN."""
     try:
         client = get_api_client(url, api_key)
-        response = client.post(
-            "/vlans",
-            json={
-                "id": vlan_id,
-                "name": name,
-                "subnet": subnet,
-                "purpose": purpose,
-                "isolated": isolated,
-            },
-        )
+        response = client.post("/vlans", json={
+            "id": vlan_id,
+            "name": name,
+            "subnet": subnet,
+            "purpose": purpose,
+            "isolated": isolated,
+        })
         response.raise_for_status()
         console.print(f"[green]Created VLAN {vlan_id}: {name}[/]")
     except Exception as e:
@@ -344,7 +352,6 @@ def vlans_create(
 # =============================================================================
 # Agent Commands
 # =============================================================================
-
 
 @agents_app.command("list")
 def agents_list(
@@ -420,7 +427,6 @@ def agents_disable(
 # =============================================================================
 # Event Commands
 # =============================================================================
-
 
 @events_app.command("list")
 def events_list(
@@ -500,7 +506,6 @@ def events_ack(
 # Scan Commands
 # =============================================================================
 
-
 @scan_app.command("quick")
 def scan_quick(
     url: str = typer.Option("http://localhost:8000", "--url", "-u"),
@@ -555,11 +560,12 @@ def scan_full(
 # Config Commands
 # =============================================================================
 
-
 @config_app.command("show")
 def config_show(
     config_path: Path = typer.Option(
-        Path("config/sentinel.yaml"), "--config", "-c", help="Path to config file"
+        Path("config/sentinel.yaml"),
+        "--config", "-c",
+        help="Path to config file"
     ),
 ):
     """Show current configuration."""
@@ -569,12 +575,10 @@ def config_show(
             return
 
         import yaml
-
         with open(config_path) as f:
             config = yaml.safe_load(f)
 
         from rich.syntax import Syntax
-
         yaml_str = yaml.dump(config, default_flow_style=False)
         syntax = Syntax(yaml_str, "yaml", theme="monokai", line_numbers=True)
         console.print(syntax)
@@ -587,7 +591,9 @@ def config_show(
 @config_app.command("validate")
 def config_validate(
     config_path: Path = typer.Option(
-        Path("config/sentinel.yaml"), "--config", "-c", help="Path to config file"
+        Path("config/sentinel.yaml"),
+        "--config", "-c",
+        help="Path to config file"
     ),
 ):
     """Validate configuration file."""
@@ -613,24 +619,22 @@ def config_generate_api_key(
 
     key, key_hash = generate_api_key()
 
-    console.print(
-        Panel(
-            f"[bold]API Key:[/] {key}\n\n"
-            f"[bold]Key Hash (for config):[/] {key_hash}\n\n"
-            "[yellow]Save this key now - it cannot be recovered![/]\n\n"
-            "Add to config/sentinel.yaml:\n"
-            f"  api:\n"
-            f"    auth:\n"
-            f"      api_keys:\n"
-            f"        {name}:\n"
-            f'          key_hash: "{key_hash}"\n'
-            f'          name: "{name}"\n'
-            f"          scopes:\n"
-            f'            - "read"\n'
-            f'            - "write"',
-            title=f"New API Key: {name}",
-        )
-    )
+    console.print(Panel(
+        f"[bold]API Key:[/] {key}\n\n"
+        f"[bold]Key Hash (for config):[/] {key_hash}\n\n"
+        "[yellow]Save this key now - it cannot be recovered![/]\n\n"
+        "Add to config/sentinel.yaml:\n"
+        f"  api:\n"
+        f"    auth:\n"
+        f"      api_keys:\n"
+        f"        {name}:\n"
+        f"          key_hash: \"{key_hash}\"\n"
+        f"          name: \"{name}\"\n"
+        f"          scopes:\n"
+        f"            - \"read\"\n"
+        f"            - \"write\"",
+        title=f"New API Key: {name}",
+    ))
 
 
 def main():

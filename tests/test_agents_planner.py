@@ -12,14 +12,16 @@ Tests cover:
 - Action execution
 - Rollback functionality
 """
-
 import asyncio
 import pytest
 from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, AsyncMock, patch
 
 from sentinel.agents.planner import PlannerAgent
-from sentinel.core.models.event import Event, EventCategory, EventSeverity, AgentAction
+from sentinel.core.models.event import (
+    Event, EventCategory, EventSeverity,
+    AgentAction
+)
 
 
 @pytest.fixture
@@ -68,7 +70,9 @@ class TestPlannerAgentInit:
 
     def test_init_with_custom_confirmation(self, mock_engine):
         """Test initialization with custom confirmation list."""
-        config = {"require_confirmation_for": ["only_one_action"]}
+        config = {
+            "require_confirmation_for": ["only_one_action"]
+        }
         agent = PlannerAgent(mock_engine, config)
 
         assert agent.require_confirmation == ["only_one_action"]
@@ -140,8 +144,8 @@ class TestPlannerAgentDeviceClassification:
                 "mac": "00:11:22:33:44:55",
                 "current_vlan": 1,
                 "recommended_vlan": 10,
-                "device_type": "workstation",
-            },
+                "device_type": "workstation"
+            }
         )
 
         await agent._handle_device_classified(event)
@@ -165,8 +169,8 @@ class TestPlannerAgentDeviceClassification:
                 "mac": "00:11:22:33:44:55",
                 "current_vlan": 10,
                 "recommended_vlan": 10,
-                "device_type": "workstation",
-            },
+                "device_type": "workstation"
+            }
         )
 
         await agent._handle_device_classified(event)
@@ -189,8 +193,8 @@ class TestPlannerAgentDeviceClassification:
                 "device_id": "device1",
                 "mac": "00:11:22:33:44:55",
                 "current_vlan": 1,
-                "recommended_vlan": None,
-            },
+                "recommended_vlan": None
+            }
         )
 
         await agent._handle_device_classified(event)
@@ -209,7 +213,7 @@ class TestPlannerAgentVLANChange:
             "mac": "00:11:22:33:44:55",
             "current_vlan": 1,
             "device_type": "workstation",
-            "confidence": 0.8,
+            "confidence": 0.8
         }
 
         # No VLAN 999 defined
@@ -221,14 +225,16 @@ class TestPlannerAgentVLANChange:
     @pytest.mark.asyncio
     async def test_evaluate_vlan_change_success(self, agent, mock_engine):
         """Test successful VLAN change evaluation."""
-        agent._vlans = {10: {"id": 10, "name": "Workstations", "purpose": "User workstations"}}
+        agent._vlans = {
+            10: {"id": 10, "name": "Workstations", "purpose": "User workstations"}
+        }
 
         device_data = {
             "device_id": "device1",
             "mac": "00:11:22:33:44:55",
             "current_vlan": 1,
             "device_type": "workstation",
-            "confidence": 0.85,
+            "confidence": 0.85
         }
 
         await agent._evaluate_vlan_change(device_data, 10)
@@ -250,7 +256,7 @@ class TestPlannerAgentSegmentation:
                 "source_vlan": 10,
                 "destination_vlan": 20,
                 "allowed_services": ["http", "https"],
-                "default_action": "deny",
+                "default_action": "deny"
             }
         }
         agent._evaluate_segmentation_exception = AsyncMock()
@@ -262,7 +268,11 @@ class TestPlannerAgentSegmentation:
             source="firewall",
             title="Segmentation Request",
             description="Request",
-            data={"source_vlan": 10, "destination_vlan": 20, "service": "https"},
+            data={
+                "source_vlan": 10,
+                "destination_vlan": 20,
+                "service": "https"
+            }
         )
 
         await agent._handle_segmentation_request(event)
@@ -279,7 +289,7 @@ class TestPlannerAgentSegmentation:
                 "destination_vlan": 20,
                 "allowed_services": ["http"],
                 "denied_services": ["ssh"],
-                "default_action": "deny",
+                "default_action": "deny"
             }
         }
         agent._evaluate_segmentation_exception = AsyncMock()
@@ -291,7 +301,11 @@ class TestPlannerAgentSegmentation:
             source="firewall",
             title="Segmentation Request",
             description="Request",
-            data={"source_vlan": 10, "destination_vlan": 20, "service": "ssh"},
+            data={
+                "source_vlan": 10,
+                "destination_vlan": 20,
+                "service": "ssh"
+            }
         )
 
         await agent._handle_segmentation_request(event)
@@ -305,7 +319,7 @@ class TestPlannerAgentSegmentation:
                 "source_vlan": 10,
                 "destination_vlan": 20,
                 "allowed_services": ["http", "https"],
-                "default_action": "deny",
+                "default_action": "deny"
             }
         }
 
@@ -320,7 +334,7 @@ class TestPlannerAgentSegmentation:
                 "source_vlan": 10,
                 "destination_vlan": 20,
                 "denied_services": ["ssh"],
-                "default_action": "allow",
+                "default_action": "allow"
             }
         }
 
@@ -335,7 +349,7 @@ class TestPlannerAgentSegmentation:
                 "source_vlan": 10,
                 "destination_vlan": 20,
                 "allowed_services": ["http"],
-                "default_action": "deny",
+                "default_action": "deny"
             }
         }
 
@@ -350,7 +364,7 @@ class TestPlannerAgentSegmentation:
                 "source_vlan": 10,
                 "destination_vlan": 20,
                 "allowed_services": [],
-                "default_action": "allow",
+                "default_action": "allow"
             }
         }
 
@@ -360,7 +374,9 @@ class TestPlannerAgentSegmentation:
 
     def test_check_segmentation_isolated_vlan(self, agent):
         """Test segmentation check for isolated VLAN."""
-        agent._vlans = {50: {"id": 50, "isolated": True, "allowed_destinations": []}}
+        agent._vlans = {
+            50: {"id": 50, "isolated": True, "allowed_destinations": []}
+        }
 
         result = agent._check_segmentation(50, 20, "http")
 
@@ -368,7 +384,13 @@ class TestPlannerAgentSegmentation:
 
     def test_check_segmentation_no_policy_fallback(self, agent):
         """Test segmentation check with no policy falls back to VLAN rules."""
-        agent._vlans = {10: {"id": 10, "isolated": False, "allowed_destinations": [20, 30]}}
+        agent._vlans = {
+            10: {
+                "id": 10,
+                "isolated": False,
+                "allowed_destinations": [20, 30]
+            }
+        }
 
         # Allowed destination
         result1 = agent._check_segmentation(10, 20, "http")
@@ -385,7 +407,7 @@ class TestPlannerAgentSegmentation:
             "source_vlan": 10,
             "destination_vlan": 30,
             "service": "mysql",
-            "reason": "Database access needed",
+            "reason": "Database access needed"
         }
 
         await agent._evaluate_segmentation_exception(request)
@@ -410,7 +432,11 @@ class TestPlannerAgentPolicyViolation:
             source="ids",
             title="Policy Violation",
             description="Critical violation",
-            data={"mac": "00:11:22:33:44:55", "vlan": 10, "severity": "critical"},
+            data={
+                "mac": "00:11:22:33:44:55",
+                "vlan": 10,
+                "severity": "critical"
+            }
         )
 
         await agent._handle_policy_violation(event)
@@ -431,7 +457,11 @@ class TestPlannerAgentPolicyViolation:
             source="ids",
             title="Policy Violation",
             description="High severity violation",
-            data={"mac": "00:11:22:33:44:55", "vlan": 10, "severity": "high"},
+            data={
+                "mac": "00:11:22:33:44:55",
+                "vlan": 10,
+                "severity": "high"
+            }
         )
 
         await agent._handle_policy_violation(event)
@@ -452,7 +482,11 @@ class TestPlannerAgentPolicyViolation:
             source="ids",
             title="Policy Violation",
             description="Low severity violation",
-            data={"mac": "00:11:22:33:44:55", "vlan": 10, "severity": "low"},
+            data={
+                "mac": "00:11:22:33:44:55",
+                "vlan": 10,
+                "severity": "low"
+            }
         )
 
         await agent._handle_policy_violation(event)
@@ -463,7 +497,11 @@ class TestPlannerAgentPolicyViolation:
     @pytest.mark.asyncio
     async def test_propose_quarantine(self, agent, mock_engine):
         """Test quarantine proposal."""
-        violation = {"mac": "00:11:22:33:44:55", "vlan": 10, "severity": "critical"}
+        violation = {
+            "mac": "00:11:22:33:44:55",
+            "vlan": 10,
+            "severity": "critical"
+        }
 
         await agent._propose_quarantine(violation)
 
@@ -472,7 +510,11 @@ class TestPlannerAgentPolicyViolation:
     @pytest.mark.asyncio
     async def test_propose_access_restriction(self, agent, mock_engine):
         """Test access restriction proposal."""
-        violation = {"mac": "00:11:22:33:44:55", "vlan": 10, "severity": "high"}
+        violation = {
+            "mac": "00:11:22:33:44:55",
+            "vlan": 10,
+            "severity": "high"
+        }
 
         await agent._propose_access_restriction(violation)
 
@@ -492,14 +534,17 @@ class TestPlannerAgentFirewallRules:
     @pytest.mark.asyncio
     async def test_generate_firewall_rules_with_policy(self, agent, mock_engine):
         """Test firewall rule generation with policies."""
-        agent._vlans = {10: {"id": 10, "name": "Workstations"}, 20: {"id": 20, "name": "Servers"}}
+        agent._vlans = {
+            10: {"id": 10, "name": "Workstations"},
+            20: {"id": 20, "name": "Servers"}
+        }
         agent._segmentation_policies = {
             "policy1": {
                 "name": "WorkToServer",
                 "source_vlan": 10,
                 "destination_vlan": 20,
                 "allowed_services": ["http", "https"],
-                "default_action": "deny",
+                "default_action": "deny"
             }
         }
 
@@ -524,7 +569,7 @@ class TestPlannerAgentFirewallRules:
                 "source_vlan": 10,
                 "destination_vlan": 20,
                 "allowed_services": ["http"],
-                "default_action": "deny",
+                "default_action": "deny"
             }
         }
 
@@ -544,12 +589,18 @@ class TestPlannerAgentValidatePolicies:
         future_time = (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()
 
         agent._firewall_rules = {
-            "expired_rule": {"id": "expired_rule", "expires_at": expired_time},
-            "valid_rule": {"id": "valid_rule", "expires_at": future_time},
+            "expired_rule": {
+                "id": "expired_rule",
+                "expires_at": expired_time
+            },
+            "valid_rule": {
+                "id": "valid_rule",
+                "expires_at": future_time
+            },
             "permanent_rule": {
                 "id": "permanent_rule"
                 # No expires_at
-            },
+            }
         }
 
         await agent._validate_policies()
@@ -574,9 +625,13 @@ class TestPlannerAgentDoExecute:
             action_type="vlan_change",
             target_type="device",
             target_id="00:11:22:33:44:55",
-            parameters={"mac": "00:11:22:33:44:55", "current_vlan": 1, "target_vlan": 10},
+            parameters={
+                "mac": "00:11:22:33:44:55",
+                "current_vlan": 1,
+                "target_vlan": 10
+            },
             reasoning="Device classified",
-            confidence=0.85,
+            confidence=0.85
         )
 
         result = await agent._do_execute(action)
@@ -594,9 +649,12 @@ class TestPlannerAgentDoExecute:
             action_type="vlan_change",
             target_type="device",
             target_id="00:11:22:33:44:55",
-            parameters={"mac": "00:11:22:33:44:55", "target_vlan": 10},
+            parameters={
+                "mac": "00:11:22:33:44:55",
+                "target_vlan": 10
+            },
             reasoning="Device classified",
-            confidence=0.85,
+            confidence=0.85
         )
 
         result = await agent._do_execute(action)
@@ -613,9 +671,15 @@ class TestPlannerAgentDoExecute:
             action_type="create_vlan",
             target_type="vlan",
             target_id="100",
-            parameters={"vlan": {"id": 100, "name": "NewVLAN", "purpose": "Testing"}},
+            parameters={
+                "vlan": {
+                    "id": 100,
+                    "name": "NewVLAN",
+                    "purpose": "Testing"
+                }
+            },
             reasoning="Create new VLAN",
-            confidence=0.95,
+            confidence=0.95
         )
 
         result = await agent._do_execute(action)
@@ -635,7 +699,7 @@ class TestPlannerAgentDoExecute:
             target_id="100",
             parameters={"vlan_id": 100},
             reasoning="Delete VLAN",
-            confidence=0.95,
+            confidence=0.95
         )
 
         result = await agent._do_execute(action)
@@ -653,7 +717,7 @@ class TestPlannerAgentDoExecute:
             target_id="999",
             parameters={"vlan_id": 999},
             reasoning="Delete VLAN",
-            confidence=0.95,
+            confidence=0.95
         )
 
         result = await agent._do_execute(action)
@@ -672,9 +736,15 @@ class TestPlannerAgentDoExecute:
             action_type="add_firewall_rule",
             target_type="firewall_rule",
             target_id="rule1",
-            parameters={"rule": {"id": "rule1", "name": "Test Rule", "action": "allow"}},
+            parameters={
+                "rule": {
+                    "id": "rule1",
+                    "name": "Test Rule",
+                    "action": "allow"
+                }
+            },
             reasoning="Add firewall rule",
-            confidence=0.85,
+            confidence=0.85
         )
 
         result = await agent._do_execute(action)
@@ -695,7 +765,7 @@ class TestPlannerAgentDoExecute:
             target_id="rule1",
             parameters={"rule_id": "rule1"},
             reasoning="Remove rule",
-            confidence=0.95,
+            confidence=0.95
         )
 
         result = await agent._do_execute(action)
@@ -713,7 +783,7 @@ class TestPlannerAgentDoExecute:
             target_id="nonexistent",
             parameters={"rule_id": "nonexistent"},
             reasoning="Remove rule",
-            confidence=0.95,
+            confidence=0.95
         )
 
         result = await agent._do_execute(action)
@@ -732,9 +802,12 @@ class TestPlannerAgentDoExecute:
             action_type="quarantine_device",
             target_type="device",
             target_id="00:11:22:33:44:55",
-            parameters={"mac": "00:11:22:33:44:55", "current_vlan": 10},
+            parameters={
+                "mac": "00:11:22:33:44:55",
+                "current_vlan": 10
+            },
             reasoning="Quarantine for violation",
-            confidence=0.95,
+            confidence=0.95
         )
 
         result = await agent._do_execute(action)
@@ -756,10 +829,10 @@ class TestPlannerAgentDoExecute:
                 "source_vlan": 10,
                 "destination_vlan": 30,
                 "service": "mysql",
-                "reason": "Database access",
+                "reason": "Database access"
             },
             reasoning="Exception request",
-            confidence=0.5,
+            confidence=0.5
         )
 
         result = await agent._do_execute(action)
@@ -777,7 +850,7 @@ class TestPlannerAgentDoExecute:
                 "source_vlan": 10,
                 "destination_vlan": 30,
                 "allowed_services": ["http"],
-                "default_action": "deny",
+                "default_action": "deny"
             }
         }
         agent._generate_firewall_rules = AsyncMock()
@@ -791,10 +864,10 @@ class TestPlannerAgentDoExecute:
                 "source_vlan": 10,
                 "destination_vlan": 30,
                 "service": "mysql",
-                "reason": "Database access",
+                "reason": "Database access"
             },
             reasoning="Exception request",
-            confidence=0.5,
+            confidence=0.5
         )
 
         result = await agent._do_execute(action)
@@ -813,7 +886,7 @@ class TestPlannerAgentDoExecute:
             target_id="test",
             parameters={},
             reasoning="Test",
-            confidence=0.5,
+            confidence=0.5
         )
 
         with pytest.raises(ValueError, match="Unknown action type"):
@@ -831,9 +904,13 @@ class TestPlannerAgentRollback:
             action_type="vlan_change",
             target_type="device",
             target_id="00:11:22:33:44:55",
-            parameters={"mac": "00:11:22:33:44:55", "current_vlan": 1, "target_vlan": 10},
+            parameters={
+                "mac": "00:11:22:33:44:55",
+                "current_vlan": 1,
+                "target_vlan": 10
+            },
             reasoning="Test",
-            confidence=0.85,
+            confidence=0.85
         )
 
         rollback_data = await agent._capture_rollback_data(action)
@@ -852,7 +929,7 @@ class TestPlannerAgentRollback:
             target_id="rule1",
             parameters={"rule": {"id": "rule1"}},
             reasoning="Test",
-            confidence=0.85,
+            confidence=0.85
         )
 
         rollback_data = await agent._capture_rollback_data(action)
@@ -868,9 +945,12 @@ class TestPlannerAgentRollback:
             action_type="quarantine_device",
             target_type="device",
             target_id="00:11:22:33:44:55",
-            parameters={"mac": "00:11:22:33:44:55", "current_vlan": 10},
+            parameters={
+                "mac": "00:11:22:33:44:55",
+                "current_vlan": 10
+            },
             reasoning="Test",
-            confidence=0.95,
+            confidence=0.95
         )
 
         rollback_data = await agent._capture_rollback_data(action)
@@ -893,7 +973,11 @@ class TestPlannerAgentRollback:
             parameters={},
             reasoning="Test",
             confidence=0.85,
-            rollback_data={"action": "vlan_change", "mac": "00:11:22:33:44:55", "target_vlan": 1},
+            rollback_data={
+                "action": "vlan_change",
+                "mac": "00:11:22:33:44:55",
+                "target_vlan": 1
+            }
         )
 
         await agent._do_rollback(action)
@@ -913,7 +997,10 @@ class TestPlannerAgentRollback:
             parameters={},
             reasoning="Test",
             confidence=0.85,
-            rollback_data={"action": "remove_firewall_rule", "rule_id": "rule1"},
+            rollback_data={
+                "action": "remove_firewall_rule",
+                "rule_id": "rule1"
+            }
         )
 
         await agent._do_rollback(action)
@@ -966,7 +1053,7 @@ class TestPlannerAgentAnalyze:
             source="test",
             title="Test",
             description="Test event",
-            data={},
+            data={}
         )
 
         result = await agent.analyze(event)
@@ -983,16 +1070,11 @@ class TestPlannerAgentMainLoop:
         mock_engine.config = {
             "vlans": [
                 {"id": 10, "name": "Workstations", "purpose": "User devices"},
-                {"id": 20, "name": "Servers", "subnet": "10.0.20.0/24"},
+                {"id": 20, "name": "Servers", "subnet": "10.0.20.0/24"}
             ],
             "segmentation_policies": [
-                {
-                    "name": "WorkToServer",
-                    "source_vlan": 10,
-                    "destination_vlan": 20,
-                    "allowed_services": ["http"],
-                }
-            ],
+                {"name": "WorkToServer", "source_vlan": 10, "destination_vlan": 20, "allowed_services": ["http"]}
+            ]
         }
         agent._generate_firewall_rules = AsyncMock()
         agent._validate_policies = AsyncMock()

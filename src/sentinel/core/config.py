@@ -4,7 +4,6 @@ Configuration management for Sentinel.
 This module provides configuration loading, validation, and access
 for the Sentinel security platform.
 """
-
 import os
 import re
 from pathlib import Path
@@ -19,10 +18,8 @@ from pydantic_settings import BaseSettings
 # Configuration Models
 # =============================================================================
 
-
 class StateConfig(BaseModel):
     """State backend configuration."""
-
     backend: str = "sqlite"  # memory, sqlite, postgresql, redis
     path: str = "/var/lib/sentinel/state.db"
 
@@ -35,7 +32,6 @@ class StateConfig(BaseModel):
 
 class RouterIntegrationConfig(BaseModel):
     """Router integration configuration."""
-
     type: str = "opnsense"
     host: str = "192.168.1.1"
     port: int = 443
@@ -47,7 +43,6 @@ class RouterIntegrationConfig(BaseModel):
 
 class SwitchIntegrationConfig(BaseModel):
     """Switch integration configuration."""
-
     type: str = "ubiquiti"
     controller_url: str = ""
     username: str = ""
@@ -58,7 +53,6 @@ class SwitchIntegrationConfig(BaseModel):
 
 class HypervisorIntegrationConfig(BaseModel):
     """Hypervisor integration configuration."""
-
     type: str = "proxmox"
     host: str = ""
     port: int = 8006
@@ -70,7 +64,6 @@ class HypervisorIntegrationConfig(BaseModel):
 
 class StorageIntegrationConfig(BaseModel):
     """Storage integration configuration."""
-
     type: str = "truenas"
     host: str = ""
     api_key: str = ""
@@ -79,7 +72,6 @@ class StorageIntegrationConfig(BaseModel):
 
 class KubernetesIntegrationConfig(BaseModel):
     """Kubernetes integration configuration."""
-
     type: str = "k3s"
     kubeconfig: str = ""
     context: str = "default"
@@ -87,7 +79,6 @@ class KubernetesIntegrationConfig(BaseModel):
 
 class LLMProviderConfig(BaseModel):
     """LLM provider configuration."""
-
     type: str = "ollama"
     host: str = "http://localhost:11434"
     model: str = "llama3.1:8b"
@@ -97,14 +88,12 @@ class LLMProviderConfig(BaseModel):
 
 class LLMConfig(BaseModel):
     """LLM configuration with primary and fallback."""
-
     primary: LLMProviderConfig = Field(default_factory=LLMProviderConfig)
     fallback: Optional[LLMProviderConfig] = None
 
 
 class IntegrationsConfig(BaseModel):
     """All integrations configuration."""
-
     router: Optional[RouterIntegrationConfig] = None
     switch: Optional[SwitchIntegrationConfig] = None
     hypervisor: Optional[HypervisorIntegrationConfig] = None
@@ -115,7 +104,6 @@ class IntegrationsConfig(BaseModel):
 
 class AgentConfig(BaseModel):
     """Base agent configuration."""
-
     enabled: bool = True
     auto_execute_threshold: float = 0.95
     log_execute_threshold: float = 0.80
@@ -125,7 +113,6 @@ class AgentConfig(BaseModel):
 
 class DiscoveryAgentConfig(AgentConfig):
     """Discovery agent configuration."""
-
     scan_interval_seconds: int = 300
     full_scan_interval_seconds: int = 3600
     networks: list[str] = Field(default_factory=list)
@@ -135,7 +122,6 @@ class DiscoveryAgentConfig(AgentConfig):
 
 class OptimizerAgentConfig(AgentConfig):
     """Optimizer agent configuration."""
-
     analysis_interval_seconds: int = 60
     netflow_enabled: bool = False
     netflow_port: int = 2055
@@ -144,7 +130,6 @@ class OptimizerAgentConfig(AgentConfig):
 
 class PlannerAgentConfig(AgentConfig):
     """Planner agent configuration."""
-
     require_confirmation_for: list[str] = Field(
         default_factory=lambda: ["create_vlan", "delete_vlan", "modify_firewall"]
     )
@@ -152,7 +137,6 @@ class PlannerAgentConfig(AgentConfig):
 
 class HealerAgentConfig(AgentConfig):
     """Healer agent configuration."""
-
     health_check_interval_seconds: int = 30
     auto_restart_services: bool = True
     max_restart_attempts: int = 3
@@ -161,17 +145,19 @@ class HealerAgentConfig(AgentConfig):
 
 class GuardianAgentConfig(AgentConfig):
     """Guardian agent configuration."""
-
     auto_quarantine: bool = True
     quarantine_vlan: int = 666
     threat_thresholds: dict = Field(
-        default_factory=lambda: {"port_scan": 100, "failed_auth": 10, "bandwidth_spike": 500}
+        default_factory=lambda: {
+            "port_scan": 100,
+            "failed_auth": 10,
+            "bandwidth_spike": 500
+        }
     )
 
 
 class AgentsConfig(BaseModel):
     """All agents configuration."""
-
     discovery: DiscoveryAgentConfig = Field(default_factory=DiscoveryAgentConfig)
     optimizer: OptimizerAgentConfig = Field(default_factory=OptimizerAgentConfig)
     planner: PlannerAgentConfig = Field(default_factory=PlannerAgentConfig)
@@ -181,7 +167,6 @@ class AgentsConfig(BaseModel):
 
 class VLANConfig(BaseModel):
     """VLAN definition configuration."""
-
     id: int
     name: str
     purpose: str = "general"
@@ -197,7 +182,6 @@ class VLANConfig(BaseModel):
 
 class SegmentationPolicyConfig(BaseModel):
     """Segmentation policy configuration."""
-
     name: str
     source_vlan: int
     destination_vlan: int
@@ -205,56 +189,22 @@ class SegmentationPolicyConfig(BaseModel):
     default_action: str = "deny"
 
 
-class APIKeyConfig(BaseModel):
-    """API key configuration."""
-
-    key_hash: str = ""  # SHA-256 hash of the API key
-    name: str = ""
-    scopes: list[str] = Field(default_factory=lambda: ["read"])
-
-
 class AuthConfig(BaseModel):
-    """API authentication configuration.
-
-    Supports both API key and JWT authentication methods.
-    When enabled=False, all endpoints are public (use for development only).
-    """
-
-    enabled: bool = True
-    # API key authentication
-    api_keys: dict[str, APIKeyConfig] = Field(default_factory=dict)
-    # JWT authentication
-    jwt_secret: str = (
-        ""  # Required for JWT - generate with: python -c "import secrets; print(secrets.token_urlsafe(32))"
-    )
-    jwt_algorithm: str = "HS256"
-    token_expire_minutes: int = 60
-
-    @field_validator("jwt_secret")
-    @classmethod
-    def validate_jwt_secret(cls, v: str, info) -> str:
-        """Warn if JWT secret is empty when auth is enabled."""
-        # Access 'enabled' from the values dict if available
-        if not v and info.data.get("enabled", True):
-            import logging
-
-            logging.getLogger(__name__).warning(
-                "JWT secret is empty - JWT authentication will not work. "
-                'Generate a secret with: python -c "import secrets; print(secrets.token_urlsafe(32))"'
-            )
-        return v
+    """API authentication configuration."""
+    type: str = "jwt"
+    secret_key: str = ""
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 60
 
 
 class RateLimitConfig(BaseModel):
     """Rate limiting configuration."""
-
     enabled: bool = True
     requests_per_minute: int = 100
 
 
 class APIConfig(BaseModel):
     """API server configuration."""
-
     enabled: bool = True
     host: str = "0.0.0.0"
     port: int = 8080
@@ -265,18 +215,21 @@ class APIConfig(BaseModel):
 
 class PushoverConfig(BaseModel):
     """Pushover notification configuration."""
-
     enabled: bool = False
     user_key: str = ""
     api_token: str = ""
     priority_mapping: dict = Field(
-        default_factory=lambda: {"critical": 2, "error": 1, "warning": 0, "info": -1}
+        default_factory=lambda: {
+            "critical": 2,
+            "error": 1,
+            "warning": 0,
+            "info": -1
+        }
     )
 
 
 class WebhookConfig(BaseModel):
     """Webhook notification configuration."""
-
     enabled: bool = False
     url: str = ""
     headers: dict = Field(default_factory=dict)
@@ -284,7 +237,6 @@ class WebhookConfig(BaseModel):
 
 class AlertingConfig(BaseModel):
     """Alerting configuration."""
-
     enabled: bool = True
     pushover: PushoverConfig = Field(default_factory=PushoverConfig)
     webhook: WebhookConfig = Field(default_factory=WebhookConfig)
@@ -292,7 +244,6 @@ class AlertingConfig(BaseModel):
 
 class LogFileConfig(BaseModel):
     """Log file configuration."""
-
     enabled: bool = True
     path: str = "/var/log/sentinel/sentinel.log"
     max_size_mb: int = 100
@@ -301,7 +252,6 @@ class LogFileConfig(BaseModel):
 
 class StructuredLogConfig(BaseModel):
     """Structured logging configuration."""
-
     enabled: bool = True
     include_timestamp: bool = True
     include_caller: bool = False
@@ -309,7 +259,6 @@ class StructuredLogConfig(BaseModel):
 
 class LoggingConfig(BaseModel):
     """Logging configuration."""
-
     level: str = "INFO"
     format: str = "json"  # json or text
     file: LogFileConfig = Field(default_factory=LogFileConfig)
@@ -318,7 +267,6 @@ class LoggingConfig(BaseModel):
 
 class SentinelConfig(BaseModel):
     """Main Sentinel configuration."""
-
     state: StateConfig = Field(default_factory=StateConfig)
     integrations: IntegrationsConfig = Field(default_factory=IntegrationsConfig)
     agents: AgentsConfig = Field(default_factory=AgentsConfig)
@@ -333,7 +281,6 @@ class SentinelConfig(BaseModel):
 # Environment Variable Substitution
 # =============================================================================
 
-
 def substitute_env_vars(value: Any) -> Any:
     """
     Recursively substitute environment variables in configuration values.
@@ -345,7 +292,7 @@ def substitute_env_vars(value: Any) -> Any:
     """
     if isinstance(value, str):
         # Pattern to match ${VAR} or ${VAR:-default}
-        pattern = r"\$\{([^}:]+)(?::-([^}]*))?\}"
+        pattern = r'\$\{([^}:]+)(?::-([^}]*))?\}'
 
         def replace_var(match):
             var_name = match.group(1)
@@ -375,7 +322,6 @@ def substitute_env_vars(value: Any) -> Any:
 # =============================================================================
 # Configuration Loading
 # =============================================================================
-
 
 def load_config(config_path: Optional[str] = None) -> SentinelConfig:
     """
@@ -414,7 +360,7 @@ def load_config(config_path: Optional[str] = None) -> SentinelConfig:
         # Return default config if no file found
         return SentinelConfig()
 
-    with open(config_file, "r") as f:
+    with open(config_file, 'r') as f:
         raw_config = yaml.safe_load(f)
 
     if raw_config is None:

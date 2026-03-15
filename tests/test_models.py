@@ -1,17 +1,13 @@
 """
 Tests for Sentinel core models.
 """
-
 import pytest
 from datetime import datetime
 from uuid import uuid4
 
 from sentinel.core.models.device import (
-    Device,
-    DeviceType,
-    DeviceFingerprint,
-    NetworkInterface,
-    DeviceInventory,
+    Device, DeviceType, DeviceFingerprint, 
+    NetworkInterface, DeviceInventory
 )
 from sentinel.core.models.network import VLAN, TrafficFlow, QoSPolicy
 from sentinel.core.models.policy import FirewallRule, SegmentationPolicy
@@ -25,7 +21,11 @@ class TestDeviceModels:
         """Test basic device creation."""
         from sentinel.core.models.device import TrustLevel, DeviceStatus
 
-        device = Device(id=str(uuid4()), device_type=DeviceType.WORKSTATION, hostname="test-ws-01")
+        device = Device(
+            id=str(uuid4()),
+            device_type=DeviceType.WORKSTATION,
+            hostname="test-ws-01"
+        )
 
         assert device.hostname == "test-ws-01"
         assert device.device_type == DeviceType.WORKSTATION
@@ -35,14 +35,16 @@ class TestDeviceModels:
     def test_device_with_interface(self):
         """Test device with network interface."""
         interface = NetworkInterface(
-            mac_address="00:11:22:33:44:55", ip_addresses=["192.168.1.100"], vlan_id=10
+            mac_address="00:11:22:33:44:55",
+            ip_addresses=["192.168.1.100"],
+            vlan_id=10
         )
 
         device = Device(
             id=str(uuid4()),
             device_type=DeviceType.SERVER,
             hostname="test-server",
-            interfaces=[interface],
+            interfaces=[interface]
         )
 
         assert len(device.interfaces) == 1
@@ -56,7 +58,7 @@ class TestDeviceModels:
             model="OptiPlex 7090",
             os_family="Windows",
             os_version="11",
-            confidence=0.85,
+            confidence=0.85
         )
 
         assert fingerprint.vendor == "Dell"
@@ -70,18 +72,20 @@ class TestDeviceModels:
             id=str(uuid4()),
             device_type=DeviceType.WORKSTATION,
             hostname="ws-01",
-            interfaces=[
-                NetworkInterface(mac_address="00:11:22:33:44:55", ip_addresses=["192.168.1.100"])
-            ],
+            interfaces=[NetworkInterface(
+                mac_address="00:11:22:33:44:55",
+                ip_addresses=["192.168.1.100"]
+            )]
         )
 
         device2 = Device(
             id=str(uuid4()),
             device_type=DeviceType.SERVER,
             hostname="srv-01",
-            interfaces=[
-                NetworkInterface(mac_address="AA:BB:CC:DD:EE:FF", ip_addresses=["192.168.1.10"])
-            ],
+            interfaces=[NetworkInterface(
+                mac_address="AA:BB:CC:DD:EE:FF",
+                ip_addresses=["192.168.1.10"]
+            )]
         )
 
         inventory.add_device(device1)
@@ -94,7 +98,7 @@ class TestDeviceModels:
 
 class TestNetworkModels:
     """Tests for network models."""
-
+    
     def test_vlan_creation(self):
         """Test VLAN creation."""
         vlan = VLAN(
@@ -103,13 +107,13 @@ class TestNetworkModels:
             purpose="workstations",
             subnet="192.168.10.0/24",
             gateway="192.168.10.1",
-            dhcp_enabled=True,
+            dhcp_enabled=True
         )
-
+        
         assert vlan.id == 10
         assert vlan.name == "Workstations"
         assert vlan.dhcp_enabled == True
-
+    
     def test_traffic_flow(self):
         """Test traffic flow model."""
         flow = TrafficFlow(
@@ -121,12 +125,12 @@ class TestNetworkModels:
             protocol="tcp",
             bytes_sent=1024,
             bytes_received=2048,
-            application="web",
+            application="web"
         )
-
+        
         assert flow.destination_port == 443
         assert flow.application == "web"
-
+    
     def test_qos_policy(self):
         """Test QoS policy model."""
         policy = QoSPolicy(
@@ -135,7 +139,7 @@ class TestNetworkModels:
             description="High priority for VoIP",
             priority_queue=1,
             bandwidth_guarantee_mbps=10,
-            set_dscp=46,
+            set_dscp=46
         )
 
         assert policy.priority_queue == 1
@@ -156,12 +160,12 @@ class TestPolicyModels:
             action=PolicyAction.ALLOW,
             source_zones=["management"],
             destination_ports=["22"],
-            protocols=["tcp"],
+            protocols=["tcp"]
         )
 
         assert rule.action == PolicyAction.ALLOW
         assert "22" in rule.destination_ports
-
+    
     def test_segmentation_policy(self):
         """Test segmentation policy."""
         policy = SegmentationPolicy(
@@ -170,16 +174,16 @@ class TestPolicyModels:
             source_vlan=10,
             destination_vlan=20,
             allowed_services=["http", "https", "ssh"],
-            default_action="deny",
+            default_action="deny"
         )
-
+        
         assert policy.source_vlan == 10
         assert "ssh" in policy.allowed_services
 
 
 class TestEventModels:
     """Tests for event models."""
-
+    
     def test_event_creation(self):
         """Test event creation."""
         event = Event(
@@ -189,13 +193,13 @@ class TestEventModels:
             severity=EventSeverity.INFO,
             source="discovery",
             title="New device discovered",
-            description="Device 00:11:22:33:44:55 found on network",
+            description="Device 00:11:22:33:44:55 found on network"
         )
-
+        
         assert event.category == EventCategory.NETWORK
         assert event.severity == EventSeverity.INFO
         assert event.acknowledged == False
-
+    
     def test_event_with_data(self):
         """Test event with additional data."""
         event = Event(
@@ -205,16 +209,20 @@ class TestEventModels:
             severity=EventSeverity.WARNING,
             source="guardian",
             title="Suspicious activity detected",
-            data={"source_ip": "192.168.1.100", "destination_port": 4444, "connection_count": 50},
+            data={
+                "source_ip": "192.168.1.100",
+                "destination_port": 4444,
+                "connection_count": 50
+            }
         )
-
+        
         assert event.data["source_ip"] == "192.168.1.100"
 
 
 @pytest.mark.asyncio
 class TestAsyncComponents:
     """Tests for async components."""
-
+    
     async def test_event_bus(self):
         """Test event bus pub/sub."""
         import asyncio
@@ -238,7 +246,7 @@ class TestAsyncComponents:
             event_type="test.event",
             severity=EventSeverity.INFO,
             source="test",
-            title="Test event",
+            title="Test event"
         )
 
         await bus.publish(event)
@@ -250,30 +258,30 @@ class TestAsyncComponents:
 
         assert len(received_events) == 1
         assert received_events[0].title == "Test event"
-
+    
     async def test_state_manager_memory(self):
         """Test in-memory state manager."""
         from sentinel.core.state import StateManager
-
+        
         manager = StateManager({"backend": "memory"})
         await manager.initialize()
-
+        
         # Test set/get
         await manager.set("test:key", "test-value")
         value = await manager.get("test:key")
         assert value == "test-value"
-
+        
         # Test delete
         await manager.delete("test:key")
         value = await manager.get("test:key")
         assert value is None
-
+        
         # Test counter
         await manager.increment("test:counter")
         await manager.increment("test:counter")
         count = await manager.get("test:counter")
         assert count == 2
-
+        
         await manager.close()
 
 

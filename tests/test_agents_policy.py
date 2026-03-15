@@ -4,7 +4,6 @@ Tests for the PolicyEnforcerAgent.
 Tests cover policy loading, violation detection, remediation,
 and compliance reporting.
 """
-
 import pytest
 from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -12,7 +11,9 @@ from uuid import uuid4
 
 from sentinel.agents.policy import PolicyEnforcerAgent
 from sentinel.core.models.event import Event, EventCategory, EventSeverity, AgentAction
-from sentinel.core.models.policy import PolicySet, DevicePolicy, FirewallRule, PolicyAction
+from sentinel.core.models.policy import (
+    PolicySet, DevicePolicy, FirewallRule, PolicyAction
+)
 from sentinel.core.utils import utc_now
 
 
@@ -66,7 +67,7 @@ class TestPolicyEnforcerAgentInit:
             "enforcement_interval_seconds": 120,
             "violation_threshold": 5,
             "auto_remediate": False,
-            "audit_mode": True,
+            "audit_mode": True
         }
         agent = PolicyEnforcerAgent(mock_engine, config)
 
@@ -98,7 +99,7 @@ class TestPolicyEnforcerAgentLoadPolicies:
             "name": "test_policy_set",
             "firewall_rules": [],
             "device_policies": [],
-            "automation_rules": [],
+            "automation_rules": []
         }
         mock_engine.state.get = AsyncMock(return_value=policy_data)
 
@@ -131,22 +132,24 @@ class TestPolicyEnforcerAgentViolationDetection:
                 "device_type": "iot",
                 "vendor": "Ring",
                 "vlan": 100,  # Wrong VLAN
-                "name": "Ring Doorbell",
+                "name": "Ring Doorbell"
             }
         }
-        mock_engine.state.get = AsyncMock(
-            side_effect=lambda key, default=None: {
-                "device_inventory": inventory,
-                "policy_set": None,
-            }.get(key, default)
-        )
+        mock_engine.state.get = AsyncMock(side_effect=lambda key, default=None: {
+            "device_inventory": inventory,
+            "policy_set": None
+        }.get(key, default))
 
         # Set up policy requiring IoT on VLAN 50
         agent._policy_set = PolicySet(
             name="test",
             device_policies=[
-                DevicePolicy(name="iot_policy", match_device_types=["iot"], assign_vlan=50)
-            ],
+                DevicePolicy(
+                    name="iot_policy",
+                    match_device_types=["iot"],
+                    assign_vlan=50
+                )
+            ]
         )
 
         await agent._verify_device_compliance()
@@ -170,9 +173,13 @@ class TestPolicyEnforcerAgentViolationDetection:
             "id": "device-1",
             "vlan": 100,
             "mac_address": "aa:bb:cc:dd:ee:ff",
-            "name": "Test Device",
+            "name": "Test Device"
         }
-        policy = DevicePolicy(name="test_policy", match_device_types=["iot"], assign_vlan=50)
+        policy = DevicePolicy(
+            name="test_policy",
+            match_device_types=["iot"],
+            assign_vlan=50
+        )
 
         # This should trigger remediation
         await agent._handle_vlan_violation("device-1", device, policy, 100)
@@ -194,9 +201,12 @@ class TestPolicyEnforcerAgentFirewallExpiration:
             name="test",
             firewall_rules=[
                 FirewallRule(
-                    name="expired_rule", action=PolicyAction.DENY, enabled=True, expires_at=past
+                    name="expired_rule",
+                    action=PolicyAction.DENY,
+                    enabled=True,
+                    expires_at=past
                 )
-            ],
+            ]
         )
 
         await agent._check_firewall_expirations()
@@ -223,7 +233,7 @@ class TestPolicyEnforcerAgentDoExecute:
             target_id="device-1",
             parameters={"mac_address": "aa:bb:cc:dd:ee:ff", "vlan_id": 50},
             reasoning="Test",
-            confidence=0.90,
+            confidence=0.90
         )
 
         result = await agent._do_execute(action)
@@ -243,7 +253,7 @@ class TestPolicyEnforcerAgentDoExecute:
             target_id="device-1",
             parameters={"mac_address": "aa:bb:cc:dd:ee:ff", "vlan_id": 50},
             reasoning="Test",
-            confidence=0.90,
+            confidence=0.90
         )
 
         result = await agent._do_execute(action)
@@ -264,7 +274,7 @@ class TestPolicyEnforcerAgentDoExecute:
             target_id=str(rule.id),
             parameters={},
             reasoning="Test",
-            confidence=0.90,
+            confidence=0.90
         )
 
         result = await agent._do_execute(action)
@@ -321,7 +331,7 @@ class TestPolicyEnforcerAgentRollback:
             target_id="device-1",
             parameters={"vlan_id": 50},
             reasoning="Test",
-            confidence=0.90,
+            confidence=0.90
         )
 
         rollback_data = await agent._capture_rollback_data(action)
@@ -343,7 +353,7 @@ class TestPolicyEnforcerAgentRollback:
             parameters={"mac_address": "aa:bb:cc:dd:ee:ff", "vlan_id": 50},
             reasoning="Test",
             confidence=0.90,
-            rollback_data={"action": "assign_vlan", "original_vlan": 100},
+            rollback_data={"action": "assign_vlan", "original_vlan": 100}
         )
 
         await agent._do_rollback(action)

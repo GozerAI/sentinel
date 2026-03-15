@@ -5,7 +5,6 @@ This module provides integration with Proxmox Virtual Environment
 via the Proxmox API. Supports VM management, resource monitoring,
 live migration, and cluster operations.
 """
-
 import asyncio
 import logging
 from datetime import datetime
@@ -73,7 +72,9 @@ class ProxmoxIntegration(HypervisorIntegration):
     async def connect(self) -> None:
         """Establish connection to Proxmox API."""
         self._client = httpx.AsyncClient(
-            base_url=self._base_url, verify=self.verify_ssl, timeout=30.0
+            base_url=self._base_url,
+            verify=self.verify_ssl,
+            timeout=30.0
         )
 
         try:
@@ -85,7 +86,11 @@ class ProxmoxIntegration(HypervisorIntegration):
             elif self.password:
                 # Password-based authentication - get ticket
                 response = await self._client.post(
-                    "/access/ticket", data={"username": self.user, "password": self.password}
+                    "/access/ticket",
+                    data={
+                        "username": self.user,
+                        "password": self.password
+                    }
                 )
                 response.raise_for_status()
                 data = response.json()["data"]
@@ -183,25 +188,23 @@ class ProxmoxIntegration(HypervisorIntegration):
                 try:
                     qemu_vms = await self._api_get(f"/nodes/{node_name}/qemu")
                     for vm in qemu_vms:
-                        vms.append(
-                            {
-                                "id": f"qemu/{vm['vmid']}",
-                                "vmid": vm["vmid"],
-                                "type": "qemu",
-                                "name": vm.get("name", f"VM {vm['vmid']}"),
-                                "host": node_name,
-                                "status": vm.get("status", "unknown"),
-                                "cpu_usage": vm.get("cpu", 0),
-                                "memory_usage": vm.get("mem", 0),
-                                "memory_max": vm.get("maxmem", 0),
-                                "disk_read": vm.get("diskread", 0),
-                                "disk_write": vm.get("diskwrite", 0),
-                                "net_in": vm.get("netin", 0),
-                                "net_out": vm.get("netout", 0),
-                                "uptime": vm.get("uptime", 0),
-                                "template": vm.get("template", 0) == 1,
-                            }
-                        )
+                        vms.append({
+                            "id": f"qemu/{vm['vmid']}",
+                            "vmid": vm["vmid"],
+                            "type": "qemu",
+                            "name": vm.get("name", f"VM {vm['vmid']}"),
+                            "host": node_name,
+                            "status": vm.get("status", "unknown"),
+                            "cpu_usage": vm.get("cpu", 0),
+                            "memory_usage": vm.get("mem", 0),
+                            "memory_max": vm.get("maxmem", 0),
+                            "disk_read": vm.get("diskread", 0),
+                            "disk_write": vm.get("diskwrite", 0),
+                            "net_in": vm.get("netin", 0),
+                            "net_out": vm.get("netout", 0),
+                            "uptime": vm.get("uptime", 0),
+                            "template": vm.get("template", 0) == 1
+                        })
                 except Exception as e:
                     logger.warning(f"Failed to get QEMU VMs from {node_name}: {e}")
 
@@ -209,25 +212,23 @@ class ProxmoxIntegration(HypervisorIntegration):
                 try:
                     lxc_cts = await self._api_get(f"/nodes/{node_name}/lxc")
                     for ct in lxc_cts:
-                        vms.append(
-                            {
-                                "id": f"lxc/{ct['vmid']}",
-                                "vmid": ct["vmid"],
-                                "type": "lxc",
-                                "name": ct.get("name", f"CT {ct['vmid']}"),
-                                "host": node_name,
-                                "status": ct.get("status", "unknown"),
-                                "cpu_usage": ct.get("cpu", 0),
-                                "memory_usage": ct.get("mem", 0),
-                                "memory_max": ct.get("maxmem", 0),
-                                "disk_read": ct.get("diskread", 0),
-                                "disk_write": ct.get("diskwrite", 0),
-                                "net_in": ct.get("netin", 0),
-                                "net_out": ct.get("netout", 0),
-                                "uptime": ct.get("uptime", 0),
-                                "template": ct.get("template", 0) == 1,
-                            }
-                        )
+                        vms.append({
+                            "id": f"lxc/{ct['vmid']}",
+                            "vmid": ct["vmid"],
+                            "type": "lxc",
+                            "name": ct.get("name", f"CT {ct['vmid']}"),
+                            "host": node_name,
+                            "status": ct.get("status", "unknown"),
+                            "cpu_usage": ct.get("cpu", 0),
+                            "memory_usage": ct.get("mem", 0),
+                            "memory_max": ct.get("maxmem", 0),
+                            "disk_read": ct.get("diskread", 0),
+                            "disk_write": ct.get("diskwrite", 0),
+                            "net_in": ct.get("netin", 0),
+                            "net_out": ct.get("netout", 0),
+                            "uptime": ct.get("uptime", 0),
+                            "template": ct.get("template", 0) == 1
+                        })
                 except Exception as e:
                     logger.warning(f"Failed to get LXC containers from {node_name}: {e}")
 
@@ -316,13 +317,17 @@ class ProxmoxIntegration(HypervisorIntegration):
                     return False
 
             # Initiate migration
-            migrate_data = {"target": target_host, "online": 1}  # Live migration
+            migrate_data = {
+                "target": target_host,
+                "online": 1  # Live migration
+            }
 
-            await self._api_post(f"/nodes/{current_node}/{vm_type}/{vmid}/migrate", migrate_data)
-
-            logger.info(
-                f"Initiated migration of {vm_type} {vmid} from {current_node} to {target_host}"
+            await self._api_post(
+                f"/nodes/{current_node}/{vm_type}/{vmid}/migrate",
+                migrate_data
             )
+
+            logger.info(f"Initiated migration of {vm_type} {vmid} from {current_node} to {target_host}")
             return True
 
         except Exception as e:
@@ -373,7 +378,7 @@ class ProxmoxIntegration(HypervisorIntegration):
                 "disk_total": total_disk,
                 "disk_used": total_disk_used,
                 "disk_percent": round(disk_percent, 2),
-                "node_count": len(nodes),
+                "node_count": len(nodes)
             }
 
         except Exception as e:
@@ -399,25 +404,22 @@ class ProxmoxIntegration(HypervisorIntegration):
                 node_name = node["node"]
                 status = await self._api_get(f"/nodes/{node_name}/status")
 
-                result.append(
-                    {
-                        "name": node_name,
-                        "status": node.get("status", "unknown"),
-                        "cpu_count": status.get("cpuinfo", {}).get("cpus", 0),
-                        "cpu_percent": round(status.get("cpu", 0) * 100, 2),
-                        "memory_total": status.get("memory", {}).get("total", 0),
-                        "memory_used": status.get("memory", {}).get("used", 0),
-                        "memory_percent": round(
-                            status.get("memory", {}).get("used", 0)
-                            / max(status.get("memory", {}).get("total", 1), 1)
-                            * 100,
-                            2,
-                        ),
-                        "uptime": status.get("uptime", 0),
-                        "kernel": status.get("kversion", ""),
-                        "pve_version": status.get("pveversion", ""),
-                    }
-                )
+                result.append({
+                    "name": node_name,
+                    "status": node.get("status", "unknown"),
+                    "cpu_count": status.get("cpuinfo", {}).get("cpus", 0),
+                    "cpu_percent": round(status.get("cpu", 0) * 100, 2),
+                    "memory_total": status.get("memory", {}).get("total", 0),
+                    "memory_used": status.get("memory", {}).get("used", 0),
+                    "memory_percent": round(
+                        status.get("memory", {}).get("used", 0) /
+                        max(status.get("memory", {}).get("total", 1), 1) * 100,
+                        2
+                    ),
+                    "uptime": status.get("uptime", 0),
+                    "kernel": status.get("kversion", ""),
+                    "pve_version": status.get("pveversion", "")
+                })
 
             return result
 
@@ -446,28 +448,24 @@ class ProxmoxIntegration(HypervisorIntegration):
                         status = await self._api_get(
                             f"/nodes/{nodes[0]['node']}/storage/{store_name}/status"
                         )
-                        result.append(
-                            {
-                                "name": store_name,
-                                "type": store.get("type"),
-                                "content": store.get("content", "").split(","),
-                                "shared": store.get("shared", 0) == 1,
-                                "total": status.get("total", 0),
-                                "used": status.get("used", 0),
-                                "available": status.get("avail", 0),
-                                "active": status.get("active", True),
-                            }
-                        )
+                        result.append({
+                            "name": store_name,
+                            "type": store.get("type"),
+                            "content": store.get("content", "").split(","),
+                            "shared": store.get("shared", 0) == 1,
+                            "total": status.get("total", 0),
+                            "used": status.get("used", 0),
+                            "available": status.get("avail", 0),
+                            "active": status.get("active", True)
+                        })
                     except Exception as e:
                         logger.debug(f"Failed to get storage status for {store_name}: {e}")
-                        result.append(
-                            {
-                                "name": store_name,
-                                "type": store.get("type"),
-                                "content": store.get("content", "").split(","),
-                                "shared": store.get("shared", 0) == 1,
-                            }
-                        )
+                        result.append({
+                            "name": store_name,
+                            "type": store.get("type"),
+                            "content": store.get("content", "").split(","),
+                            "shared": store.get("shared", 0) == 1
+                        })
 
             return result
 
@@ -497,7 +495,10 @@ class ProxmoxIntegration(HypervisorIntegration):
 
             await self._api_post(
                 f"/nodes/{node}/{vm_type}/{vmid}/snapshot",
-                {"snapname": name, "description": description},
+                {
+                    "snapname": name,
+                    "description": description
+                }
             )
 
             logger.info(f"Created snapshot '{name}' for {vm_type} {vmid}")
@@ -524,14 +525,16 @@ class ProxmoxIntegration(HypervisorIntegration):
             if not node:
                 return []
 
-            snapshots = await self._api_get(f"/nodes/{node}/{vm_type}/{vmid}/snapshot")
+            snapshots = await self._api_get(
+                f"/nodes/{node}/{vm_type}/{vmid}/snapshot"
+            )
 
             return [
                 {
                     "name": snap.get("name"),
                     "description": snap.get("description", ""),
                     "parent": snap.get("parent"),
-                    "snaptime": snap.get("snaptime"),
+                    "snaptime": snap.get("snaptime")
                 }
                 for snap in snapshots
                 if snap.get("name") != "current"

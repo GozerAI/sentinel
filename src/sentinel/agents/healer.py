@@ -8,7 +8,6 @@ This agent monitors system health and performs:
 - Resource optimization and rebalancing
 - Predictive failure detection
 """
-
 import asyncio
 import logging
 from datetime import datetime, timedelta
@@ -17,11 +16,8 @@ from typing import Optional
 from sentinel.core.utils import utc_now
 from sentinel.agents.base import BaseAgent
 from sentinel.core.models.event import (
-    Event,
-    EventCategory,
-    EventSeverity,
-    AgentAction,
-    AgentDecision,
+    Event, EventCategory, EventSeverity,
+    AgentAction, AgentDecision
 )
 
 logger = logging.getLogger(__name__)
@@ -79,10 +75,17 @@ class HealerAgent(BaseAgent):
 
     async def _subscribe_events(self) -> None:
         """Subscribe to health-related events."""
-        self.engine.event_bus.subscribe(self._handle_health_alert, event_type="health.alert")
-        self.engine.event_bus.subscribe(self._handle_service_down, event_type="service.down")
         self.engine.event_bus.subscribe(
-            self._handle_resource_critical, event_type="resource.critical"
+            self._handle_health_alert,
+            event_type="health.alert"
+        )
+        self.engine.event_bus.subscribe(
+            self._handle_service_down,
+            event_type="service.down"
+        )
+        self.engine.event_bus.subscribe(
+            self._handle_resource_critical,
+            event_type="resource.critical"
         )
 
     async def _main_loop(self) -> None:
@@ -93,14 +96,14 @@ class HealerAgent(BaseAgent):
 
                 # Run health checks periodically
                 if (
-                    self._last_health_check is None
-                    or (now - self._last_health_check).total_seconds() > self.health_check_interval
+                    self._last_health_check is None or
+                    (now - self._last_health_check).total_seconds() > self.health_check_interval
                 ):
                     await self._run_health_checks()
                     self._last_health_check = now
 
                 # Predictive analysis every 5 minutes
-                if hasattr(self, "_last_predictive") and self._last_predictive:
+                if hasattr(self, '_last_predictive') and self._last_predictive:
                     if (now - self._last_predictive).total_seconds() > 300:
                         await self._predictive_analysis()
                         self._last_predictive = now
@@ -130,7 +133,7 @@ class HealerAgent(BaseAgent):
                 self._health_status[component] = {
                     "status": status,
                     "last_check": utc_now().isoformat(),
-                    "healthy": status.get("healthy", False),
+                    "healthy": status.get("healthy", False)
                 }
 
                 if not status.get("healthy", True):
@@ -141,24 +144,22 @@ class HealerAgent(BaseAgent):
                 self._health_status[component] = {
                     "status": {"error": str(e)},
                     "last_check": utc_now().isoformat(),
-                    "healthy": False,
+                    "healthy": False
                 }
 
         # Persist health status
         await self.engine.state.set("healer:health_status", self._health_status)
 
         # Publish health check event
-        await self.engine.event_bus.publish(
-            Event(
-                category=EventCategory.SYSTEM,
-                event_type="health.check.completed",
-                severity=EventSeverity.DEBUG,
-                source=f"sentinel.agents.{self.agent_name}",
-                title="Health check completed",
-                description=f"Checked {len(checks)} components",
-                data={"health_status": self._health_status},
-            )
-        )
+        await self.engine.event_bus.publish(Event(
+            category=EventCategory.SYSTEM,
+            event_type="health.check.completed",
+            severity=EventSeverity.DEBUG,
+            source=f"sentinel.agents.{self.agent_name}",
+            title="Health check completed",
+            description=f"Checked {len(checks)} components",
+            data={"health_status": self._health_status}
+        ))
 
     async def _check_router_health(self) -> dict:
         """Check router integration health."""
@@ -171,7 +172,7 @@ class HealerAgent(BaseAgent):
             return {
                 "healthy": healthy,
                 "connected": integration.connected,
-                "message": "OK" if healthy else "Health check failed",
+                "message": "OK" if healthy else "Health check failed"
             }
         except Exception as e:
             return {"healthy": False, "error": str(e)}
@@ -187,7 +188,7 @@ class HealerAgent(BaseAgent):
             return {
                 "healthy": healthy,
                 "connected": integration.connected,
-                "message": "OK" if healthy else "Health check failed",
+                "message": "OK" if healthy else "Health check failed"
             }
         except Exception as e:
             return {"healthy": False, "error": str(e)}
@@ -216,7 +217,7 @@ class HealerAgent(BaseAgent):
                 "connected": integration.connected,
                 "cpu_percent": cpu_util,
                 "memory_percent": mem_util,
-                "warnings": warnings,
+                "warnings": warnings
             }
         except Exception as e:
             return {"healthy": False, "error": str(e)}
@@ -231,13 +232,16 @@ class HealerAgent(BaseAgent):
             health = await integration.get_health()
             pools = await integration.get_pools()
 
-            unhealthy_pools = [p for p in pools if p.get("status") not in ("ONLINE", "HEALTHY")]
+            unhealthy_pools = [
+                p for p in pools
+                if p.get("status") not in ("ONLINE", "HEALTHY")
+            ]
 
             return {
                 "healthy": health.get("healthy", False) and not unhealthy_pools,
                 "overall_status": health.get("status"),
                 "pool_count": len(pools),
-                "unhealthy_pools": [p.get("name") for p in unhealthy_pools],
+                "unhealthy_pools": [p.get("name") for p in unhealthy_pools]
             }
         except Exception as e:
             return {"healthy": False, "error": str(e)}
@@ -285,9 +289,11 @@ class HealerAgent(BaseAgent):
                 decision_type="component_recovery",
                 input_state={"component": component, "status": status},
                 analysis=f"Component {component} has error: {error}. Proposing reconnection.",
-                options_considered=[{"action": "reconnect", "reason": "Restore connectivity"}],
+                options_considered=[
+                    {"action": "reconnect", "reason": "Restore connectivity"}
+                ],
                 selected_option={"action": "reconnect"},
-                confidence=0.85,
+                confidence=0.85
             )
             self._decisions.append(decision)
 
@@ -298,16 +304,17 @@ class HealerAgent(BaseAgent):
                 parameters={"error": error},
                 reasoning=f"Integration {component} has error: {error}",
                 confidence=0.85,
-                reversible=False,
+                reversible=False
             )
 
         elif warnings:
             # Resource warnings - evaluate migration
             for warning in warnings:
                 if "CPU" in warning or "memory" in warning:
-                    await self._evaluate_resource_action(
-                        {"component": component, "warning": warning}
-                    )
+                    await self._evaluate_resource_action({
+                        "component": component,
+                        "warning": warning
+                    })
 
     async def _attempt_service_restart(self, service: str, host: str) -> None:
         """Attempt to restart a failed service with backoff."""
@@ -325,17 +332,15 @@ class HealerAgent(BaseAgent):
             logger.error(f"Max restart attempts reached for {service_key}")
 
             # Escalate
-            await self.engine.event_bus.publish(
-                Event(
-                    category=EventCategory.SYSTEM,
-                    event_type="service.restart.failed",
-                    severity=EventSeverity.CRITICAL,
-                    source=f"sentinel.agents.{self.agent_name}",
-                    title=f"Service restart failed: {service}",
-                    description=f"Max restart attempts ({self.max_restart_attempts}) reached for {service} on {host}",
-                    data={"service": service, "host": host, "attempts": restart_count},
-                )
-            )
+            await self.engine.event_bus.publish(Event(
+                category=EventCategory.SYSTEM,
+                event_type="service.restart.failed",
+                severity=EventSeverity.CRITICAL,
+                source=f"sentinel.agents.{self.agent_name}",
+                title=f"Service restart failed: {service}",
+                description=f"Max restart attempts ({self.max_restart_attempts}) reached for {service} on {host}",
+                data={"service": service, "host": host, "attempts": restart_count}
+            ))
             return
 
         # Propose restart with increasing confirmation requirement
@@ -343,10 +348,14 @@ class HealerAgent(BaseAgent):
             action_type="service_restart",
             target_type="service",
             target_id=service_key,
-            parameters={"service": service, "host": host, "attempt": restart_count + 1},
+            parameters={
+                "service": service,
+                "host": host,
+                "attempt": restart_count + 1
+            },
             reasoning=f"Service {service} down on {host}, attempting restart ({restart_count + 1}/{self.max_restart_attempts})",
             confidence=0.90 if restart_count == 0 else 0.75,  # Lower confidence on retries
-            reversible=False,
+            reversible=False
         )
 
     async def _evaluate_resource_action(self, data: dict) -> None:
@@ -361,17 +370,15 @@ class HealerAgent(BaseAgent):
             await self._propose_vm_migration(host, "memory")
         elif resource_type == "disk" and utilization > 90:
             # Disk space - alert only
-            await self.engine.event_bus.publish(
-                Event(
-                    category=EventCategory.SYSTEM,
-                    event_type="resource.disk.warning",
-                    severity=EventSeverity.WARNING,
-                    source=f"sentinel.agents.{self.agent_name}",
-                    title=f"Disk space warning on {host}",
-                    description=f"Disk utilization at {utilization}%",
-                    data=data,
-                )
-            )
+            await self.engine.event_bus.publish(Event(
+                category=EventCategory.SYSTEM,
+                event_type="resource.disk.warning",
+                severity=EventSeverity.WARNING,
+                source=f"sentinel.agents.{self.agent_name}",
+                title=f"Disk space warning on {host}",
+                description=f"Disk utilization at {utilization}%",
+                data=data
+            ))
 
     async def _propose_vm_migration(self, source_host: str, reason: str) -> None:
         """Propose migrating VMs from an overloaded host."""
@@ -395,13 +402,18 @@ class HealerAgent(BaseAgent):
             decision = AgentDecision(
                 agent_name=self.agent_name,
                 decision_type="vm_migration",
-                input_state={"source_host": source_host, "reason": reason, "vms": host_vms},
+                input_state={
+                    "source_host": source_host,
+                    "reason": reason,
+                    "vms": host_vms
+                },
                 analysis=f"Host {source_host} overloaded ({reason}). Proposing migration of VM {vm_to_migrate.get('name')}.",
                 options_considered=[
-                    {"vm": v.get("name"), "cpu_usage": v.get("cpu_usage", 0)} for v in host_vms
+                    {"vm": v.get("name"), "cpu_usage": v.get("cpu_usage", 0)}
+                    for v in host_vms
                 ],
                 selected_option={"vm": vm_to_migrate.get("name")},
-                confidence=0.75,
+                confidence=0.75
             )
             self._decisions.append(decision)
 
@@ -413,11 +425,11 @@ class HealerAgent(BaseAgent):
                     "vm_name": vm_to_migrate.get("name"),
                     "source_host": source_host,
                     "target_host": "auto",
-                    "reason": reason,
+                    "reason": reason
                 },
                 reasoning=f"Host {source_host} overloaded ({reason}), proposing migration of VM {vm_to_migrate.get('name')}",
                 confidence=0.75,
-                reversible=True,
+                reversible=True
             )
 
         except Exception as e:
@@ -433,20 +445,19 @@ class HealerAgent(BaseAgent):
             # Check for warning signs
             warnings = status.get("status", {}).get("warnings", [])
             if warnings:
-                self._failure_predictions.append(
-                    {
-                        "component": component,
-                        "prediction": "degraded",
-                        "confidence": 0.6,
-                        "warnings": warnings,
-                        "timestamp": utc_now().isoformat(),
-                    }
-                )
+                self._failure_predictions.append({
+                    "component": component,
+                    "prediction": "degraded",
+                    "confidence": 0.6,
+                    "warnings": warnings,
+                    "timestamp": utc_now().isoformat()
+                })
 
         # Clean old predictions
         cutoff = utc_now() - timedelta(hours=1)
         self._failure_predictions = [
-            p for p in self._failure_predictions if datetime.fromisoformat(p["timestamp"]) > cutoff
+            p for p in self._failure_predictions
+            if datetime.fromisoformat(p["timestamp"]) > cutoff
         ]
 
     async def analyze(self, event: Event) -> Optional[AgentDecision]:
@@ -482,24 +493,15 @@ class HealerAgent(BaseAgent):
                 try:
                     # Check if this is a VM that needs restart
                     vms = await hypervisor.get_vms()
-                    matching_vms = [
-                        v for v in vms if v.get("name") == service or service in v.get("name", "")
-                    ]
+                    matching_vms = [v for v in vms if v.get("name") == service or service in v.get("name", "")]
                     if matching_vms:
                         vm = matching_vms[0]
                         vm_id = vm.get("id")
-                        logger.info(
-                            f"Restarting VM {vm.get('name')} (ID: {vm_id}) for service {service}"
-                        )
+                        logger.info(f"Restarting VM {vm.get('name')} (ID: {vm_id}) for service {service}")
                         await hypervisor.stop_vm(vm_id)
                         await asyncio.sleep(5)
                         await hypervisor.start_vm(vm_id)
-                        return {
-                            "restarted": True,
-                            "service": service,
-                            "host": host,
-                            "method": "vm_restart",
-                        }
+                        return {"restarted": True, "service": service, "host": host, "method": "vm_restart"}
                 except Exception as e:
                     logger.warning(f"VM restart attempt failed: {e}")
 
@@ -510,12 +512,7 @@ class HealerAgent(BaseAgent):
                     # Execute systemctl restart on the target host
                     result = await router.execute_command(f"ssh {host} systemctl restart {service}")
                     if result.get("success"):
-                        return {
-                            "restarted": True,
-                            "service": service,
-                            "host": host,
-                            "method": "ssh_systemctl",
-                        }
+                        return {"restarted": True, "service": service, "host": host, "method": "ssh_systemctl"}
                 except Exception as e:
                     logger.warning(f"SSH restart attempt failed: {e}")
 
@@ -524,23 +521,16 @@ class HealerAgent(BaseAgent):
                 f"No suitable integration found to restart service {service} on {host}. "
                 f"Manual intervention may be required."
             )
-            await self.engine.event_bus.publish(
-                Event(
-                    category=EventCategory.SYSTEM,
-                    event_type="service.restart.manual_required",
-                    severity=EventSeverity.WARNING,
-                    source=f"sentinel.agents.{self.agent_name}",
-                    title=f"Manual restart needed: {service}",
-                    description=f"Service {service} on {host} needs manual restart - no suitable automation available",
-                    data={"service": service, "host": host},
-                )
-            )
-            return {
-                "restarted": False,
-                "service": service,
-                "host": host,
-                "method": "manual_required",
-            }
+            await self.engine.event_bus.publish(Event(
+                category=EventCategory.SYSTEM,
+                event_type="service.restart.manual_required",
+                severity=EventSeverity.WARNING,
+                source=f"sentinel.agents.{self.agent_name}",
+                title=f"Manual restart needed: {service}",
+                description=f"Service {service} on {host} needs manual restart - no suitable automation available",
+                data={"service": service, "host": host}
+            ))
+            return {"restarted": False, "service": service, "host": host, "method": "manual_required"}
 
         elif action.action_type == "vm_migration":
             vm_id = action.target_id
@@ -571,7 +561,7 @@ class HealerAgent(BaseAgent):
             return {
                 "action": "vm_migration",
                 "vm_id": action.target_id,
-                "original_host": action.parameters.get("source_host"),
+                "original_host": action.parameters.get("source_host")
             }
         return None
 
@@ -592,7 +582,7 @@ class HealerAgent(BaseAgent):
         return {
             "health_status": self._health_status,
             "restart_counts": self._restart_counts,
-            "failure_predictions": len(self._failure_predictions),
+            "failure_predictions": len(self._failure_predictions)
         }
 
     @property
@@ -600,12 +590,15 @@ class HealerAgent(BaseAgent):
         """Get healer statistics."""
         base = super().stats
 
-        healthy_count = sum(1 for s in self._health_status.values() if s.get("healthy", False))
+        healthy_count = sum(
+            1 for s in self._health_status.values()
+            if s.get("healthy", False)
+        )
 
         return {
             **base,
             "components_monitored": len(self._health_status),
             "healthy_components": healthy_count,
             "restart_attempts": sum(self._restart_counts.values()),
-            "failure_predictions": len(self._failure_predictions),
+            "failure_predictions": len(self._failure_predictions)
         }

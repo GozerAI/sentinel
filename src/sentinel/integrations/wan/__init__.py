@@ -7,7 +7,6 @@ Provides management of internet connectivity and ISP relationships:
 - ISP SLA tracking
 - Speed testing and quality metrics
 """
-
 from sentinel.integrations.wan.manager import WANManager
 from sentinel.integrations.wan.connection import (
     WANConnection,

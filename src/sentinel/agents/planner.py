@@ -7,7 +7,6 @@ This agent manages:
 - Firewall rule automation
 - Network topology optimization
 """
-
 import asyncio
 import logging
 from datetime import datetime, timedelta
@@ -16,11 +15,8 @@ from typing import Optional
 from sentinel.core.utils import utc_now
 from sentinel.agents.base import BaseAgent
 from sentinel.core.models.event import (
-    Event,
-    EventCategory,
-    EventSeverity,
-    AgentAction,
-    AgentDecision,
+    Event, EventCategory, EventSeverity,
+    AgentAction, AgentDecision
 )
 
 logger = logging.getLogger(__name__)
@@ -60,9 +56,11 @@ class PlannerAgent(BaseAgent):
         super().__init__(engine, config)
 
         # Actions that always require confirmation
-        self.require_confirmation = config.get(
-            "require_confirmation_for", ["create_vlan", "delete_vlan", "modify_firewall"]
-        )
+        self.require_confirmation = config.get("require_confirmation_for", [
+            "create_vlan",
+            "delete_vlan",
+            "modify_firewall"
+        ])
 
         # State
         self._vlans: dict[int, dict] = {}
@@ -96,34 +94,37 @@ class PlannerAgent(BaseAgent):
                 "name": "Trusted",
                 "description": "Internal trusted networks",
                 "trust_level": 0.9,
-                "vlans": [1, 10, 20, 30],
+                "vlans": [1, 10, 20, 30]
             },
             "restricted": {
                 "id": "zone_restricted",
                 "name": "Restricted",
                 "description": "Limited access networks",
                 "trust_level": 0.5,
-                "vlans": [50, 100],
+                "vlans": [50, 100]
             },
             "untrusted": {
                 "id": "zone_untrusted",
                 "name": "Untrusted",
                 "description": "Guest and quarantine networks",
                 "trust_level": 0.1,
-                "vlans": [200, 666],
-            },
+                "vlans": [200, 666]
+            }
         }
 
     async def _subscribe_events(self) -> None:
         """Subscribe to segmentation-related events."""
         self.engine.event_bus.subscribe(
-            self._handle_device_classified, event_type="device.classified"
+            self._handle_device_classified,
+            event_type="device.classified"
         )
         self.engine.event_bus.subscribe(
-            self._handle_segmentation_request, event_type="network.segmentation.request"
+            self._handle_segmentation_request,
+            event_type="network.segmentation.request"
         )
         self.engine.event_bus.subscribe(
-            self._handle_policy_violation, event_type="security.policy.violation"
+            self._handle_policy_violation,
+            event_type="security.policy.violation"
         )
 
     async def _main_loop(self) -> None:
@@ -142,7 +143,7 @@ class PlannerAgent(BaseAgent):
                 "dhcp_range_start": vlan_data.get("dhcp_range_start"),
                 "dhcp_range_end": vlan_data.get("dhcp_range_end"),
                 "isolated": vlan_data.get("isolated", False),
-                "allowed_destinations": vlan_data.get("allowed_destinations", []),
+                "allowed_destinations": vlan_data.get("allowed_destinations", [])
             }
 
         # Load segmentation policies from config
@@ -156,7 +157,7 @@ class PlannerAgent(BaseAgent):
                 "destination_vlan": policy_data["destination_vlan"],
                 "allowed_services": policy_data.get("allowed_services", []),
                 "denied_services": policy_data.get("denied_services", []),
-                "default_action": policy_data.get("default_action", "deny"),
+                "default_action": policy_data.get("default_action", "deny")
             }
 
         # Initialize security zones
@@ -165,9 +166,7 @@ class PlannerAgent(BaseAgent):
         # Generate initial firewall rules
         await self._generate_firewall_rules()
 
-        logger.info(
-            f"Planner initialized with {len(self._vlans)} VLANs, {len(self._segmentation_policies)} policies"
-        )
+        logger.info(f"Planner initialized with {len(self._vlans)} VLANs, {len(self._segmentation_policies)} policies")
 
         while self._running:
             try:
@@ -231,10 +230,10 @@ class PlannerAgent(BaseAgent):
             analysis=f"Device {mac} classified as {device_type}, should be in VLAN {target_vlan}",
             options_considered=[
                 {"action": "change_vlan", "target": target_vlan},
-                {"action": "keep_current", "target": current_vlan},
+                {"action": "keep_current", "target": current_vlan}
             ],
             selected_option={"action": "change_vlan", "target": target_vlan},
-            confidence=action_confidence,
+            confidence=action_confidence
         )
         self._decisions.append(decision)
 
@@ -247,11 +246,11 @@ class PlannerAgent(BaseAgent):
                 "current_vlan": current_vlan,
                 "target_vlan": target_vlan,
                 "target_vlan_name": target_vlan_info.get("name"),
-                "device_type": device_type,
+                "device_type": device_type
             },
             reasoning=f"Device classified as {device_type}, moving from VLAN {current_vlan} to {target_vlan}",
             confidence=action_confidence,
-            reversible=True,
+            reversible=True
         )
 
     def _check_segmentation(self, source_vlan: int, dest_vlan: int, service: str) -> bool:
@@ -286,7 +285,7 @@ class PlannerAgent(BaseAgent):
             analysis=f"Exception requested: {source_vlan} -> {dest_vlan} for {service}",
             options_considered=[{"action": "create_exception"}, {"action": "deny"}],
             selected_option={"action": "create_exception"},
-            confidence=0.5,
+            confidence=0.5
         )
         self._decisions.append(decision)
 
@@ -298,11 +297,11 @@ class PlannerAgent(BaseAgent):
                 "source_vlan": source_vlan,
                 "destination_vlan": dest_vlan,
                 "service": service,
-                "reason": request.get("reason", "Unknown"),
+                "reason": request.get("reason", "Unknown")
             },
             reasoning=f"Segmentation exception requested: {source_vlan} -> {dest_vlan} for {service}",
             confidence=0.5,
-            reversible=True,
+            reversible=True
         )
 
     async def _propose_quarantine(self, violation: dict) -> None:
@@ -318,11 +317,11 @@ class PlannerAgent(BaseAgent):
                 "mac": mac,
                 "current_vlan": current_vlan,
                 "target_vlan": 666,
-                "violation": violation,
+                "violation": violation
             },
             reasoning=f"Critical policy violation - quarantining device {mac}",
             confidence=0.95,
-            reversible=True,
+            reversible=True
         )
 
     async def _propose_access_restriction(self, violation: dict) -> None:
@@ -342,13 +341,13 @@ class PlannerAgent(BaseAgent):
                     "action": "drop",
                     "source_mac": mac,
                     "auto_generated": True,
-                    "expires_at": (utc_now() + timedelta(hours=24)).isoformat(),
+                    "expires_at": (utc_now() + timedelta(hours=24)).isoformat()
                 },
-                "violation": violation,
+                "violation": violation
             },
             reasoning=f"High severity violation - restricting access for {mac}",
             confidence=0.85,
-            reversible=True,
+            reversible=True
         )
 
     async def _generate_firewall_rules(self) -> None:
@@ -374,7 +373,7 @@ class PlannerAgent(BaseAgent):
                         "destination_zone": f"vlan{dest_vlan['id']}",
                         "destination_port": port,
                         "protocol": proto,
-                        "auto_generated": True,
+                        "auto_generated": True
                     }
 
             if policy.get("default_action") == "deny":
@@ -387,7 +386,7 @@ class PlannerAgent(BaseAgent):
                     "source_zone": f"vlan{source_vlan['id']}",
                     "destination_zone": f"vlan{dest_vlan['id']}",
                     "auto_generated": True,
-                    "priority": 1000,
+                    "priority": 1000
                 }
 
         logger.info(f"Generated {len(self._firewall_rules)} firewall rules")
@@ -396,8 +395,7 @@ class PlannerAgent(BaseAgent):
         """Validate and clean up policies."""
         now = utc_now()
         expired = [
-            rule_id
-            for rule_id, rule in self._firewall_rules.items()
+            rule_id for rule_id, rule in self._firewall_rules.items()
             if rule.get("expires_at") and datetime.fromisoformat(rule["expires_at"]) < now
         ]
 
@@ -429,12 +427,7 @@ class PlannerAgent(BaseAgent):
 
                     if success:
                         logger.info(f"VLAN changed: {mac} -> VLAN {target_vlan}")
-                        return {
-                            "changed": True,
-                            "mac": mac,
-                            "vlan": target_vlan,
-                            "method": "switch",
-                        }
+                        return {"changed": True, "mac": mac, "vlan": target_vlan, "method": "switch"}
                 except Exception as e:
                     logger.warning(f"Switch VLAN change failed: {e}")
 
@@ -445,23 +438,13 @@ class PlannerAgent(BaseAgent):
                         success = await router.set_port_vlan(port=port, pvid=target_vlan)
                         if success:
                             logger.info(f"VLAN changed via router: {mac} -> VLAN {target_vlan}")
-                            return {
-                                "changed": True,
-                                "mac": mac,
-                                "vlan": target_vlan,
-                                "method": "router",
-                            }
+                            return {"changed": True, "mac": mac, "vlan": target_vlan, "method": "router"}
                 except Exception as e:
                     logger.warning(f"Router VLAN change failed: {e}")
 
             # No suitable integration or all attempts failed
             logger.error(f"Failed to change VLAN for {mac} - no integration succeeded")
-            return {
-                "changed": False,
-                "mac": mac,
-                "vlan": target_vlan,
-                "error": "No integration available or all attempts failed",
-            }
+            return {"changed": False, "mac": mac, "vlan": target_vlan, "error": "No integration available or all attempts failed"}
 
         elif action.action_type == "create_vlan":
             vlan_data = action.parameters.get("vlan", {})
@@ -477,51 +460,20 @@ class PlannerAgent(BaseAgent):
 
         elif action.action_type == "add_firewall_rule":
             rule = action.parameters.get("rule", {})
-            rule_id = rule.get("id")
+            self._firewall_rules[rule.get("id")] = rule
 
-            # Store locally first
-            self._firewall_rules[rule_id] = rule
-
-            # Apply to router if available
             router = self.engine.get_integration("router")
-            router_rule_id = None
             if router:
-                try:
-                    router_rule_id = await router.add_firewall_rule(rule)
-                    if router_rule_id:
-                        # Store the router rule ID for rollback
-                        rule["router_rule_id"] = router_rule_id
-                        logger.info(
-                            f"Applied firewall rule to router: {rule_id} -> {router_rule_id}"
-                        )
-                    else:
-                        logger.warning(f"Router returned empty rule ID for {rule_id}")
-                except Exception as e:
-                    logger.error(f"Failed to apply firewall rule to router: {e}")
+                await router.add_firewall_rule(rule)
 
-            return {"added": True, "rule_id": rule_id, "router_rule_id": router_rule_id}
+            return {"added": True}
 
         elif action.action_type == "remove_firewall_rule":
             rule_id = action.parameters.get("rule_id")
-
             if rule_id in self._firewall_rules:
-                rule = self._firewall_rules[rule_id]
-                router_rule_id = rule.get("router_rule_id")
-
-                # Remove from router first if we have a router rule ID
-                if router_rule_id:
-                    router = self.engine.get_integration("router")
-                    if router:
-                        try:
-                            await router.delete_firewall_rule(router_rule_id)
-                            logger.info(f"Removed firewall rule from router: {router_rule_id}")
-                        except Exception as e:
-                            logger.error(f"Failed to remove firewall rule from router: {e}")
-
                 del self._firewall_rules[rule_id]
-                return {"removed": True, "rule_id": rule_id}
-
-            return {"removed": False, "error": "Rule not found"}
+                return {"removed": True}
+            return {"removed": False}
 
         elif action.action_type == "quarantine_device":
             mac = action.parameters.get("mac")
@@ -549,7 +501,7 @@ class PlannerAgent(BaseAgent):
                 "source_vlan": source,
                 "destination_vlan": dest,
                 "allowed_services": [service],
-                "default_action": "deny",
+                "default_action": "deny"
             }
             await self._generate_firewall_rules()
             return {"created": True}
@@ -562,21 +514,18 @@ class PlannerAgent(BaseAgent):
             return {
                 "action": "vlan_change",
                 "mac": action.parameters.get("mac"),
-                "target_vlan": action.parameters.get("current_vlan"),
-                "port": action.parameters.get("port"),
+                "target_vlan": action.parameters.get("current_vlan")
             }
         elif action.action_type == "add_firewall_rule":
-            rule = action.parameters.get("rule", {})
             return {
                 "action": "remove_firewall_rule",
-                "rule_id": rule.get("id"),
-                "router_rule_id": rule.get("router_rule_id"),
+                "rule_id": action.parameters.get("rule", {}).get("id")
             }
         elif action.action_type == "quarantine_device":
             return {
                 "action": "vlan_change",
                 "mac": action.parameters.get("mac"),
-                "target_vlan": action.parameters.get("current_vlan"),
+                "target_vlan": action.parameters.get("current_vlan")
             }
         return None
 
@@ -587,34 +536,13 @@ class PlannerAgent(BaseAgent):
         if rollback.get("action") == "vlan_change":
             mac = rollback.get("mac")
             target_vlan = rollback.get("target_vlan")
-            port = rollback.get("port")
             switch = self.engine.get_integration("switch")
             if switch and target_vlan:
-                try:
-                    if port:
-                        await switch.set_port_vlan(port=port, vlan_id=target_vlan)
-                    else:
-                        await switch.set_port_vlan(mac=mac, vlan_id=target_vlan)
-                    logger.info(f"Rolled back VLAN change for {mac or port}")
-                except Exception as e:
-                    logger.error(f"Failed to rollback VLAN change: {e}")
+                await switch.set_port_vlan(mac=mac, vlan_id=target_vlan)
 
         elif rollback.get("action") == "remove_firewall_rule":
             rule_id = rollback.get("rule_id")
-            router_rule_id = rollback.get("router_rule_id")
-
-            # Remove from router first
-            if router_rule_id:
-                router = self.engine.get_integration("router")
-                if router:
-                    try:
-                        await router.delete_firewall_rule(router_rule_id)
-                        logger.info(f"Rolled back firewall rule from router: {router_rule_id}")
-                    except Exception as e:
-                        logger.error(f"Failed to rollback firewall rule from router: {e}")
-
-            # Remove from local state
-            if rule_id and rule_id in self._firewall_rules:
+            if rule_id in self._firewall_rules:
                 del self._firewall_rules[rule_id]
 
     async def _get_relevant_state(self) -> dict:
@@ -622,7 +550,7 @@ class PlannerAgent(BaseAgent):
         return {
             "vlans": len(self._vlans),
             "segmentation_policies": len(self._segmentation_policies),
-            "firewall_rules": len(self._firewall_rules),
+            "firewall_rules": len(self._firewall_rules)
         }
 
     @property
@@ -634,5 +562,5 @@ class PlannerAgent(BaseAgent):
             "vlans": len(self._vlans),
             "segmentation_policies": len(self._segmentation_policies),
             "firewall_rules": len(self._firewall_rules),
-            "security_zones": len(self._security_zones),
+            "security_zones": len(self._security_zones)
         }

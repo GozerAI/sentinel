@@ -4,7 +4,6 @@ Security and network policy models.
 This module defines policy structures for firewall rules, segmentation,
 device policies, and automation rules used throughout the Sentinel platform.
 """
-
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional, Any
@@ -19,7 +18,6 @@ def _utc_now() -> datetime:
 
 class PolicyAction(str, Enum):
     """Actions that can be taken by policies."""
-
     ALLOW = "allow"
     DENY = "deny"
     LOG = "log"
@@ -30,7 +28,6 @@ class PolicyAction(str, Enum):
 
 class PolicyScope(str, Enum):
     """Scope at which a policy applies."""
-
     GLOBAL = "global"
     VLAN = "vlan"
     DEVICE_GROUP = "device_group"
@@ -39,7 +36,6 @@ class PolicyScope(str, Enum):
 
 class PolicyPriority(int, Enum):
     """Standard priority levels for policies."""
-
     CRITICAL = 10
     HIGH = 25
     NORMAL = 50
@@ -50,9 +46,9 @@ class PolicyPriority(int, Enum):
 class FirewallRule(BaseModel):
     """
     Individual firewall rule definition.
-
+    
     Follows standard 5-tuple matching with zone-based extensions.
-
+    
     Attributes:
         id: Unique rule identifier
         name: Human-readable rule name
@@ -74,75 +70,79 @@ class FirewallRule(BaseModel):
         created_at: Creation timestamp
         expires_at: Optional expiration timestamp
     """
-
     id: UUID = Field(default_factory=uuid4)
     name: str
     description: Optional[str] = None
-
+    
     # Source
     source_zones: list[str] = Field(default_factory=list)
     source_addresses: list[str] = Field(default_factory=list)  # CIDR or IP
     source_ports: list[str] = Field(default_factory=list)
-
+    
     # Destination
     destination_zones: list[str] = Field(default_factory=list)
     destination_addresses: list[str] = Field(default_factory=list)
     destination_ports: list[str] = Field(default_factory=list)
-
+    
     # Match
     protocols: list[str] = Field(default_factory=lambda: ["any"])
     applications: list[str] = Field(default_factory=list)
-
+    
     # Action
     action: PolicyAction = PolicyAction.DENY
     log_enabled: bool = False
-
+    
     # Metadata
     priority: int = 100
     enabled: bool = True
     auto_generated: bool = False
     generated_by_agent: Optional[str] = None
-
+    
     created_at: datetime = Field(default_factory=_utc_now)
     expires_at: Optional[datetime] = None
-
+    
     @property
     def is_expired(self) -> bool:
         """Check if rule has expired."""
         if self.expires_at is None:
             return False
         return _utc_now() > self.expires_at
-
+    
     def matches(
-        self, src_ip: str, src_port: int, dst_ip: str, dst_port: int, protocol: str
+        self,
+        src_ip: str,
+        src_port: int,
+        dst_ip: str,
+        dst_port: int,
+        protocol: str
     ) -> bool:
         """Check if traffic matches this rule."""
         # Simplified matching - real implementation would be more complex
         if self.protocols and "any" not in self.protocols:
             if protocol.lower() not in [p.lower() for p in self.protocols]:
                 return False
-
+        
         if self.source_addresses:
             # Would need CIDR matching here
             pass
-
+        
         if self.destination_addresses:
             # Would need CIDR matching here
             pass
-
+        
         if self.destination_ports:
             if str(dst_port) not in self.destination_ports:
                 return False
-
+        
         return True
 
 
 class SegmentationPolicy(BaseModel):
     """
     Defines allowed communication between network segments.
-
+    
     Used by Planner agent to auto-generate firewall rules.
-
+    
     Attributes:
         id: Policy identifier
         name: Policy name
@@ -154,22 +154,21 @@ class SegmentationPolicy(BaseModel):
         default_action: Action for unlisted services
         enabled: Whether policy is active
     """
-
     id: UUID = Field(default_factory=uuid4)
     name: str
     description: Optional[str] = None
-
+    
     source_vlan: int
     destination_vlan: int
-
+    
     allowed_services: list[str] = Field(default_factory=list)
     denied_services: list[str] = Field(default_factory=list)
-
+    
     # Default action if service not explicitly listed
     default_action: PolicyAction = PolicyAction.DENY
-
+    
     enabled: bool = True
-
+    
     def is_service_allowed(self, service: str) -> bool:
         """Check if a service is allowed by this policy."""
         if service in self.denied_services:
@@ -182,9 +181,9 @@ class SegmentationPolicy(BaseModel):
 class DevicePolicy(BaseModel):
     """
     Policy applied to devices based on classification.
-
+    
     Used for automatic device onboarding and segmentation.
-
+    
     Attributes:
         id: Policy identifier
         name: Policy name
@@ -202,59 +201,61 @@ class DevicePolicy(BaseModel):
         priority: Policy priority
         enabled: Whether policy is active
     """
-
     id: UUID = Field(default_factory=uuid4)
     name: str
-
+    
     # Matching
     match_device_types: list[str] = Field(default_factory=list)
     match_vendors: list[str] = Field(default_factory=list)
     match_tags: list[str] = Field(default_factory=list)
-
+    
     # Assignment
     assign_vlan: Optional[int] = None
     assign_zone: Optional[str] = None
     assign_trust_level: Optional[str] = None
-
+    
     # Restrictions
     internet_access: bool = True
     lan_access: bool = True
     allowed_destinations: list[str] = Field(default_factory=list)
     blocked_destinations: list[str] = Field(default_factory=list)
-
+    
     # QoS
     qos_policy_id: Optional[UUID] = None
-
+    
     priority: int = 100
     enabled: bool = True
-
+    
     def matches_device(
-        self, device_type: str, vendor: Optional[str] = None, tags: list[str] = None
+        self,
+        device_type: str,
+        vendor: Optional[str] = None,
+        tags: list[str] = None
     ) -> bool:
         """Check if a device matches this policy."""
         tags = tags or []
-
+        
         if self.match_device_types:
             if device_type not in self.match_device_types:
                 return False
-
+        
         if self.match_vendors and vendor:
             if not any(v.lower() in vendor.lower() for v in self.match_vendors):
                 return False
-
+        
         if self.match_tags:
             if not any(t in tags for t in self.match_tags):
                 return False
-
+        
         return True
 
 
 class AutomationRule(BaseModel):
     """
     Rules for agent automation.
-
+    
     Defines conditions and actions that agents can take automatically.
-
+    
     Attributes:
         id: Rule identifier
         name: Rule name
@@ -273,46 +274,45 @@ class AutomationRule(BaseModel):
         last_executed: Last execution timestamp
         last_result: Result of last execution
     """
-
     id: UUID = Field(default_factory=uuid4)
     name: str
     description: Optional[str] = None
-
+    
     # Trigger
     trigger_event: str  # Event type that triggers this rule
     trigger_conditions: dict = Field(default_factory=dict)  # Additional conditions
-
+    
     # Action
     action_type: str  # What action to take
     action_params: dict = Field(default_factory=dict)
-
+    
     # Constraints
     requires_confirmation: bool = False
     confidence_threshold: float = Field(ge=0.0, le=1.0, default=0.8)
     max_executions_per_hour: Optional[int] = None
-
+    
     # Rollback
     rollback_enabled: bool = True
     rollback_timeout_seconds: int = 3600
-
+    
     enabled: bool = True
-
+    
     # Stats
     execution_count: int = 0
     last_executed: Optional[datetime] = None
     last_result: Optional[str] = None
-
+    
     def can_execute(self, executions_this_hour: int) -> bool:
         """Check if rule can be executed based on rate limits."""
         if not self.enabled:
             return False
-
+        
         if self.max_executions_per_hour:
             if executions_this_hour >= self.max_executions_per_hour:
                 return False
-
+        
         return True
-
+    
     def record_execution(self, result: str) -> None:
         """Record an execution of this rule."""
         self.execution_count += 1
@@ -323,7 +323,7 @@ class AutomationRule(BaseModel):
 class SecurityZone(BaseModel):
     """
     Security zone definition for zone-based policies.
-
+    
     Attributes:
         id: Zone identifier
         name: Zone name
@@ -333,7 +333,6 @@ class SecurityZone(BaseModel):
         default_ingress_policy: Default policy for incoming traffic
         default_egress_policy: Default policy for outgoing traffic
     """
-
     id: UUID = Field(default_factory=uuid4)
     name: str
     description: Optional[str] = None
@@ -346,25 +345,27 @@ class SecurityZone(BaseModel):
 class PolicySet(BaseModel):
     """
     Collection of related policies.
-
+    
     Provides organization and batch operations for policies.
     """
-
     id: UUID = Field(default_factory=uuid4)
     name: str
     description: Optional[str] = None
-
+    
     firewall_rules: list[FirewallRule] = Field(default_factory=list)
     segmentation_policies: list[SegmentationPolicy] = Field(default_factory=list)
     device_policies: list[DevicePolicy] = Field(default_factory=list)
     automation_rules: list[AutomationRule] = Field(default_factory=list)
     zones: list[SecurityZone] = Field(default_factory=list)
-
+    
     enabled: bool = True
     version: int = 1
     created_at: datetime = Field(default_factory=_utc_now)
     updated_at: datetime = Field(default_factory=_utc_now)
-
+    
     def get_firewall_rules_sorted(self) -> list[FirewallRule]:
         """Get firewall rules sorted by priority."""
-        return sorted([r for r in self.firewall_rules if r.enabled], key=lambda r: r.priority)
+        return sorted(
+            [r for r in self.firewall_rules if r.enabled],
+            key=lambda r: r.priority
+        )

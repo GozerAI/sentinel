@@ -1,139 +1,176 @@
-# Sentinel
+# Sentinel Security Platform
 
-[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://python.org)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-AI-powered security monitoring and threat detection platform. Uses autonomous agents to scan networks, discover devices, manage VLANs, detect threats, and enforce security policies.
+**AI-Native Security Platform with Zero-Trust Architecture and Autonomous Network Management**
 
-Part of the [GozerAI](https://gozerai.com) ecosystem.
+Sentinel is a comprehensive security platform that combines zero-trust architecture, intelligent network management, and AI-driven automation. It provides real-time network discovery, automatic segmentation, traffic optimization, and self-healing capabilities.
 
 ## Features
 
-- **Network discovery** with automatic device classification and topology mapping
-- **Threat detection** with SOC operations, IP blocking, and device quarantine
-- **VLAN management** with segmentation policies and firewall rules
-- **Self-healing** with automated failover and health monitoring
-- **Traffic optimization** with QoS management and NetFlow analysis
-- **REST API** with API key and JWT authentication
+- **Zero-Trust Identity (Gatekeeper)**: Continuous authentication and authorization
+- **Credential Management (Keymaster)**: Certificate lifecycle and secrets management
+- **Network Fabric (NetMesh)**: Software-defined networking with automatic VLAN management
+- **Firewall (Shield)**: L3-L7 inspection with WAF capabilities
+- **Detection (Observer)**: SIEM/XDR with event correlation
+- **AI Agents**: Autonomous network management with human-in-the-loop controls
 
-## Feature Tiers
+## AI Agents
 
-| Feature | Community | Pro | Enterprise |
-|---------|:---------:|:---:|:----------:|
-| Network & discovery agents | x | x | x |
-| REST API & core engine | x | x | x |
-| Native integrations | x | x | x |
-| GUI dashboard | | x | x |
-| Orchestration engine | | x | x |
-| IoT device management | | x | x |
-| Visualization & reporting | | x | x |
-| Nexus integration | | | x |
+| Agent | Purpose |
+|-------|---------|
+| Discovery | Network scanning and device classification |
+| Optimizer | Traffic engineering and QoS management |
+| Planner | Segmentation and VLAN automation |
+| Orchestrator | Workload placement and scaling |
+| Forecaster | Predictive analytics and capacity planning |
+| Healer | Self-repair and automated failover |
+| Guardian | Security policy enforcement |
 
-## Agents
+## Architecture
 
-| Agent | Role | Description |
-|-------|------|-------------|
-| **Guardian** | Security | SOC operations, threat detection, IP blocking, quarantine |
-| **Healer** | Reliability | SRE operations, self-repair, health monitoring, failover |
-| **Discovery** | Asset Management | Network scanning, device classification, topology |
-| **Optimizer** | Network Ops | Traffic engineering, QoS, NetFlow analysis |
-| **Planner** | Architecture | VLAN design, segmentation policies, firewall rules |
-| **Strategy** | Executive | Agent coordination, decision approval, oversight |
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    SENTINEL CONTROL PLANE                    │
+├─────────────────────────────────────────────────────────────┤
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐  │
+│  │  Gatekeeper  │  │   Keymaster  │  │  Policy Engine   │  │
+│  │  (Identity)  │  │ (Credentials)│  │  (Zero-Trust)    │  │
+│  └──────────────┘  └──────────────┘  └──────────────────┘  │
+│                           │                                  │
+│                    ┌──────┴──────┐                          │
+│                    │   AI Agents  │                          │
+│                    │   Council    │                          │
+│                    └──────┬──────┘                          │
+│                           │                                  │
+│  ┌──────────────┐  ┌──────┴──────┐  ┌──────────────────┐  │
+│  │   NetMesh    │  │   Shield    │  │    Observer      │  │
+│  │  (Network)   │  │ (Firewall)  │  │    (SIEM)        │  │
+│  └──────────────┘  └─────────────┘  └──────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ## Quick Start
 
+### Prerequisites
+
+- Python 3.11+
+- Docker and Docker Compose (for deployment)
+- Network equipment with API access (OPNsense, UniFi, etc.)
+- Ollama (for local AI inference)
+
+### Installation
+
 ```bash
-git clone https://github.com/GozerAI/sentinel.git
+# Clone the repository
+git clone https://github.com/1450enterprises/sentinel.git
 cd sentinel
+
+# Create virtual environment
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install dependencies
 pip install -e ".[dev]"
 
-# Copy and edit configuration
-cp config.example.yaml config/config.yaml
-# Edit config.yaml — set network ranges, credentials, auth settings
-
-# Start the server
-python -m sentinel.main
+# Copy and configure settings
+cp config/default.yaml config/local.yaml
+# Edit config/local.yaml with your settings
 ```
 
-## Configuration
-
-Sentinel uses a YAML configuration file (`config/config.yaml`). Key sections:
-
-```yaml
-api:
-  host: 0.0.0.0
-  port: 8010
-  auth:
-    enabled: true
-    jwt_secret: "your-secret"
-    api_keys:
-      my-key:
-        name: "My API Key"
-        scopes: ["read", "write"]
-
-state:
-  backend: sqlite           # memory, sqlite, postgresql, redis
-  path: /var/lib/sentinel/state.db
-
-network:
-  scan_range: "192.168.1.0/24"
-  scan_interval: 300         # seconds
-
-integrations:
-  router:
-    type: opnsense
-    host: 192.168.1.1
-    api_key: ""
-    api_secret: ""
-```
-
-## API Reference
-
-Authentication: `X-API-Key: <key>` or `Authorization: Bearer <jwt_token>`.
-
-### Network & Discovery
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/devices` | List discovered devices |
-| GET | `/api/v1/devices/:id` | Device details |
-| POST | `/api/v1/scan` | Trigger network scan |
-| GET | `/api/v1/topology` | Network topology map |
-
-### Security
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/events` | Security events |
-| GET | `/api/v1/threats` | Active threats |
-| POST | `/api/v1/quarantine/:device_id` | Quarantine a device |
-| POST | `/api/v1/block/:ip` | Block an IP address |
-
-### VLANs & Segmentation
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/vlans` | List VLANs |
-| POST | `/api/v1/vlans` | Create a VLAN |
-| GET | `/api/v1/policies` | Segmentation policies |
-| POST | `/api/v1/policies` | Create a policy |
-
-### System
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/agents` | Agent statuses |
-| GET | `/api/v1/health` | System health |
-| GET | `/api/v1/metrics` | Metrics and statistics |
-
-## Docker
+### Running
 
 ```bash
-docker compose up -d
+# Start with local configuration
+sentinel --config config/local.yaml
+
+# Or run directly with Python
+python -m sentinel.main --config config/local.yaml
+
+# Run with Docker
+docker-compose -f deploy/docker/docker-compose.prod.yml up -d
 ```
 
-See `docker-compose.yml` for configuration options and `deploy/` for production deployment scripts.
+### Configuration
+
+See `config/homelab.yaml` for a complete configuration example. Key settings:
+
+```yaml
+integrations:
+  router:
+    type: "opnsense"
+    host: "192.168.1.1"
+    api_key: "${ROUTER_API_KEY}"
+    
+  switch:
+    type: "ubiquiti"
+    controller_url: "https://192.168.1.2:8443"
+    
+  llm:
+    primary:
+      type: "ollama"
+      host: "http://localhost:11434"
+      model: "llama3.1:8b"
+```
+
+## Project Structure
+
+```
+sentinel/
+├── src/sentinel/
+│   ├── core/           # Core engine and models
+│   ├── agents/         # AI agents
+│   ├── integrations/   # External system integrations
+│   ├── api/            # REST API
+│   └── cli/            # Command-line interface
+├── tests/              # Test suite
+├── config/             # Configuration files
+├── deploy/             # Deployment configurations
+└── docs/               # Documentation
+```
+
+## Development
+
+```bash
+# Install dev dependencies
+pip install -e ".[dev]"
+
+# Run tests
+pytest
+
+# Run tests with coverage
+pytest --cov=sentinel --cov-report=html
+
+# Format code
+black src tests
+
+# Lint code
+ruff check src tests
+
+# Type checking
+mypy src
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-MIT — see [LICENSE](LICENSE) for details. Learn more at [gozerai.com](https://gozerai.com).
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- Part of the GozerAI ecosystem by 1450 Enterprises LLC
+- Built with [Pydantic](https://pydantic.dev/), [FastAPI](https://fastapi.tiangolo.com/), and [Ollama](https://ollama.ai/)
+
+---
+
+**Documentation**: [https://sentinel.1450enterprises.com/docs](https://sentinel.1450enterprises.com/docs)  
+**Issues**: [https://github.com/1450enterprises/sentinel/issues](https://github.com/1450enterprises/sentinel/issues)

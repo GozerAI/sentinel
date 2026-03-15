@@ -4,7 +4,6 @@ Sentinel Security Platform - Main Entry Point.
 This module provides the main entry point for running the Sentinel platform.
 It handles configuration loading, signal handling, and graceful shutdown.
 """
-
 import asyncio
 import logging
 import signal
@@ -21,7 +20,6 @@ from sentinel.core.engine import SentinelEngine
 # =============================================================================
 # Logging Setup
 # =============================================================================
-
 
 def setup_logging(config: SentinelConfig) -> None:
     """
@@ -64,7 +62,7 @@ def setup_logging(config: SentinelConfig) -> None:
     logging.basicConfig(
         level=level,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
+        datefmt="%Y-%m-%d %H:%M:%S"
     )
 
     # Set up file logging if enabled
@@ -75,7 +73,7 @@ def setup_logging(config: SentinelConfig) -> None:
         file_handler = logging.handlers.RotatingFileHandler(
             log_path,
             maxBytes=log_config.file.max_size_mb * 1024 * 1024,
-            backupCount=log_config.file.backup_count,
+            backupCount=log_config.file.backup_count
         )
         file_handler.setLevel(level)
         file_handler.setFormatter(
@@ -93,7 +91,6 @@ def setup_logging(config: SentinelConfig) -> None:
 # =============================================================================
 # Main Application
 # =============================================================================
-
 
 class SentinelApplication:
     """
@@ -185,7 +182,6 @@ class SentinelApplication:
 # Entry Points
 # =============================================================================
 
-
 async def run_sentinel(config_path: Optional[str] = None) -> None:
     """
     Run Sentinel with the specified configuration.
@@ -204,9 +200,22 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Sentinel Security Platform - AI-Native Zero-Trust Security"
     )
-    parser.add_argument("-c", "--config", type=str, help="Path to configuration file", default=None)
-    parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
-    parser.add_argument("--version", action="version", version="Sentinel 0.1.0")
+    parser.add_argument(
+        "-c", "--config",
+        type=str,
+        help="Path to configuration file",
+        default=None
+    )
+    parser.add_argument(
+        "-v", "--verbose",
+        action="store_true",
+        help="Enable verbose output"
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version="Sentinel 0.1.0"
+    )
 
     args = parser.parse_args()
 

@@ -4,7 +4,6 @@ Tests for WAN Manager and connection management.
 Tests cover connection tracking, failover logic, bandwidth monitoring,
 and integration with router for actual failover.
 """
-
 import asyncio
 import pytest
 from datetime import datetime, timedelta
@@ -175,18 +174,25 @@ class TestBandwidthMetrics:
 
     def test_download_utilization(self):
         """Test download utilization calculation."""
-        metrics = BandwidthMetrics(contracted_download_mbps=100, current_download_mbps=50)
+        metrics = BandwidthMetrics(
+            contracted_download_mbps=100,
+            current_download_mbps=50
+        )
         assert metrics.download_utilization_percent == 50.0
 
     def test_download_utilization_zero_contracted(self):
         """Test utilization with zero contracted bandwidth."""
-        metrics = BandwidthMetrics(contracted_download_mbps=0, current_download_mbps=50)
+        metrics = BandwidthMetrics(
+            contracted_download_mbps=0,
+            current_download_mbps=50
+        )
         assert metrics.download_utilization_percent == 0.0
 
     def test_monthly_usage(self):
         """Test monthly usage calculation."""
         metrics = BandwidthMetrics(
-            bytes_downloaded_month=1024**3, bytes_uploaded_month=512 * 1024**2  # 1 GB  # 512 MB
+            bytes_downloaded_month=1024**3,  # 1 GB
+            bytes_uploaded_month=512 * 1024**2  # 512 MB
         )
         assert abs(metrics.monthly_usage_gb - 1.5) < 0.01
 
@@ -195,7 +201,7 @@ class TestBandwidthMetrics:
         metrics = BandwidthMetrics(
             bytes_downloaded_month=500 * 1024**3,  # 500 GB
             bytes_uploaded_month=0,
-            monthly_cap_gb=1000,
+            monthly_cap_gb=1000
         )
         assert metrics.cap_usage_percent == 50.0
 
@@ -211,7 +217,10 @@ class TestConnectionQuality:
     def test_quality_score_perfect(self):
         """Test quality score with perfect metrics."""
         quality = ConnectionQuality(
-            latency_ms=10, jitter_ms=1, packet_loss_percent=0, uptime_percent_30d=100
+            latency_ms=10,
+            jitter_ms=1,
+            packet_loss_percent=0,
+            uptime_percent_30d=100
         )
         score = quality.calculate_quality_score()
         assert score == 100.0
@@ -219,7 +228,10 @@ class TestConnectionQuality:
     def test_quality_score_high_latency(self):
         """Test quality score with high latency."""
         quality = ConnectionQuality(
-            latency_ms=150, jitter_ms=1, packet_loss_percent=0, uptime_percent_30d=100
+            latency_ms=150,
+            jitter_ms=1,
+            packet_loss_percent=0,
+            uptime_percent_30d=100
         )
         score = quality.calculate_quality_score()
         assert score < 100.0
@@ -228,7 +240,10 @@ class TestConnectionQuality:
     def test_quality_score_packet_loss(self):
         """Test quality score with packet loss."""
         quality = ConnectionQuality(
-            latency_ms=20, jitter_ms=1, packet_loss_percent=5, uptime_percent_30d=100
+            latency_ms=20,
+            jitter_ms=1,
+            packet_loss_percent=5,
+            uptime_percent_30d=100
         )
         score = quality.calculate_quality_score()
         assert score < 100.0
@@ -236,7 +251,10 @@ class TestConnectionQuality:
     def test_quality_score_poor_uptime(self):
         """Test quality score with poor uptime."""
         quality = ConnectionQuality(
-            latency_ms=20, jitter_ms=1, packet_loss_percent=0, uptime_percent_30d=90
+            latency_ms=20,
+            jitter_ms=1,
+            packet_loss_percent=0,
+            uptime_percent_30d=90
         )
         score = quality.calculate_quality_score()
         assert score < 100.0
@@ -249,7 +267,7 @@ class TestWANManagerConnections:
     async def test_add_connection(self, wan_manager, primary_connection):
         """Test adding a connection."""
         # Mock the check connection
-        with patch.object(wan_manager, "_check_connection", return_value=ConnectionStatus.UP):
+        with patch.object(wan_manager, '_check_connection', return_value=ConnectionStatus.UP):
             await wan_manager.add_connection(primary_connection)
 
         assert primary_connection.id in wan_manager._connections
@@ -258,7 +276,7 @@ class TestWANManagerConnections:
     @pytest.mark.asyncio
     async def test_remove_connection(self, wan_manager, primary_connection, backup_connection):
         """Test removing a connection."""
-        with patch.object(wan_manager, "_check_connection", return_value=ConnectionStatus.UP):
+        with patch.object(wan_manager, '_check_connection', return_value=ConnectionStatus.UP):
             await wan_manager.add_connection(primary_connection)
             await wan_manager.add_connection(backup_connection)
 
@@ -284,9 +302,7 @@ class TestWANManagerConnections:
         result = wan_manager.get_connection("ether1")
         assert result == primary_connection
 
-    def test_get_connections_sorted_by_priority(
-        self, wan_manager, primary_connection, backup_connection
-    ):
+    def test_get_connections_sorted_by_priority(self, wan_manager, primary_connection, backup_connection):
         """Test that connections are sorted by priority."""
         wan_manager._connections[primary_connection.id] = primary_connection
         wan_manager._connections[backup_connection.id] = backup_connection
@@ -358,7 +374,7 @@ class TestFailoverEvent:
         event = FailoverEvent(
             from_connection=primary_connection,
             to_connection=backup_connection,
-            reason="Primary degraded",
+            reason="Primary degraded"
         )
 
         assert event.from_connection_id == primary_connection.id
@@ -369,7 +385,9 @@ class TestFailoverEvent:
     def test_failover_event_serialization(self, primary_connection, backup_connection):
         """Test failover event serialization."""
         event = FailoverEvent(
-            from_connection=primary_connection, to_connection=backup_connection, reason="Test"
+            from_connection=primary_connection,
+            to_connection=backup_connection,
+            reason="Test"
         )
 
         data = event.to_dict()

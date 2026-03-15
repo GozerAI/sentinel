@@ -3,7 +3,6 @@ Comprehensive tests for GUI modules.
 
 Tests cover both gui/app.py and gui/main_window.py with mocked Qt components.
 """
-
 import pytest
 from unittest.mock import MagicMock, patch, PropertyMock, AsyncMock
 import sys
@@ -67,15 +66,10 @@ class TestGUIAppModule:
 
     def test_sentinel_app_init(self):
         """Test SentinelApp initialization."""
-        with patch.dict(
-            sys.modules,
-            {
-                "PySide6": mock_pyside6,
-                "PySide6.QtWidgets": mock_pyside6.QtWidgets,
-                "PySide6.QtCore": mock_pyside6.QtCore,
-                "PySide6.QtGui": mock_pyside6.QtGui,
-            },
-        ):
+        with patch.dict(sys.modules, {'PySide6': mock_pyside6,
+                                       'PySide6.QtWidgets': mock_pyside6.QtWidgets,
+                                       'PySide6.QtCore': mock_pyside6.QtCore,
+                                       'PySide6.QtGui': mock_pyside6.QtGui}):
             # Need to reload the module with mocked PySide6
             from sentinel.gui import app as gui_app
 
@@ -93,15 +87,10 @@ class TestGUIAppModule:
 
     def test_sentinel_app_init_with_config(self):
         """Test SentinelApp initialization with config path."""
-        with patch.dict(
-            sys.modules,
-            {
-                "PySide6": mock_pyside6,
-                "PySide6.QtWidgets": mock_pyside6.QtWidgets,
-                "PySide6.QtCore": mock_pyside6.QtCore,
-                "PySide6.QtGui": mock_pyside6.QtGui,
-            },
-        ):
+        with patch.dict(sys.modules, {'PySide6': mock_pyside6,
+                                       'PySide6.QtWidgets': mock_pyside6.QtWidgets,
+                                       'PySide6.QtCore': mock_pyside6.QtCore,
+                                       'PySide6.QtGui': mock_pyside6.QtGui}):
             from sentinel.gui import app as gui_app
 
             sentinel_app = gui_app.SentinelApp(config_path="/path/to/config.yaml")
@@ -110,15 +99,10 @@ class TestGUIAppModule:
 
     def test_load_config_default(self):
         """Test loading default config when no path given."""
-        with patch.dict(
-            sys.modules,
-            {
-                "PySide6": mock_pyside6,
-                "PySide6.QtWidgets": mock_pyside6.QtWidgets,
-                "PySide6.QtCore": mock_pyside6.QtCore,
-                "PySide6.QtGui": mock_pyside6.QtGui,
-            },
-        ):
+        with patch.dict(sys.modules, {'PySide6': mock_pyside6,
+                                       'PySide6.QtWidgets': mock_pyside6.QtWidgets,
+                                       'PySide6.QtCore': mock_pyside6.QtCore,
+                                       'PySide6.QtGui': mock_pyside6.QtGui}):
             from sentinel.gui import app as gui_app
 
             sentinel_app = gui_app.SentinelApp()
@@ -131,28 +115,21 @@ class TestGUIAppModule:
 
     def test_load_config_from_file(self, tmp_path):
         """Test loading config from file."""
-        with patch.dict(
-            sys.modules,
-            {
-                "PySide6": mock_pyside6,
-                "PySide6.QtWidgets": mock_pyside6.QtWidgets,
-                "PySide6.QtCore": mock_pyside6.QtCore,
-                "PySide6.QtGui": mock_pyside6.QtGui,
-            },
-        ):
+        with patch.dict(sys.modules, {'PySide6': mock_pyside6,
+                                       'PySide6.QtWidgets': mock_pyside6.QtWidgets,
+                                       'PySide6.QtCore': mock_pyside6.QtCore,
+                                       'PySide6.QtGui': mock_pyside6.QtGui}):
             from sentinel.gui import app as gui_app
 
             config_file = tmp_path / "test_config.yaml"
-            config_file.write_text(
-                """
+            config_file.write_text("""
 api:
   host: localhost
   port: 9000
 agents:
   discovery:
     enabled: true
-"""
-            )
+""")
 
             with patch("sentinel.gui.app.load_config") as mock_load:
                 mock_load.return_value = {"api": {"host": "localhost"}}
@@ -165,15 +142,10 @@ agents:
 
     def test_setup_logging(self):
         """Test logging setup."""
-        with patch.dict(
-            sys.modules,
-            {
-                "PySide6": mock_pyside6,
-                "PySide6.QtWidgets": mock_pyside6.QtWidgets,
-                "PySide6.QtCore": mock_pyside6.QtCore,
-                "PySide6.QtGui": mock_pyside6.QtGui,
-            },
-        ):
+        with patch.dict(sys.modules, {'PySide6': mock_pyside6,
+                                       'PySide6.QtWidgets': mock_pyside6.QtWidgets,
+                                       'PySide6.QtCore': mock_pyside6.QtCore,
+                                       'PySide6.QtGui': mock_pyside6.QtGui}):
             from sentinel.gui import app as gui_app
             import logging
 
@@ -186,15 +158,10 @@ agents:
 
     def test_create_engine(self):
         """Test engine creation."""
-        with patch.dict(
-            sys.modules,
-            {
-                "PySide6": mock_pyside6,
-                "PySide6.QtWidgets": mock_pyside6.QtWidgets,
-                "PySide6.QtCore": mock_pyside6.QtCore,
-                "PySide6.QtGui": mock_pyside6.QtGui,
-            },
-        ):
+        with patch.dict(sys.modules, {'PySide6': mock_pyside6,
+                                       'PySide6.QtWidgets': mock_pyside6.QtWidgets,
+                                       'PySide6.QtCore': mock_pyside6.QtCore,
+                                       'PySide6.QtGui': mock_pyside6.QtGui}):
             from sentinel.gui import app as gui_app
 
             sentinel_app = gui_app.SentinelApp()
@@ -211,15 +178,10 @@ agents:
 
     def test_create_qt_app(self):
         """Test Qt application creation."""
-        with patch.dict(
-            sys.modules,
-            {
-                "PySide6": mock_pyside6,
-                "PySide6.QtWidgets": mock_pyside6.QtWidgets,
-                "PySide6.QtCore": mock_pyside6.QtCore,
-                "PySide6.QtGui": mock_pyside6.QtGui,
-            },
-        ):
+        with patch.dict(sys.modules, {'PySide6': mock_pyside6,
+                                       'PySide6.QtWidgets': mock_pyside6.QtWidgets,
+                                       'PySide6.QtCore': mock_pyside6.QtCore,
+                                       'PySide6.QtGui': mock_pyside6.QtGui}):
             from sentinel.gui import app as gui_app
 
             mock_qt_app = MagicMock()
@@ -229,7 +191,7 @@ agents:
             mock_qt_app.setOrganizationName = MagicMock()
             mock_qt_app.setStyle = MagicMock()
 
-            with patch.object(gui_app, "QApplication", return_value=mock_qt_app):
+            with patch.object(gui_app, 'QApplication', return_value=mock_qt_app):
                 sentinel_app = gui_app.SentinelApp()
                 sentinel_app._create_qt_app()
 
@@ -240,21 +202,16 @@ agents:
 
     def test_create_main_window(self):
         """Test main window creation."""
-        with patch.dict(
-            sys.modules,
-            {
-                "PySide6": mock_pyside6,
-                "PySide6.QtWidgets": mock_pyside6.QtWidgets,
-                "PySide6.QtCore": mock_pyside6.QtCore,
-                "PySide6.QtGui": mock_pyside6.QtGui,
-            },
-        ):
+        with patch.dict(sys.modules, {'PySide6': mock_pyside6,
+                                       'PySide6.QtWidgets': mock_pyside6.QtWidgets,
+                                       'PySide6.QtCore': mock_pyside6.QtCore,
+                                       'PySide6.QtGui': mock_pyside6.QtGui}):
             from sentinel.gui import app as gui_app
 
             mock_main_window = MagicMock()
             mock_main_window.show = MagicMock()
 
-            with patch.object(gui_app, "MainWindow", return_value=mock_main_window):
+            with patch.object(gui_app, 'MainWindow', return_value=mock_main_window):
                 sentinel_app = gui_app.SentinelApp()
                 sentinel_app.engine = MagicMock()
                 sentinel_app.config = {"test": "config"}
@@ -266,15 +223,10 @@ agents:
 
     def test_setup_update_timer(self):
         """Test update timer setup."""
-        with patch.dict(
-            sys.modules,
-            {
-                "PySide6": mock_pyside6,
-                "PySide6.QtWidgets": mock_pyside6.QtWidgets,
-                "PySide6.QtCore": mock_pyside6.QtCore,
-                "PySide6.QtGui": mock_pyside6.QtGui,
-            },
-        ):
+        with patch.dict(sys.modules, {'PySide6': mock_pyside6,
+                                       'PySide6.QtWidgets': mock_pyside6.QtWidgets,
+                                       'PySide6.QtCore': mock_pyside6.QtCore,
+                                       'PySide6.QtGui': mock_pyside6.QtGui}):
             from sentinel.gui import app as gui_app
 
             mock_timer = MagicMock()
@@ -282,7 +234,7 @@ agents:
             mock_timer.timeout.connect = MagicMock()
             mock_timer.start = MagicMock()
 
-            with patch.object(gui_app, "QTimer", return_value=mock_timer):
+            with patch.object(gui_app, 'QTimer', return_value=mock_timer):
                 sentinel_app = gui_app.SentinelApp()
                 sentinel_app._setup_update_timer()
 
@@ -291,15 +243,10 @@ agents:
 
     def test_update_ui(self):
         """Test UI update."""
-        with patch.dict(
-            sys.modules,
-            {
-                "PySide6": mock_pyside6,
-                "PySide6.QtWidgets": mock_pyside6.QtWidgets,
-                "PySide6.QtCore": mock_pyside6.QtCore,
-                "PySide6.QtGui": mock_pyside6.QtGui,
-            },
-        ):
+        with patch.dict(sys.modules, {'PySide6': mock_pyside6,
+                                       'PySide6.QtWidgets': mock_pyside6.QtWidgets,
+                                       'PySide6.QtCore': mock_pyside6.QtCore,
+                                       'PySide6.QtGui': mock_pyside6.QtGui}):
             from sentinel.gui import app as gui_app
 
             sentinel_app = gui_app.SentinelApp()
@@ -311,15 +258,10 @@ agents:
 
     def test_update_ui_no_window(self):
         """Test UI update when no window exists."""
-        with patch.dict(
-            sys.modules,
-            {
-                "PySide6": mock_pyside6,
-                "PySide6.QtWidgets": mock_pyside6.QtWidgets,
-                "PySide6.QtCore": mock_pyside6.QtCore,
-                "PySide6.QtGui": mock_pyside6.QtGui,
-            },
-        ):
+        with patch.dict(sys.modules, {'PySide6': mock_pyside6,
+                                       'PySide6.QtWidgets': mock_pyside6.QtWidgets,
+                                       'PySide6.QtCore': mock_pyside6.QtCore,
+                                       'PySide6.QtGui': mock_pyside6.QtGui}):
             from sentinel.gui import app as gui_app
 
             sentinel_app = gui_app.SentinelApp()
@@ -331,15 +273,10 @@ agents:
     @pytest.mark.asyncio
     async def test_start_engine(self):
         """Test engine start."""
-        with patch.dict(
-            sys.modules,
-            {
-                "PySide6": mock_pyside6,
-                "PySide6.QtWidgets": mock_pyside6.QtWidgets,
-                "PySide6.QtCore": mock_pyside6.QtCore,
-                "PySide6.QtGui": mock_pyside6.QtGui,
-            },
-        ):
+        with patch.dict(sys.modules, {'PySide6': mock_pyside6,
+                                       'PySide6.QtWidgets': mock_pyside6.QtWidgets,
+                                       'PySide6.QtCore': mock_pyside6.QtCore,
+                                       'PySide6.QtGui': mock_pyside6.QtGui}):
             from sentinel.gui import app as gui_app
 
             mock_engine = MagicMock()
@@ -355,15 +292,10 @@ agents:
     @pytest.mark.asyncio
     async def test_start_engine_error(self):
         """Test engine start with error."""
-        with patch.dict(
-            sys.modules,
-            {
-                "PySide6": mock_pyside6,
-                "PySide6.QtWidgets": mock_pyside6.QtWidgets,
-                "PySide6.QtCore": mock_pyside6.QtCore,
-                "PySide6.QtGui": mock_pyside6.QtGui,
-            },
-        ):
+        with patch.dict(sys.modules, {'PySide6': mock_pyside6,
+                                       'PySide6.QtWidgets': mock_pyside6.QtWidgets,
+                                       'PySide6.QtCore': mock_pyside6.QtCore,
+                                       'PySide6.QtGui': mock_pyside6.QtGui}):
             from sentinel.gui import app as gui_app
 
             mock_engine = MagicMock()
@@ -378,15 +310,10 @@ agents:
     @pytest.mark.asyncio
     async def test_stop_engine(self):
         """Test engine stop."""
-        with patch.dict(
-            sys.modules,
-            {
-                "PySide6": mock_pyside6,
-                "PySide6.QtWidgets": mock_pyside6.QtWidgets,
-                "PySide6.QtCore": mock_pyside6.QtCore,
-                "PySide6.QtGui": mock_pyside6.QtGui,
-            },
-        ):
+        with patch.dict(sys.modules, {'PySide6': mock_pyside6,
+                                       'PySide6.QtWidgets': mock_pyside6.QtWidgets,
+                                       'PySide6.QtCore': mock_pyside6.QtCore,
+                                       'PySide6.QtGui': mock_pyside6.QtGui}):
             from sentinel.gui import app as gui_app
 
             mock_engine = MagicMock()
@@ -402,15 +329,10 @@ agents:
     @pytest.mark.asyncio
     async def test_stop_engine_error(self):
         """Test engine stop with error."""
-        with patch.dict(
-            sys.modules,
-            {
-                "PySide6": mock_pyside6,
-                "PySide6.QtWidgets": mock_pyside6.QtWidgets,
-                "PySide6.QtCore": mock_pyside6.QtCore,
-                "PySide6.QtGui": mock_pyside6.QtGui,
-            },
-        ):
+        with patch.dict(sys.modules, {'PySide6': mock_pyside6,
+                                       'PySide6.QtWidgets': mock_pyside6.QtWidgets,
+                                       'PySide6.QtCore': mock_pyside6.QtCore,
+                                       'PySide6.QtGui': mock_pyside6.QtGui}):
             from sentinel.gui import app as gui_app
 
             mock_engine = MagicMock()
@@ -425,15 +347,10 @@ agents:
     @pytest.mark.asyncio
     async def test_stop_engine_no_engine(self):
         """Test engine stop when no engine exists."""
-        with patch.dict(
-            sys.modules,
-            {
-                "PySide6": mock_pyside6,
-                "PySide6.QtWidgets": mock_pyside6.QtWidgets,
-                "PySide6.QtCore": mock_pyside6.QtCore,
-                "PySide6.QtGui": mock_pyside6.QtGui,
-            },
-        ):
+        with patch.dict(sys.modules, {'PySide6': mock_pyside6,
+                                       'PySide6.QtWidgets': mock_pyside6.QtWidgets,
+                                       'PySide6.QtCore': mock_pyside6.QtCore,
+                                       'PySide6.QtGui': mock_pyside6.QtGui}):
             from sentinel.gui import app as gui_app
 
             sentinel_app = gui_app.SentinelApp()
@@ -448,15 +365,10 @@ class TestGUIMainEntry:
 
     def test_main_function(self):
         """Test main() entry point."""
-        with patch.dict(
-            sys.modules,
-            {
-                "PySide6": mock_pyside6,
-                "PySide6.QtWidgets": mock_pyside6.QtWidgets,
-                "PySide6.QtCore": mock_pyside6.QtCore,
-                "PySide6.QtGui": mock_pyside6.QtGui,
-            },
-        ):
+        with patch.dict(sys.modules, {'PySide6': mock_pyside6,
+                                       'PySide6.QtWidgets': mock_pyside6.QtWidgets,
+                                       'PySide6.QtCore': mock_pyside6.QtCore,
+                                       'PySide6.QtGui': mock_pyside6.QtGui}):
             from sentinel.gui import app as gui_app
 
             with patch("sentinel.gui.app.SentinelApp") as mock_app_class:
@@ -472,15 +384,10 @@ class TestGUIMainEntry:
 
     def test_main_function_with_config(self):
         """Test main() with config argument."""
-        with patch.dict(
-            sys.modules,
-            {
-                "PySide6": mock_pyside6,
-                "PySide6.QtWidgets": mock_pyside6.QtWidgets,
-                "PySide6.QtCore": mock_pyside6.QtCore,
-                "PySide6.QtGui": mock_pyside6.QtGui,
-            },
-        ):
+        with patch.dict(sys.modules, {'PySide6': mock_pyside6,
+                                       'PySide6.QtWidgets': mock_pyside6.QtWidgets,
+                                       'PySide6.QtCore': mock_pyside6.QtCore,
+                                       'PySide6.QtGui': mock_pyside6.QtGui}):
             from sentinel.gui import app as gui_app
 
             with patch("sentinel.gui.app.SentinelApp") as mock_app_class:
@@ -499,15 +406,10 @@ class TestMainWindowModule:
 
     def test_sidebar_button_init(self):
         """Test SidebarButton initialization."""
-        with patch.dict(
-            sys.modules,
-            {
-                "PySide6": mock_pyside6,
-                "PySide6.QtWidgets": mock_pyside6.QtWidgets,
-                "PySide6.QtCore": mock_pyside6.QtCore,
-                "PySide6.QtGui": mock_pyside6.QtGui,
-            },
-        ):
+        with patch.dict(sys.modules, {'PySide6': mock_pyside6,
+                                       'PySide6.QtWidgets': mock_pyside6.QtWidgets,
+                                       'PySide6.QtCore': mock_pyside6.QtCore,
+                                       'PySide6.QtGui': mock_pyside6.QtGui}):
             # Create a mock QPushButton class
             class MockQPushButton:
                 def __init__(self, text, parent=None):
@@ -535,15 +437,10 @@ class TestMainWindowModule:
 
     def test_stats_card_init(self):
         """Test StatsCard initialization."""
-        with patch.dict(
-            sys.modules,
-            {
-                "PySide6": mock_pyside6,
-                "PySide6.QtWidgets": mock_pyside6.QtWidgets,
-                "PySide6.QtCore": mock_pyside6.QtCore,
-                "PySide6.QtGui": mock_pyside6.QtGui,
-            },
-        ):
+        with patch.dict(sys.modules, {'PySide6': mock_pyside6,
+                                       'PySide6.QtWidgets': mock_pyside6.QtWidgets,
+                                       'PySide6.QtCore': mock_pyside6.QtCore,
+                                       'PySide6.QtGui': mock_pyside6.QtGui}):
             # Test component structure
             mock_frame = MagicMock()
             mock_layout = MagicMock()
@@ -668,8 +565,8 @@ class TestMainWindowModule:
 
         mock_engine.get_agent.return_value = mock_guardian
 
-        blocked = getattr(mock_guardian, "_blocked_ips", set())
-        quarantined = getattr(mock_guardian, "_quarantined_devices", set())
+        blocked = getattr(mock_guardian, '_blocked_ips', set())
+        quarantined = getattr(mock_guardian, '_quarantined_devices', set())
 
         assert len(blocked) == 2
         assert len(quarantined) == 1
@@ -766,7 +663,7 @@ class TestMainWindowModule:
         current_index = mock_pages.currentIndex()
         current_page = mock_pages.widget(current_index)
 
-        if hasattr(current_page, "refresh"):
+        if hasattr(current_page, 'refresh'):
             current_page.refresh()
 
         mock_page.refresh.assert_called_once()
@@ -793,51 +690,35 @@ class TestGUIIntegration:
 
     def test_gui_module_imports(self):
         """Test that GUI module can be imported."""
-        with patch.dict(
-            sys.modules,
-            {
-                "PySide6": mock_pyside6,
-                "PySide6.QtWidgets": mock_pyside6.QtWidgets,
-                "PySide6.QtCore": mock_pyside6.QtCore,
-                "PySide6.QtGui": mock_pyside6.QtGui,
-            },
-        ):
+        with patch.dict(sys.modules, {'PySide6': mock_pyside6,
+                                       'PySide6.QtWidgets': mock_pyside6.QtWidgets,
+                                       'PySide6.QtCore': mock_pyside6.QtCore,
+                                       'PySide6.QtGui': mock_pyside6.QtGui}):
             from sentinel.gui import app as gui_app
-
-            assert hasattr(gui_app, "SentinelApp")
-            assert hasattr(gui_app, "main")
+            assert hasattr(gui_app, 'SentinelApp')
+            assert hasattr(gui_app, 'main')
 
     def test_sentinel_app_run_error_handling(self):
         """Test SentinelApp run with error."""
-        with patch.dict(
-            sys.modules,
-            {
-                "PySide6": mock_pyside6,
-                "PySide6.QtWidgets": mock_pyside6.QtWidgets,
-                "PySide6.QtCore": mock_pyside6.QtCore,
-                "PySide6.QtGui": mock_pyside6.QtGui,
-            },
-        ):
+        with patch.dict(sys.modules, {'PySide6': mock_pyside6,
+                                       'PySide6.QtWidgets': mock_pyside6.QtWidgets,
+                                       'PySide6.QtCore': mock_pyside6.QtCore,
+                                       'PySide6.QtGui': mock_pyside6.QtGui}):
             from sentinel.gui import app as gui_app
 
             sentinel_app = gui_app.SentinelApp()
 
             # Make _load_config raise an error
-            with patch.object(sentinel_app, "_load_config", side_effect=Exception("Config error")):
+            with patch.object(sentinel_app, '_load_config', side_effect=Exception("Config error")):
                 result = sentinel_app.run()
                 assert result == 1
 
     def test_full_app_lifecycle_mock(self):
         """Test full app lifecycle with mocks."""
-        with patch.dict(
-            sys.modules,
-            {
-                "PySide6": mock_pyside6,
-                "PySide6.QtWidgets": mock_pyside6.QtWidgets,
-                "PySide6.QtCore": mock_pyside6.QtCore,
-                "PySide6.QtGui": mock_pyside6.QtGui,
-            },
-        ):
+        with patch.dict(sys.modules, {'PySide6': mock_pyside6,
+                                       'PySide6.QtWidgets': mock_pyside6.QtWidgets,
+                                       'PySide6.QtCore': mock_pyside6.QtCore,
+                                       'PySide6.QtGui': mock_pyside6.QtGui}):
             from sentinel.gui import app as gui_app
 
             sentinel_app = gui_app.SentinelApp()
@@ -867,7 +748,7 @@ class TestGUIIntegration:
                     mock_timer_class = MagicMock()
                     mock_timer_class.singleShot = MagicMock()
 
-                    with patch.object(gui_app, "QTimer", mock_timer_class):
+                    with patch.object(gui_app, 'QTimer', mock_timer_class):
                         # Run should complete without error
                         result = sentinel_app.run()
 

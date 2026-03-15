@@ -1,7 +1,6 @@
 """
 Tests for Sentinel AI Agents.
 """
-
 import asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -163,13 +162,17 @@ class TestDiscoveryAgent:
         fp = DeviceFingerprint(
             vendor="Dell",
             open_ports=[22, 80, 3306, 5432],  # SSH, HTTP, MySQL, PostgreSQL
-            services=["ssh", "http", "mysql", "postgresql"],
+            services=["ssh", "http", "mysql", "postgresql"]
         )
         device_type = agent._classify_device(fp)
         assert device_type == DeviceType.SERVER
 
         # Printer-like fingerprint
-        fp = DeviceFingerprint(vendor="HP", open_ports=[9100, 631], services=["jetdirect", "ipp"])
+        fp = DeviceFingerprint(
+            vendor="HP",
+            open_ports=[9100, 631],
+            services=["jetdirect", "ipp"]
+        )
         device_type = agent._classify_device(fp)
         assert device_type == DeviceType.PRINTER
 
@@ -182,7 +185,10 @@ class TestDiscoveryAgent:
 
         # Full fingerprint
         fp = DeviceFingerprint(
-            vendor="Dell", os_family="Linux", open_ports=[22, 80], services=["ssh", "http"]
+            vendor="Dell",
+            os_family="Linux",
+            open_ports=[22, 80],
+            services=["ssh", "http"]
         )
         confidence = agent._calculate_confidence(fp)
         assert confidence >= 0.75
@@ -223,7 +229,9 @@ class TestPlannerAgent:
 
     @pytest.fixture
     def planner_config(self):
-        return {"require_confirmation_for": ["create_vlan", "delete_vlan"]}
+        return {
+            "require_confirmation_for": ["create_vlan", "delete_vlan"]
+        }
 
     @pytest.mark.asyncio
     async def test_planner_agent_creation(self, mock_engine, planner_config):
@@ -248,7 +256,7 @@ class TestPlannerAgent:
             "destination_vlan": 20,
             "allowed_services": ["ssh", "http"],
             "denied_services": [],
-            "default_action": "deny",
+            "default_action": "deny"
         }
 
         # Allowed service

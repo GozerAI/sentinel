@@ -1,8 +1,9 @@
 """
-This module is available in the commercial edition.
-Visit https://gozerai.com/pricing for licensing options.
+Sentinel Desktop GUI Package.
+
+This package provides a desktop application interface for the Sentinel platform.
 """
-raise ImportError(
-    "This module requires a commercial license. "
-    "Visit https://gozerai.com/pricing for details."
-)
+from sentinel.gui.app import SentinelApp
+from sentinel.gui.main_window import MainWindow
+
+__all__ = ["SentinelApp", "MainWindow"]

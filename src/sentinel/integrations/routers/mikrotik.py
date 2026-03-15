@@ -13,7 +13,6 @@ Supports:
 
 Uses the RouterOS REST API (v7+) or legacy API for older versions.
 """
-
 import asyncio
 import hashlib
 import binascii
@@ -130,7 +129,7 @@ class MikroTikIntegration(RouterIntegration):
                 base_url=self._base_url,
                 auth=(self.username, self.password),
                 verify=self.verify_ssl,
-                timeout=30.0,
+                timeout=30.0
             )
 
             # Test connection by getting system identity
@@ -212,15 +211,13 @@ class MikroTikIntegration(RouterIntegration):
 
             entries = []
             for entry in response.json():
-                entries.append(
-                    {
-                        "ip": entry.get("address"),
-                        "mac": entry.get("mac-address"),
-                        "interface": entry.get("interface"),
-                        "dynamic": entry.get("dynamic", "false") == "true",
-                        "complete": entry.get("complete", "false") == "true",
-                    }
-                )
+                entries.append({
+                    "ip": entry.get("address"),
+                    "mac": entry.get("mac-address"),
+                    "interface": entry.get("interface"),
+                    "dynamic": entry.get("dynamic", "false") == "true",
+                    "complete": entry.get("complete", "false") == "true"
+                })
 
             return entries
 
@@ -236,19 +233,17 @@ class MikroTikIntegration(RouterIntegration):
 
             leases = []
             for lease in response.json():
-                leases.append(
-                    {
-                        "ip": lease.get("address"),
-                        "mac": lease.get("mac-address"),
-                        "hostname": lease.get("host-name", ""),
-                        "server": lease.get("server"),
-                        "status": lease.get("status"),
-                        "expires_after": lease.get("expires-after"),
-                        "last_seen": lease.get("last-seen"),
-                        "dynamic": lease.get("dynamic", "false") == "true",
-                        "blocked": lease.get("blocked", "false") == "true",
-                    }
-                )
+                leases.append({
+                    "ip": lease.get("address"),
+                    "mac": lease.get("mac-address"),
+                    "hostname": lease.get("host-name", ""),
+                    "server": lease.get("server"),
+                    "status": lease.get("status"),
+                    "expires_after": lease.get("expires-after"),
+                    "last_seen": lease.get("last-seen"),
+                    "dynamic": lease.get("dynamic", "false") == "true",
+                    "blocked": lease.get("blocked", "false") == "true"
+                })
 
             return leases
 
@@ -317,24 +312,22 @@ class MikroTikIntegration(RouterIntegration):
 
             rules = []
             for rule in response.json():
-                rules.append(
-                    {
-                        "id": rule.get(".id"),
-                        "chain": rule.get("chain"),
-                        "action": rule.get("action"),
-                        "src_address": rule.get("src-address"),
-                        "dst_address": rule.get("dst-address"),
-                        "protocol": rule.get("protocol"),
-                        "dst_port": rule.get("dst-port"),
-                        "src_port": rule.get("src-port"),
-                        "in_interface": rule.get("in-interface"),
-                        "out_interface": rule.get("out-interface"),
-                        "comment": rule.get("comment", ""),
-                        "disabled": rule.get("disabled", "false") == "true",
-                        "bytes": int(rule.get("bytes", 0)),
-                        "packets": int(rule.get("packets", 0)),
-                    }
-                )
+                rules.append({
+                    "id": rule.get(".id"),
+                    "chain": rule.get("chain"),
+                    "action": rule.get("action"),
+                    "src_address": rule.get("src-address"),
+                    "dst_address": rule.get("dst-address"),
+                    "protocol": rule.get("protocol"),
+                    "dst_port": rule.get("dst-port"),
+                    "src_port": rule.get("src-port"),
+                    "in_interface": rule.get("in-interface"),
+                    "out_interface": rule.get("out-interface"),
+                    "comment": rule.get("comment", ""),
+                    "disabled": rule.get("disabled", "false") == "true",
+                    "bytes": int(rule.get("bytes", 0)),
+                    "packets": int(rule.get("packets", 0))
+                })
 
             return rules
 
@@ -358,21 +351,19 @@ class MikroTikIntegration(RouterIntegration):
 
             interfaces = []
             for iface in response.json():
-                interfaces.append(
-                    {
-                        "name": iface.get("name"),
-                        "type": iface.get("type"),
-                        "mac_address": iface.get("mac-address"),
-                        "mtu": iface.get("mtu"),
-                        "running": iface.get("running", "false") == "true",
-                        "disabled": iface.get("disabled", "false") == "true",
-                        "rx_byte": int(iface.get("rx-byte", 0)),
-                        "tx_byte": int(iface.get("tx-byte", 0)),
-                        "rx_packet": int(iface.get("rx-packet", 0)),
-                        "tx_packet": int(iface.get("tx-packet", 0)),
-                        "link_downs": int(iface.get("link-downs", 0)),
-                    }
-                )
+                interfaces.append({
+                    "name": iface.get("name"),
+                    "type": iface.get("type"),
+                    "mac_address": iface.get("mac-address"),
+                    "mtu": iface.get("mtu"),
+                    "running": iface.get("running", "false") == "true",
+                    "disabled": iface.get("disabled", "false") == "true",
+                    "rx_byte": int(iface.get("rx-byte", 0)),
+                    "tx_byte": int(iface.get("tx-byte", 0)),
+                    "rx_packet": int(iface.get("rx-packet", 0)),
+                    "tx_packet": int(iface.get("tx-packet", 0)),
+                    "link_downs": int(iface.get("link-downs", 0))
+                })
 
             self._interfaces_cache = interfaces
             self._cache_time = utc_now()
@@ -405,7 +396,7 @@ class MikroTikIntegration(RouterIntegration):
                     "rx_drop": int(iface.get("rx-drop", 0)),
                     "tx_drop": int(iface.get("tx-drop", 0)),
                     "fp_rx_byte": int(iface.get("fp-rx-byte", 0)),
-                    "fp_tx_byte": int(iface.get("fp-tx-byte", 0)),
+                    "fp_tx_byte": int(iface.get("fp-tx-byte", 0))
                 }
 
             return {}
@@ -426,17 +417,15 @@ class MikroTikIntegration(RouterIntegration):
 
             vlans = []
             for vlan in response.json():
-                vlans.append(
-                    {
-                        "id": vlan.get(".id"),
-                        "name": vlan.get("name"),
-                        "vlan_id": int(vlan.get("vlan-id", 0)),
-                        "interface": vlan.get("interface"),
-                        "mtu": vlan.get("mtu"),
-                        "running": vlan.get("running", "false") == "true",
-                        "disabled": vlan.get("disabled", "false") == "true",
-                    }
-                )
+                vlans.append({
+                    "id": vlan.get(".id"),
+                    "name": vlan.get("name"),
+                    "vlan_id": int(vlan.get("vlan-id", 0)),
+                    "interface": vlan.get("interface"),
+                    "mtu": vlan.get("mtu"),
+                    "running": vlan.get("running", "false") == "true",
+                    "disabled": vlan.get("disabled", "false") == "true"
+                })
 
             return vlans
 
@@ -444,7 +433,12 @@ class MikroTikIntegration(RouterIntegration):
             logger.error(f"Failed to get VLANs: {e}")
             return []
 
-    async def create_vlan(self, interface: str, vlan_id: int, name: str = None) -> str:
+    async def create_vlan(
+        self,
+        interface: str,
+        vlan_id: int,
+        name: str = None
+    ) -> str:
         """
         Create a new VLAN interface.
 
@@ -460,7 +454,11 @@ class MikroTikIntegration(RouterIntegration):
             name = f"vlan{vlan_id}"
 
         try:
-            payload = {"name": name, "vlan-id": str(vlan_id), "interface": interface}
+            payload = {
+                "name": name,
+                "vlan-id": str(vlan_id),
+                "interface": interface
+            }
 
             response = await self._client.put("/interface/vlan", json=payload)
             response.raise_for_status()
@@ -499,18 +497,16 @@ class MikroTikIntegration(RouterIntegration):
 
             ports = []
             for port in response.json():
-                ports.append(
-                    {
-                        "id": port.get(".id"),
-                        "interface": port.get("interface"),
-                        "bridge": port.get("bridge"),
-                        "pvid": int(port.get("pvid", 1)),
-                        "frame_types": port.get("frame-types"),
-                        "ingress_filtering": port.get("ingress-filtering", "false") == "true",
-                        "hw": port.get("hw", "false") == "true",
-                        "disabled": port.get("disabled", "false") == "true",
-                    }
-                )
+                ports.append({
+                    "id": port.get(".id"),
+                    "interface": port.get("interface"),
+                    "bridge": port.get("bridge"),
+                    "pvid": int(port.get("pvid", 1)),
+                    "frame_types": port.get("frame-types"),
+                    "ingress_filtering": port.get("ingress-filtering", "false") == "true",
+                    "hw": port.get("hw", "false") == "true",
+                    "disabled": port.get("disabled", "false") == "true"
+                })
 
             return ports
 
@@ -519,7 +515,10 @@ class MikroTikIntegration(RouterIntegration):
             return []
 
     async def set_port_vlan(
-        self, port: str, pvid: int, frame_types: str = "admit-only-vlan-tagged"
+        self,
+        port: str,
+        pvid: int,
+        frame_types: str = "admit-only-vlan-tagged"
     ) -> bool:
         """
         Configure VLAN settings on a bridge port.
@@ -546,9 +545,15 @@ class MikroTikIntegration(RouterIntegration):
             port_id = ports[0].get(".id")
 
             # Update the port
-            payload = {"pvid": str(pvid), "frame-types": frame_types}
+            payload = {
+                "pvid": str(pvid),
+                "frame-types": frame_types
+            }
 
-            response = await self._client.patch(f"/interface/bridge/port/{port_id}", json=payload)
+            response = await self._client.patch(
+                f"/interface/bridge/port/{port_id}",
+                json=payload
+            )
             response.raise_for_status()
 
             logger.info(f"Set port {port} PVID to {pvid}")
@@ -566,16 +571,14 @@ class MikroTikIntegration(RouterIntegration):
 
             vlans = []
             for vlan in response.json():
-                vlans.append(
-                    {
-                        "id": vlan.get(".id"),
-                        "bridge": vlan.get("bridge"),
-                        "vlan_ids": vlan.get("vlan-ids"),
-                        "tagged": vlan.get("tagged", "").split(","),
-                        "untagged": vlan.get("untagged", "").split(","),
-                        "disabled": vlan.get("disabled", "false") == "true",
-                    }
-                )
+                vlans.append({
+                    "id": vlan.get(".id"),
+                    "bridge": vlan.get("bridge"),
+                    "vlan_ids": vlan.get("vlan-ids"),
+                    "tagged": vlan.get("tagged", "").split(","),
+                    "untagged": vlan.get("untagged", "").split(","),
+                    "disabled": vlan.get("disabled", "false") == "true"
+                })
 
             return vlans
 
@@ -595,21 +598,19 @@ class MikroTikIntegration(RouterIntegration):
 
             queues = []
             for queue in response.json():
-                queues.append(
-                    {
-                        "id": queue.get(".id"),
-                        "name": queue.get("name"),
-                        "target": queue.get("target"),
-                        "max_limit": queue.get("max-limit"),
-                        "burst_limit": queue.get("burst-limit"),
-                        "burst_threshold": queue.get("burst-threshold"),
-                        "burst_time": queue.get("burst-time"),
-                        "priority": queue.get("priority"),
-                        "disabled": queue.get("disabled", "false") == "true",
-                        "bytes": queue.get("bytes"),
-                        "packets": queue.get("packets"),
-                    }
-                )
+                queues.append({
+                    "id": queue.get(".id"),
+                    "name": queue.get("name"),
+                    "target": queue.get("target"),
+                    "max_limit": queue.get("max-limit"),
+                    "burst_limit": queue.get("burst-limit"),
+                    "burst_threshold": queue.get("burst-threshold"),
+                    "burst_time": queue.get("burst-time"),
+                    "priority": queue.get("priority"),
+                    "disabled": queue.get("disabled", "false") == "true",
+                    "bytes": queue.get("bytes"),
+                    "packets": queue.get("packets")
+                })
 
             return queues
 
@@ -618,7 +619,12 @@ class MikroTikIntegration(RouterIntegration):
             return []
 
     async def create_queue(
-        self, name: str, target: str, max_limit: str = "0/0", priority: int = 8, comment: str = ""
+        self,
+        name: str,
+        target: str,
+        max_limit: str = "0/0",
+        priority: int = 8,
+        comment: str = ""
     ) -> str:
         """
         Create a simple queue for traffic shaping.
@@ -639,7 +645,7 @@ class MikroTikIntegration(RouterIntegration):
                 "target": target,
                 "max-limit": max_limit,
                 "priority": f"{priority}/{priority}",
-                "comment": comment,
+                "comment": comment
             }
 
             response = await self._client.put("/queue/simple", json=payload)
@@ -679,16 +685,14 @@ class MikroTikIntegration(RouterIntegration):
 
             addresses = []
             for addr in response.json():
-                addresses.append(
-                    {
-                        "id": addr.get(".id"),
-                        "address": addr.get("address"),
-                        "network": addr.get("network"),
-                        "interface": addr.get("interface"),
-                        "disabled": addr.get("disabled", "false") == "true",
-                        "dynamic": addr.get("dynamic", "false") == "true",
-                    }
-                )
+                addresses.append({
+                    "id": addr.get(".id"),
+                    "address": addr.get("address"),
+                    "network": addr.get("network"),
+                    "interface": addr.get("interface"),
+                    "disabled": addr.get("disabled", "false") == "true",
+                    "dynamic": addr.get("dynamic", "false") == "true"
+                })
 
             return addresses
 
@@ -696,7 +700,12 @@ class MikroTikIntegration(RouterIntegration):
             logger.error(f"Failed to get IP addresses: {e}")
             return []
 
-    async def add_ip_address(self, address: str, interface: str, comment: str = "") -> str:
+    async def add_ip_address(
+        self,
+        address: str,
+        interface: str,
+        comment: str = ""
+    ) -> str:
         """
         Add an IP address to an interface.
 
@@ -709,7 +718,11 @@ class MikroTikIntegration(RouterIntegration):
             Address ID
         """
         try:
-            payload = {"address": address, "interface": interface, "comment": comment}
+            payload = {
+                "address": address,
+                "interface": interface,
+                "comment": comment
+            }
 
             response = await self._client.put("/ip/address", json=payload)
             response.raise_for_status()
@@ -735,20 +748,18 @@ class MikroTikIntegration(RouterIntegration):
 
             routes = []
             for route in response.json():
-                routes.append(
-                    {
-                        "id": route.get(".id"),
-                        "dst_address": route.get("dst-address"),
-                        "gateway": route.get("gateway"),
-                        "distance": int(route.get("distance", 0)),
-                        "scope": route.get("scope"),
-                        "target_scope": route.get("target-scope"),
-                        "routing_mark": route.get("routing-mark"),
-                        "active": route.get("active", "false") == "true",
-                        "dynamic": route.get("dynamic", "false") == "true",
-                        "disabled": route.get("disabled", "false") == "true",
-                    }
-                )
+                routes.append({
+                    "id": route.get(".id"),
+                    "dst_address": route.get("dst-address"),
+                    "gateway": route.get("gateway"),
+                    "distance": int(route.get("distance", 0)),
+                    "scope": route.get("scope"),
+                    "target_scope": route.get("target-scope"),
+                    "routing_mark": route.get("routing-mark"),
+                    "active": route.get("active", "false") == "true",
+                    "dynamic": route.get("dynamic", "false") == "true",
+                    "disabled": route.get("disabled", "false") == "true"
+                })
 
             return routes
 
@@ -757,7 +768,11 @@ class MikroTikIntegration(RouterIntegration):
             return []
 
     async def add_route(
-        self, dst_address: str, gateway: str, distance: int = 1, comment: str = ""
+        self,
+        dst_address: str,
+        gateway: str,
+        distance: int = 1,
+        comment: str = ""
     ) -> str:
         """Add a static route."""
         try:
@@ -765,7 +780,7 @@ class MikroTikIntegration(RouterIntegration):
                 "dst-address": dst_address,
                 "gateway": gateway,
                 "distance": str(distance),
-                "comment": comment,
+                "comment": comment
             }
 
             response = await self._client.put("/ip/route", json=payload)
@@ -806,7 +821,7 @@ class MikroTikIntegration(RouterIntegration):
                 "total_hdd_space": int(data.get("total-hdd-space", 0)),
                 "architecture_name": data.get("architecture-name"),
                 "board_name": data.get("board-name"),
-                "platform": data.get("platform"),
+                "platform": data.get("platform")
             }
 
         except Exception as e:
@@ -822,16 +837,14 @@ class MikroTikIntegration(RouterIntegration):
             traffic = []
             for iface in response.json():
                 if iface.get("running") == "true":
-                    traffic.append(
-                        {
-                            "interface": iface.get("name"),
-                            "type": iface.get("type"),
-                            "rx_byte": int(iface.get("rx-byte", 0)),
-                            "tx_byte": int(iface.get("tx-byte", 0)),
-                            "rx_packet": int(iface.get("rx-packet", 0)),
-                            "tx_packet": int(iface.get("tx-packet", 0)),
-                        }
-                    )
+                    traffic.append({
+                        "interface": iface.get("name"),
+                        "type": iface.get("type"),
+                        "rx_byte": int(iface.get("rx-byte", 0)),
+                        "tx_byte": int(iface.get("tx-byte", 0)),
+                        "rx_packet": int(iface.get("rx-packet", 0)),
+                        "tx_packet": int(iface.get("tx-packet", 0))
+                    })
 
             return traffic
 
@@ -846,7 +859,10 @@ class MikroTikIntegration(RouterIntegration):
     async def create_backup(self, name: str = "sentinel-backup") -> bool:
         """Create a configuration backup on the device."""
         try:
-            response = await self._client.post("/system/backup/save", json={"name": name})
+            response = await self._client.post(
+                "/system/backup/save",
+                json={"name": name}
+            )
             response.raise_for_status()
 
             logger.info(f"Created backup: {name}")
@@ -872,7 +888,11 @@ class MikroTikIntegration(RouterIntegration):
     # Convenience Methods for Sentinel Integration
     # =========================================================================
 
-    async def block_ip(self, ip: str, comment: str = "Blocked by Sentinel") -> str:
+    async def block_ip(
+        self,
+        ip: str,
+        comment: str = "Blocked by Sentinel"
+    ) -> str:
         """
         Block an IP address in the firewall.
 
@@ -883,9 +903,12 @@ class MikroTikIntegration(RouterIntegration):
         Returns:
             Rule ID
         """
-        return await self.add_firewall_rule(
-            {"chain": "forward", "action": "drop", "src-address": ip, "comment": comment}
-        )
+        return await self.add_firewall_rule({
+            "chain": "forward",
+            "action": "drop",
+            "src-address": ip,
+            "comment": comment
+        })
 
     async def unblock_ip(self, ip: str) -> bool:
         """
@@ -908,7 +931,11 @@ class MikroTikIntegration(RouterIntegration):
         return removed
 
     async def set_device_bandwidth(
-        self, ip: str, upload: str, download: str, name: str = None
+        self,
+        ip: str,
+        upload: str,
+        download: str,
+        name: str = None
     ) -> str:
         """
         Set bandwidth limits for a device.
@@ -929,7 +956,7 @@ class MikroTikIntegration(RouterIntegration):
             name=name,
             target=f"{ip}/32",
             max_limit=f"{upload}/{download}",
-            comment="Managed by Sentinel Optimizer",
+            comment="Managed by Sentinel Optimizer"
         )
 
     @property

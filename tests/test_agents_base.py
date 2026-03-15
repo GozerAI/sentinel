@@ -4,7 +4,6 @@ Tests for the BaseAgent class.
 Tests cover agent lifecycle, action execution, confidence thresholds,
 rate limiting, and rollback functionality.
 """
-
 import asyncio
 import pytest
 from datetime import datetime, timedelta, timezone
@@ -13,18 +12,13 @@ from uuid import uuid4
 
 from sentinel.agents.base import BaseAgent
 from sentinel.core.models.event import (
-    Event,
-    EventCategory,
-    EventSeverity,
-    AgentAction,
-    AgentDecision,
+    Event, EventCategory, EventSeverity, AgentAction, AgentDecision
 )
 from sentinel.core.utils import utc_now
 
 
 class ConcreteAgent(BaseAgent):
     """Concrete implementation for testing."""
-
     agent_name = "test_agent"
     agent_description = "Test agent for unit tests"
 
@@ -130,7 +124,7 @@ class TestBaseAgentInit:
             "auto_execute_threshold": 0.99,
             "log_execute_threshold": 0.90,
             "confirm_threshold": 0.70,
-            "max_actions_per_minute": 5,
+            "max_actions_per_minute": 5
         }
         agent = ConcreteAgent(mock_engine, config)
 
@@ -191,7 +185,7 @@ class TestBaseAgentAnalyze:
             event_type="device.discovered",
             severity=EventSeverity.INFO,
             source="test",
-            title="Test event",
+            title="Test event"
         )
 
         decision = await agent.analyze(event)
@@ -214,7 +208,7 @@ class TestBaseAgentExecuteAction:
             target_id="device-123",
             parameters={"param": "value"},
             reasoning="Test reasoning",
-            confidence=0.98,  # Above auto_execute_threshold
+            confidence=0.98  # Above auto_execute_threshold
         )
 
         assert action.status == "executed"
@@ -229,14 +223,16 @@ class TestBaseAgentExecuteAction:
             target_id="device-123",
             parameters={},
             reasoning="Test reasoning",
-            confidence=0.85,  # Between log_execute and auto_execute
+            confidence=0.85  # Between log_execute and auto_execute
         )
 
         assert action.status == "executed"
         assert len(agent._executed_actions) == 1
 
     @pytest.mark.asyncio
-    async def test_execute_action_pending_confirmation_non_autonomous(self, non_autonomous_agent):
+    async def test_execute_action_pending_confirmation_non_autonomous(
+        self, non_autonomous_agent
+    ):
         """Test non-autonomous action with low confidence requests confirmation."""
         action = await non_autonomous_agent.execute_action(
             action_type="test_action",
@@ -244,7 +240,7 @@ class TestBaseAgentExecuteAction:
             target_id="device-123",
             parameters={},
             reasoning="Test reasoning",
-            confidence=0.65,  # Between confirm and log_execute
+            confidence=0.65  # Between confirm and log_execute
         )
 
         assert action.status == "pending_confirmation"
@@ -259,7 +255,7 @@ class TestBaseAgentExecuteAction:
             target_id="device-123",
             parameters={},
             reasoning="Test reasoning",
-            confidence=0.40,  # Below confirm_threshold
+            confidence=0.40  # Below confirm_threshold
         )
 
         assert action.status == "escalated"
@@ -274,7 +270,7 @@ class TestBaseAgentExecuteAction:
             target_id="device-123",
             parameters={},
             reasoning="Test reasoning",
-            confidence=0.65,  # Between confirm and log_execute
+            confidence=0.65  # Between confirm and log_execute
         )
 
         # In autonomous mode, action should be executed after timeout
@@ -292,7 +288,7 @@ class TestBaseAgentExecuteAction:
             parameters={},
             reasoning="Test reasoning",
             confidence=0.40,  # Below confirm_threshold
-            reversible=True,
+            reversible=True
         )
 
         # In autonomous mode with reversible action, should execute via fallback
@@ -309,7 +305,7 @@ class TestBaseAgentExecuteAction:
             target_id="device-123",
             parameters={},
             reasoning="Test",
-            confidence=0.98,
+            confidence=0.98
         )
 
         assert len(agent._actions) == 1
@@ -324,7 +320,7 @@ class TestBaseAgentExecuteAction:
             target_id="device-123",
             parameters={},
             reasoning="Test",
-            confidence=0.98,
+            confidence=0.98
         )
 
         mock_engine.event_bus.publish.assert_called()
@@ -339,7 +335,7 @@ class TestBaseAgentExecuteAction:
             parameters={},
             reasoning="Test",
             confidence=0.98,
-            reversible=True,
+            reversible=True
         )
 
         assert len(agent._rollback_data_captured) == 1
@@ -383,7 +379,7 @@ class TestBaseAgentRateLimiting:
                 target_id="device-123",
                 parameters={},
                 reasoning="Test",
-                confidence=0.98,
+                confidence=0.98
             )
 
 
@@ -401,7 +397,7 @@ class TestBaseAgentRollback:
             parameters={},
             reasoning="Test",
             confidence=0.98,
-            reversible=True,
+            reversible=True
         )
 
         # Now rollback
@@ -421,7 +417,7 @@ class TestBaseAgentRollback:
             parameters={},
             reasoning="Test",
             confidence=0.98,
-            reversible=False,
+            reversible=False
         )
         action.mark_executed({"result": "success"})
 
@@ -443,7 +439,7 @@ class TestBaseAgentConfirmation:
             target_id="device-123",
             parameters={},
             reasoning="Test",
-            confidence=0.65,  # Will be pending in non-autonomous mode
+            confidence=0.65  # Will be pending in non-autonomous mode
         )
 
         # Confirm it
@@ -470,7 +466,7 @@ class TestBaseAgentConfirmation:
             target_id="device-123",
             parameters={},
             reasoning="Test",
-            confidence=0.98,  # Will auto-execute
+            confidence=0.98  # Will auto-execute
         )
 
         # Try to confirm it
@@ -504,7 +500,7 @@ class TestBaseAgentStats:
             target_id="d1",
             parameters={},
             reasoning="Test",
-            confidence=0.98,
+            confidence=0.98
         )
         await agent.execute_action(
             action_type="test2",
@@ -512,7 +508,7 @@ class TestBaseAgentStats:
             target_id="d2",
             parameters={},
             reasoning="Test",
-            confidence=0.98,
+            confidence=0.98
         )
 
         stats = agent.stats
@@ -538,7 +534,7 @@ class TestBaseAgentRecentHistory:
                 target_id=f"d{i}",
                 parameters={},
                 reasoning="Test",
-                confidence=0.98,
+                confidence=0.98
             )
 
         recent = agent.get_recent_actions(5)
@@ -592,7 +588,7 @@ class TestBaseAgentExecuteActionInternal:
             target_id="d1",
             parameters={},
             reasoning="Test",
-            confidence=0.98,
+            confidence=0.98
         )
 
         result = await agent._execute_action_internal(action)
@@ -602,7 +598,6 @@ class TestBaseAgentExecuteActionInternal:
     @pytest.mark.asyncio
     async def test_execute_action_internal_failure(self, agent):
         """Test internal execution with failure."""
-
         # Make _do_execute raise an exception
         async def failing_execute(action):
             raise ValueError("Execution failed!")
@@ -616,7 +611,7 @@ class TestBaseAgentExecuteActionInternal:
             target_id="d1",
             parameters={},
             reasoning="Test",
-            confidence=0.98,
+            confidence=0.98
         )
 
         result = await agent._execute_action_internal(action)
@@ -638,7 +633,7 @@ class TestBaseAgentRollbackFailure:
             parameters={},
             reasoning="Test",
             confidence=0.98,
-            reversible=True,
+            reversible=True
         )
 
         # Make _do_rollback raise an exception
@@ -668,7 +663,7 @@ class TestBaseAgentEscalateToLLM:
             target_id="d1",
             parameters={},
             reasoning="Test",
-            confidence=0.30,
+            confidence=0.30
         )
 
         # Should not raise, just log warning
@@ -688,7 +683,7 @@ class TestBaseAgentEscalateToLLM:
             target_id="d1",
             parameters={},
             reasoning="Test",
-            confidence=0.30,
+            confidence=0.30
         )
 
         await agent._escalate_to_llm(action, None)
@@ -710,7 +705,7 @@ class TestBaseAgentEscalateToLLM:
             target_id="d1",
             parameters={},
             reasoning="Test",
-            confidence=0.30,
+            confidence=0.30
         )
 
         trigger_event = Event(
@@ -718,7 +713,7 @@ class TestBaseAgentEscalateToLLM:
             event_type="device.discovered",
             severity=EventSeverity.INFO,
             source="test",
-            title="Test event",
+            title="Test event"
         )
 
         await agent._escalate_to_llm(action, trigger_event)
@@ -739,7 +734,7 @@ class TestBaseAgentEscalateToLLM:
             target_id="d1",
             parameters={},
             reasoning="Test",
-            confidence=0.30,
+            confidence=0.30
         )
 
         # Should not raise
@@ -785,7 +780,6 @@ class TestBaseAgentMainLoop:
     @pytest.mark.asyncio
     async def test_stop_cancels_task(self, mock_engine, default_config):
         """Test stop cancels running task."""
-
         class AgentWithLoop(ConcreteAgent):
             async def _main_loop(self):
                 while self._running:
@@ -813,7 +807,7 @@ class TestBaseAgentExecuteActionWithTriggerEvent:
             event_type="device.discovered",
             severity=EventSeverity.INFO,
             source="test",
-            title="Test event",
+            title="Test event"
         )
 
         action = await agent.execute_action(
@@ -823,7 +817,7 @@ class TestBaseAgentExecuteActionWithTriggerEvent:
             parameters={},
             reasoning="Test",
             confidence=0.98,
-            trigger_event=trigger,
+            trigger_event=trigger
         )
 
         assert action.trigger_event_id == trigger.id

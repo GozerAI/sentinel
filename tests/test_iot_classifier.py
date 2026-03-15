@@ -4,7 +4,6 @@ Tests for IoT device classifier and segmenter.
 Tests cover device fingerprinting, classification accuracy,
 VLAN policy matching, and segmentation actions.
 """
-
 import pytest
 from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -42,7 +41,8 @@ class TestDeviceClassification:
     async def test_classify_raspberry_pi_by_mac(self, classifier):
         """Test Raspberry Pi classification by MAC OUI."""
         result = await classifier.classify(
-            mac_address="B8:27:EB:12:34:56", ip_address="192.168.1.100"
+            mac_address="B8:27:EB:12:34:56",
+            ip_address="192.168.1.100"
         )
 
         assert result.device_class == DeviceClass.RASPBERRY_PI
@@ -53,7 +53,9 @@ class TestDeviceClassification:
     async def test_classify_ring_doorbell(self, classifier):
         """Test Ring doorbell classification."""
         result = await classifier.classify(
-            mac_address="34:76:C5:AA:BB:CC", ip_address="192.168.1.101", hostname="ring-doorbell"
+            mac_address="34:76:C5:AA:BB:CC",
+            ip_address="192.168.1.101",
+            hostname="ring-doorbell"
         )
 
         assert result.device_class == DeviceClass.DOORBELL
@@ -63,7 +65,9 @@ class TestDeviceClassification:
     async def test_classify_philips_hue(self, classifier):
         """Test Philips Hue bridge classification."""
         result = await classifier.classify(
-            mac_address="00:17:88:11:22:33", ip_address="192.168.1.102", open_ports=[80, 443]
+            mac_address="00:17:88:11:22:33",
+            ip_address="192.168.1.102",
+            open_ports=[80, 443]
         )
 
         assert result.device_class == DeviceClass.ZIGBEE_HUB
@@ -73,7 +77,9 @@ class TestDeviceClassification:
     async def test_classify_amazon_echo(self, classifier):
         """Test Amazon Echo classification."""
         result = await classifier.classify(
-            mac_address="44:65:0D:AA:BB:CC", ip_address="192.168.1.103", hostname="amazon-echo"
+            mac_address="44:65:0D:AA:BB:CC",
+            ip_address="192.168.1.103",
+            hostname="amazon-echo"
         )
 
         assert result.device_class == DeviceClass.SMART_SPEAKER
@@ -83,7 +89,8 @@ class TestDeviceClassification:
     async def test_classify_unknown_device(self, classifier):
         """Test classification of unknown device."""
         result = await classifier.classify(
-            mac_address="AA:BB:CC:DD:EE:FF", ip_address="192.168.1.199"
+            mac_address="AA:BB:CC:DD:EE:FF",
+            ip_address="192.168.1.199"
         )
 
         assert result.device_class == DeviceClass.UNKNOWN
@@ -95,7 +102,7 @@ class TestDeviceClassification:
         result = await classifier.classify(
             mac_address="AA:BB:CC:DD:EE:FF",
             ip_address="192.168.1.104",
-            hostname="nest-thermostat-living",
+            hostname="nest-thermostat-living"
         )
 
         # Should match Nest pattern even with unknown MAC
@@ -107,7 +114,7 @@ class TestDeviceClassification:
         result = await classifier.classify(
             mac_address="AA:BB:CC:DD:EE:FF",
             ip_address="192.168.1.105",
-            open_ports=[554, 80, 443],  # RTSP + web
+            open_ports=[554, 80, 443]  # RTSP + web
         )
 
         # Ports alone might suggest camera
@@ -142,7 +149,8 @@ class TestSecurityRiskAssessment:
         """Test high-risk device gets appropriate risk level."""
         # Hikvision camera - known security issues
         result = await classifier.classify(
-            mac_address="1C:C3:16:AA:BB:CC", ip_address="192.168.1.110"
+            mac_address="1C:C3:16:AA:BB:CC",
+            ip_address="192.168.1.110"
         )
 
         assert result.security_risk == SecurityRisk.HIGH
@@ -152,7 +160,8 @@ class TestSecurityRiskAssessment:
         """Test low-risk device gets appropriate risk level."""
         # Apple TV - generally secure
         result = await classifier.classify(
-            mac_address="28:6A:B8:AA:BB:CC", ip_address="192.168.1.111"
+            mac_address="28:6A:B8:AA:BB:CC",
+            ip_address="192.168.1.111"
         )
 
         assert result.security_risk in [SecurityRisk.LOW, SecurityRisk.MINIMAL]
@@ -163,7 +172,7 @@ class TestSecurityRiskAssessment:
         result = await classifier.classify(
             mac_address="AA:BB:CC:DD:EE:FF",
             ip_address="192.168.1.112",
-            open_ports=[23, 21],  # Telnet and FTP
+            open_ports=[23, 21]  # Telnet and FTP
         )
 
         assert len(result.risk_factors) > 0
@@ -176,7 +185,10 @@ class TestClassificationCaching:
     @pytest.mark.asyncio
     async def test_cache_stores_result(self, classifier):
         """Test that classification result is cached."""
-        await classifier.classify(mac_address="B8:27:EB:12:34:56", ip_address="192.168.1.100")
+        await classifier.classify(
+            mac_address="B8:27:EB:12:34:56",
+            ip_address="192.168.1.100"
+        )
 
         cached = classifier.get_cached_classification("B8:27:EB:12:34:56")
         assert cached is not None
@@ -266,7 +278,9 @@ class TestVLANPolicy:
     def test_policy_matches_device(self):
         """Test policy device matching."""
         policy = VLANPolicy(
-            vlan_id=50, name="IoT", device_classes=[DeviceClass.SMART_TV, DeviceClass.SMART_SPEAKER]
+            vlan_id=50,
+            name="IoT",
+            device_classes=[DeviceClass.SMART_TV, DeviceClass.SMART_SPEAKER]
         )
 
         result = ClassificationResult(device_class=DeviceClass.SMART_TV)
@@ -293,7 +307,8 @@ class TestIoTSegmenter:
     def test_determine_vlan_for_iot(self, segmenter, classifier):
         """Test VLAN determination for IoT device."""
         result = ClassificationResult(
-            mac_address="AA:BB:CC:DD:EE:FF", device_class=DeviceClass.SMART_SPEAKER
+            mac_address="AA:BB:CC:DD:EE:FF",
+            device_class=DeviceClass.SMART_SPEAKER
         )
 
         vlan = segmenter.determine_vlan(result)
@@ -302,7 +317,8 @@ class TestIoTSegmenter:
     def test_determine_vlan_for_infrastructure(self, segmenter, classifier):
         """Test VLAN determination for infrastructure device."""
         result = ClassificationResult(
-            mac_address="B8:27:EB:12:34:56", device_class=DeviceClass.RASPBERRY_PI
+            mac_address="B8:27:EB:12:34:56",
+            device_class=DeviceClass.RASPBERRY_PI
         )
 
         vlan = segmenter.determine_vlan(result)
@@ -311,7 +327,8 @@ class TestIoTSegmenter:
     def test_determine_vlan_for_security_camera(self, segmenter, classifier):
         """Test VLAN determination for security camera."""
         result = ClassificationResult(
-            mac_address="1C:C3:16:AA:BB:CC", device_class=DeviceClass.SECURITY_CAMERA
+            mac_address="1C:C3:16:AA:BB:CC",
+            device_class=DeviceClass.SECURITY_CAMERA
         )
 
         vlan = segmenter.determine_vlan(result)
@@ -323,7 +340,7 @@ class TestIoTSegmenter:
         result = ClassificationResult(
             mac_address="AA:BB:CC:DD:EE:FF",
             ip_address="192.168.1.100",
-            device_class=DeviceClass.SMART_TV,
+            device_class=DeviceClass.SMART_TV
         )
 
         action = await segmenter.segment_device(result)
@@ -338,7 +355,7 @@ class TestIoTSegmenter:
         result = ClassificationResult(
             mac_address="AA:BB:CC:DD:EE:FF",
             ip_address="192.168.1.100",
-            device_class=DeviceClass.SMART_TV,
+            device_class=DeviceClass.SMART_TV
         )
 
         action = await segmenter.segment_device(result, dry_run=True)
@@ -363,7 +380,11 @@ class TestIoTSegmenter:
 
     def test_add_custom_policy(self, segmenter):
         """Test adding custom VLAN policy."""
-        policy = VLANPolicy(vlan_id=200, name="Custom", device_classes=[DeviceClass.PRINTER])
+        policy = VLANPolicy(
+            vlan_id=200,
+            name="Custom",
+            device_classes=[DeviceClass.PRINTER]
+        )
 
         segmenter.add_policy(policy)
 
@@ -375,7 +396,10 @@ class TestIoTSegmenter:
     async def test_audit_segmentation(self, segmenter, classifier):
         """Test segmentation audit."""
         # Add some classifications and assignments
-        await classifier.classify(mac_address="AA:BB:CC:DD:EE:FF", ip_address="192.168.1.100")
+        await classifier.classify(
+            mac_address="AA:BB:CC:DD:EE:FF",
+            ip_address="192.168.1.100"
+        )
 
         audit = await segmenter.audit_segmentation()
 

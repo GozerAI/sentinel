@@ -8,7 +8,6 @@ These tests achieve full coverage including:
 - DeviceGroup operations
 - DeviceInventory operations
 """
-
 import pytest
 from uuid import uuid4
 from datetime import datetime, timezone
@@ -22,7 +21,7 @@ from sentinel.core.models.device import (
     Device,
     DeviceGroup,
     DeviceInventory,
-    _utc_now,
+    _utc_now
 )
 
 
@@ -77,7 +76,7 @@ class TestNetworkInterface:
             ip_addresses=["192.168.1.100", "192.168.1.101"],
             vlan_id=10,
             speed_mbps=1000,
-            is_primary=True,
+            is_primary=True
         )
 
         assert interface.ip_addresses == ["192.168.1.100", "192.168.1.101"]
@@ -119,7 +118,7 @@ class TestDeviceFingerprint:
             os_version="11",
             services=["ssh", "http"],
             open_ports=[22, 80, 443],
-            confidence=0.95,
+            confidence=0.95
         )
 
         assert fingerprint.vendor == "Dell"
@@ -190,7 +189,7 @@ class TestDevice:
             tags=["production", "engineering"],
             custom_attributes={"owner": "john"},
             managed_by_agent=True,
-            agent_last_action="vlan_assigned",
+            agent_last_action="vlan_assigned"
         )
 
         assert device.id == device_id
@@ -212,10 +211,12 @@ class TestDevice:
                 NetworkInterface(
                     mac_address="00:11:22:33:44:55",
                     ip_addresses=["192.168.1.100"],
-                    is_primary=False,
+                    is_primary=False
                 ),
                 NetworkInterface(
-                    mac_address="00:11:22:33:44:66", ip_addresses=["192.168.2.100"], is_primary=True
+                    mac_address="00:11:22:33:44:66",
+                    ip_addresses=["192.168.2.100"],
+                    is_primary=True
                 ),
             ]
         )
@@ -229,7 +230,7 @@ class TestDevice:
                 NetworkInterface(
                     mac_address="00:11:22:33:44:55",
                     ip_addresses=["192.168.1.100"],
-                    is_primary=False,
+                    is_primary=False
                 ),
             ]
         )
@@ -240,7 +241,11 @@ class TestDevice:
         """Test primary_ip returns None when no IPs."""
         device = Device(
             interfaces=[
-                NetworkInterface(mac_address="00:11:22:33:44:55", ip_addresses=[], is_primary=True),
+                NetworkInterface(
+                    mac_address="00:11:22:33:44:55",
+                    ip_addresses=[],
+                    is_primary=True
+                ),
             ]
         )
 
@@ -255,11 +260,15 @@ class TestDevice:
         """Test primary_ip skips primary interface without IPs."""
         device = Device(
             interfaces=[
-                NetworkInterface(mac_address="00:11:22:33:44:55", ip_addresses=[], is_primary=True),
+                NetworkInterface(
+                    mac_address="00:11:22:33:44:55",
+                    ip_addresses=[],
+                    is_primary=True
+                ),
                 NetworkInterface(
                     mac_address="00:11:22:33:44:66",
                     ip_addresses=["192.168.1.100"],
-                    is_primary=False,
+                    is_primary=False
                 ),
             ]
         )
@@ -270,8 +279,14 @@ class TestDevice:
         """Test primary_mac returns MAC from primary interface."""
         device = Device(
             interfaces=[
-                NetworkInterface(mac_address="00:11:22:33:44:55", is_primary=False),
-                NetworkInterface(mac_address="00:11:22:33:44:66", is_primary=True),
+                NetworkInterface(
+                    mac_address="00:11:22:33:44:55",
+                    is_primary=False
+                ),
+                NetworkInterface(
+                    mac_address="00:11:22:33:44:66",
+                    is_primary=True
+                ),
             ]
         )
 
@@ -281,7 +296,10 @@ class TestDevice:
         """Test primary_mac falls back to first interface."""
         device = Device(
             interfaces=[
-                NetworkInterface(mac_address="00:11:22:33:44:55", is_primary=False),
+                NetworkInterface(
+                    mac_address="00:11:22:33:44:55",
+                    is_primary=False
+                ),
             ]
         )
 
@@ -297,9 +315,13 @@ class TestDevice:
         device = Device(
             interfaces=[
                 NetworkInterface(
-                    mac_address="00:11:22:33:44:55", ip_addresses=["192.168.1.100", "192.168.1.101"]
+                    mac_address="00:11:22:33:44:55",
+                    ip_addresses=["192.168.1.100", "192.168.1.101"]
                 ),
-                NetworkInterface(mac_address="00:11:22:33:44:66", ip_addresses=["192.168.2.100"]),
+                NetworkInterface(
+                    mac_address="00:11:22:33:44:66",
+                    ip_addresses=["192.168.2.100"]
+                ),
             ]
         )
 
@@ -358,7 +380,7 @@ class TestDeviceGroup:
             description="Engineering department devices",
             device_ids=[device_id],
             auto_membership_rules={"vlan": 10},
-            policies=["policy1", "policy2"],
+            policies=["policy1", "policy2"]
         )
 
         assert group.name == "Engineering"
@@ -423,7 +445,10 @@ class TestDeviceInventory:
 
         device = Device(
             interfaces=[
-                NetworkInterface(mac_address="00:11:22:33:44:55", ip_addresses=["192.168.1.100"]),
+                NetworkInterface(
+                    mac_address="00:11:22:33:44:55",
+                    ip_addresses=["192.168.1.100"]
+                ),
             ]
         )
 
@@ -440,9 +465,13 @@ class TestDeviceInventory:
         device = Device(
             interfaces=[
                 NetworkInterface(
-                    mac_address="00:11:22:33:44:55", ip_addresses=["192.168.1.100", "192.168.1.101"]
+                    mac_address="00:11:22:33:44:55",
+                    ip_addresses=["192.168.1.100", "192.168.1.101"]
                 ),
-                NetworkInterface(mac_address="00:11:22:33:44:66", ip_addresses=["192.168.2.100"]),
+                NetworkInterface(
+                    mac_address="00:11:22:33:44:66",
+                    ip_addresses=["192.168.2.100"]
+                ),
             ]
         )
 
@@ -466,16 +495,22 @@ class TestDeviceInventory:
             id=device_id,
             hostname="old_hostname",
             interfaces=[
-                NetworkInterface(mac_address="00:11:22:33:44:55", ip_addresses=["192.168.1.100"]),
-            ],
+                NetworkInterface(
+                    mac_address="00:11:22:33:44:55",
+                    ip_addresses=["192.168.1.100"]
+                ),
+            ]
         )
 
         device2 = Device(
             id=device_id,
             hostname="new_hostname",
             interfaces=[
-                NetworkInterface(mac_address="00:11:22:33:44:55", ip_addresses=["192.168.1.100"]),
-            ],
+                NetworkInterface(
+                    mac_address="00:11:22:33:44:55",
+                    ip_addresses=["192.168.1.100"]
+                ),
+            ]
         )
 
         inventory.add_device(device1)
@@ -531,7 +566,10 @@ class TestDeviceInventory:
 
         device = Device(
             interfaces=[
-                NetworkInterface(mac_address="00:11:22:33:44:55", ip_addresses=["192.168.1.100"]),
+                NetworkInterface(
+                    mac_address="00:11:22:33:44:55",
+                    ip_addresses=["192.168.1.100"]
+                ),
             ]
         )
         inventory.add_device(device)

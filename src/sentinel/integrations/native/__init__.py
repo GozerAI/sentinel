@@ -10,7 +10,6 @@ Native capabilities:
 - DHCP: Built-in DHCP server
 - DNS: Built-in DNS with filtering
 """
-
 from sentinel.integrations.native.firewall import NativeFirewall
 from sentinel.integrations.native.network import NetworkManager
 from sentinel.integrations.native.dhcp import DHCPServer

@@ -4,7 +4,6 @@ Integration tests for SentinelEngine with Agents.
 Tests the full lifecycle of the engine starting with agents,
 processing events, and coordinating actions.
 """
-
 import asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -388,7 +387,6 @@ class TestEngineAgentCommunication:
         await engine.start()
 
         try:
-
             async def security_handler(event):
                 security_events.append(event)
 
@@ -427,7 +425,6 @@ class TestEngineAgentCommunication:
         await engine.start()
 
         try:
-
             async def handler1(event):
                 subscriber1_events.append(event)
 

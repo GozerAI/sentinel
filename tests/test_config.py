@@ -4,7 +4,6 @@ Tests for the Configuration module.
 Tests cover configuration models, environment variable substitution,
 loading from files/dicts, and global configuration access.
 """
-
 import os
 import pytest
 import tempfile
@@ -57,7 +56,6 @@ from sentinel.core.config import (
 # Configuration Model Tests
 # =============================================================================
 
-
 class TestStateConfig:
     """Tests for StateConfig model."""
 
@@ -91,7 +89,10 @@ class TestRouterIntegrationConfig:
     def test_custom_values(self):
         """Test custom values."""
         config = RouterIntegrationConfig(
-            type="pfsense", host="10.0.0.1", api_key="test_key", api_secret="test_secret"
+            type="pfsense",
+            host="10.0.0.1",
+            api_key="test_key",
+            api_secret="test_secret"
         )
         assert config.type == "pfsense"
         assert config.host == "10.0.0.1"
@@ -250,7 +251,7 @@ class TestVLANConfig:
             subnet="192.168.20.0/24",
             dhcp_enabled=True,
             isolated=True,
-            allowed_destinations=[10, 30],
+            allowed_destinations=[10, 30]
         )
         assert config.subnet == "192.168.20.0/24"
         assert config.isolated is True
@@ -262,14 +263,22 @@ class TestSegmentationPolicyConfig:
 
     def test_required_fields(self):
         """Test required fields."""
-        config = SegmentationPolicyConfig(name="Test Policy", source_vlan=10, destination_vlan=20)
+        config = SegmentationPolicyConfig(
+            name="Test Policy",
+            source_vlan=10,
+            destination_vlan=20
+        )
         assert config.name == "Test Policy"
         assert config.source_vlan == 10
         assert config.destination_vlan == 20
 
     def test_default_values(self):
         """Test default values."""
-        config = SegmentationPolicyConfig(name="Test", source_vlan=10, destination_vlan=20)
+        config = SegmentationPolicyConfig(
+            name="Test",
+            source_vlan=10,
+            destination_vlan=20
+        )
         assert config.allowed_services == []
         assert config.default_action == "deny"
 
@@ -367,8 +376,12 @@ class TestSentinelConfig:
             state=StateConfig(backend="memory"),
             vlans=[VLANConfig(id=10, name="Test")],
             segmentation_policies=[
-                SegmentationPolicyConfig(name="Policy1", source_vlan=10, destination_vlan=20)
-            ],
+                SegmentationPolicyConfig(
+                    name="Policy1",
+                    source_vlan=10,
+                    destination_vlan=20
+                )
+            ]
         )
         assert config.state.backend == "memory"
         assert len(config.vlans) == 1
@@ -378,7 +391,6 @@ class TestSentinelConfig:
 # =============================================================================
 # Environment Variable Substitution Tests
 # =============================================================================
-
 
 class TestSubstituteEnvVars:
     """Tests for environment variable substitution."""
@@ -417,7 +429,10 @@ class TestSubstituteEnvVars:
     def test_dict_substitution(self):
         """Test substitution in dictionary."""
         with patch.dict(os.environ, {"API_KEY": "secret123"}):
-            result = substitute_env_vars({"key": "${API_KEY}", "nested": {"inner": "${API_KEY}"}})
+            result = substitute_env_vars({
+                "key": "${API_KEY}",
+                "nested": {"inner": "${API_KEY}"}
+            })
             assert result["key"] == "secret123"
             assert result["nested"]["inner"] == "secret123"
 
@@ -439,7 +454,6 @@ class TestSubstituteEnvVars:
 # Configuration Loading Tests
 # =============================================================================
 
-
 class TestLoadConfig:
     """Tests for load_config function."""
 
@@ -453,9 +467,16 @@ class TestLoadConfig:
 
     def test_load_from_file(self):
         """Test loading config from file."""
-        config_data = {"state": {"backend": "memory"}, "agents": {"discovery": {"enabled": False}}}
+        config_data = {
+            "state": {"backend": "memory"},
+            "agents": {
+                "discovery": {"enabled": False}
+            }
+        }
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode='w', suffix='.yaml', delete=False
+        ) as f:
             yaml.dump(config_data, f)
             temp_path = f.name
 
@@ -468,7 +489,9 @@ class TestLoadConfig:
 
     def test_load_empty_file(self):
         """Test loading empty config file."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode='w', suffix='.yaml', delete=False
+        ) as f:
             f.write("")  # Empty file
             temp_path = f.name
 
@@ -482,9 +505,17 @@ class TestLoadConfig:
 
     def test_load_with_env_vars(self):
         """Test loading config with environment variable substitution."""
-        config_data = {"api": {"auth": {"secret_key": "${API_SECRET:-default_secret}"}}}
+        config_data = {
+            "api": {
+                "auth": {
+                    "secret_key": "${API_SECRET:-default_secret}"
+                }
+            }
+        }
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode='w', suffix='.yaml', delete=False
+        ) as f:
             yaml.dump(config_data, f)
             temp_path = f.name
 
@@ -501,7 +532,9 @@ class TestLoadConfigFromDict:
 
     def test_basic_dict(self):
         """Test loading from basic dict."""
-        config = load_config_from_dict({"state": {"backend": "memory"}})
+        config = load_config_from_dict({
+            "state": {"backend": "memory"}
+        })
         assert config.state.backend == "memory"
 
     def test_empty_dict(self):
@@ -513,14 +546,19 @@ class TestLoadConfigFromDict:
     def test_with_env_substitution(self):
         """Test dict loading with env var substitution."""
         with patch.dict(os.environ, {"TEST_HOST": "10.0.0.1"}):
-            config = load_config_from_dict({"integrations": {"router": {"host": "${TEST_HOST}"}}})
+            config = load_config_from_dict({
+                "integrations": {
+                    "router": {
+                        "host": "${TEST_HOST}"
+                    }
+                }
+            })
             assert config.integrations.router.host == "10.0.0.1"
 
 
 # =============================================================================
 # Global Configuration Access Tests
 # =============================================================================
-
 
 class TestGlobalConfig:
     """Tests for global configuration access functions."""
@@ -529,7 +567,6 @@ class TestGlobalConfig:
         """Test get_config returns a config instance."""
         # Reset global config
         import sentinel.core.config as config_module
-
         config_module._config = None
 
         config = get_config()
@@ -564,7 +601,9 @@ class TestGlobalConfig:
         """Test reload_config with specific file."""
         config_data = {"state": {"backend": "reloaded"}}
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode='w', suffix='.yaml', delete=False
+        ) as f:
             yaml.dump(config_data, f)
             temp_path = f.name
 
@@ -579,30 +618,51 @@ class TestGlobalConfig:
 # Integration Tests
 # =============================================================================
 
-
 class TestConfigIntegration:
     """Integration tests for configuration system."""
 
     def test_full_config_file(self):
         """Test loading a complete configuration file."""
         config_data = {
-            "state": {"backend": "sqlite", "path": "/data/sentinel.db"},
+            "state": {
+                "backend": "sqlite",
+                "path": "/data/sentinel.db"
+            },
             "integrations": {
-                "router": {"type": "opnsense", "host": "192.168.1.1"},
-                "llm": {"primary": {"type": "ollama", "model": "llama3.1:8b"}},
+                "router": {
+                    "type": "opnsense",
+                    "host": "192.168.1.1"
+                },
+                "llm": {
+                    "primary": {
+                        "type": "ollama",
+                        "model": "llama3.1:8b"
+                    }
+                }
             },
             "agents": {
-                "discovery": {"enabled": True, "networks": ["192.168.1.0/24", "10.0.0.0/8"]},
-                "guardian": {"auto_quarantine": True, "quarantine_vlan": 999},
+                "discovery": {
+                    "enabled": True,
+                    "networks": ["192.168.1.0/24", "10.0.0.0/8"]
+                },
+                "guardian": {
+                    "auto_quarantine": True,
+                    "quarantine_vlan": 999
+                }
             },
             "vlans": [
                 {"id": 10, "name": "Workstations"},
-                {"id": 20, "name": "Servers", "isolated": True},
+                {"id": 20, "name": "Servers", "isolated": True}
             ],
-            "api": {"port": 8080, "cors_origins": ["http://localhost:3000"]},
+            "api": {
+                "port": 8080,
+                "cors_origins": ["http://localhost:3000"]
+            }
         }
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode='w', suffix='.yaml', delete=False
+        ) as f:
             yaml.dump(config_data, f)
             temp_path = f.name
 

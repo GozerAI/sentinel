@@ -4,7 +4,6 @@ Agent Factory for dynamic agent creation and management.
 This module enables Sentinel to create, modify, and manage agents dynamically
 based on emerging threats, opportunities, or operational needs.
 """
-
 import asyncio
 import importlib
 import inspect
@@ -46,7 +45,7 @@ class AgentTemplate:
         capabilities: list[str] = None,
         required_integrations: list[str] = None,
         event_subscriptions: list[str] = None,
-        default_config: dict = None,
+        default_config: dict = None
     ):
         self.id = uuid4()
         self.name = name
@@ -69,7 +68,7 @@ class AgentTemplate:
             "required_integrations": self.required_integrations,
             "event_subscriptions": self.event_subscriptions,
             "default_config": self.default_config,
-            "created_at": self.created_at.isoformat(),
+            "created_at": self.created_at.isoformat()
         }
 
 
@@ -89,7 +88,7 @@ class AgentInstance:
         self,
         agent: BaseAgent,
         template: Optional[AgentTemplate] = None,
-        parent_id: Optional[UUID] = None,
+        parent_id: Optional[UUID] = None
     ):
         self.id = agent.id
         self.agent = agent
@@ -156,8 +155,8 @@ class AgentInstance:
                 "actions_taken": self.actions_taken,
                 "decisions_made": self.decisions_made,
                 "errors_encountered": self.errors_encountered,
-                "last_activity": self.last_activity.isoformat() if self.last_activity else None,
-            },
+                "last_activity": self.last_activity.isoformat() if self.last_activity else None
+            }
         }
 
 
@@ -239,7 +238,7 @@ class AgentFactory:
                     description=agent_class.agent_description,
                     base_class=agent_class,
                     capabilities=getattr(agent_class, "capabilities", []),
-                    default_config={},
+                    default_config={}
                 )
                 self._templates[name] = template
 
@@ -280,7 +279,7 @@ class AgentFactory:
         template_name: str,
         config: Optional[dict] = None,
         parent_id: Optional[UUID] = None,
-        auto_start: bool = True,
+        auto_start: bool = True
     ) -> AgentInstance:
         """
         Create a new agent instance from a template.
@@ -322,17 +321,15 @@ class AgentFactory:
         self._instances[instance.id] = instance
 
         # Publish creation event
-        await self.engine.event_bus.publish(
-            Event(
-                category=EventCategory.AGENT,
-                event_type="agent.created",
-                severity=EventSeverity.INFO,
-                source="sentinel.agents.factory",
-                title=f"Agent Created: {agent.agent_name}",
-                description=f"Created new agent instance from template '{template_name}'",
-                data=instance.to_dict(),
-            )
-        )
+        await self.engine.event_bus.publish(Event(
+            category=EventCategory.AGENT,
+            event_type="agent.created",
+            severity=EventSeverity.INFO,
+            source="sentinel.agents.factory",
+            title=f"Agent Created: {agent.agent_name}",
+            description=f"Created new agent instance from template '{template_name}'",
+            data=instance.to_dict()
+        ))
 
         # Auto-start if requested
         if auto_start:
@@ -350,7 +347,7 @@ class AgentFactory:
         execute_function: callable,
         subscribe_events: list[str] = None,
         config: dict = None,
-        parent_id: Optional[UUID] = None,
+        parent_id: Optional[UUID] = None
     ) -> AgentInstance:
         """
         Create a specialized agent dynamically with custom behavior.
@@ -371,15 +368,17 @@ class AgentFactory:
         Returns:
             AgentInstance for the new specialized agent
         """
-
         # Create a dynamic agent class
         class DynamicAgent(BaseAgent):
             agent_name = name
             agent_description = description
 
             async def _subscribe_events(self):
-                for event_type in subscribe_events or []:
-                    self.engine.event_bus.subscribe(self._handle_event, event_type=event_type)
+                for event_type in (subscribe_events or []):
+                    self.engine.event_bus.subscribe(
+                        self._handle_event,
+                        event_type=event_type
+                    )
 
             async def _handle_event(self, event: Event):
                 decision = await self.analyze(event)
@@ -402,17 +401,23 @@ class AgentFactory:
             base_class=DynamicAgent,
             capabilities=capabilities,
             event_subscriptions=subscribe_events or [],
-            default_config=config or {},
+            default_config=config or {}
         )
         self.register_template(template)
 
         # Create and return instance
         return await self.create_agent(
-            template_name=name, config=config, parent_id=parent_id, auto_start=True
+            template_name=name,
+            config=config,
+            parent_id=parent_id,
+            auto_start=True
         )
 
     async def clone_agent(
-        self, instance_id: UUID, config_overrides: Optional[dict] = None, auto_start: bool = True
+        self,
+        instance_id: UUID,
+        config_overrides: Optional[dict] = None,
+        auto_start: bool = True
     ) -> AgentInstance:
         """
         Clone an existing agent instance.
@@ -439,7 +444,7 @@ class AgentFactory:
             template_name=template_name,
             config=new_config,
             parent_id=original.id,
-            auto_start=auto_start,
+            auto_start=auto_start
         )
 
     async def retire_agent(self, instance_id: UUID, reason: str = "") -> bool:
@@ -464,22 +469,20 @@ class AgentFactory:
                 await instance.stop()
 
             # Publish retirement event
-            await self.engine.event_bus.publish(
-                Event(
-                    category=EventCategory.AGENT,
-                    event_type="agent.retired",
-                    severity=EventSeverity.INFO,
-                    source="sentinel.agents.factory",
-                    title=f"Agent Retired: {instance.agent.agent_name}",
-                    description=reason or f"Agent {instance.id} was retired",
-                    data={
-                        "instance_id": str(instance_id),
-                        "agent_name": instance.agent.agent_name,
-                        "reason": reason,
-                        "final_metrics": instance.to_dict()["metrics"],
-                    },
-                )
-            )
+            await self.engine.event_bus.publish(Event(
+                category=EventCategory.AGENT,
+                event_type="agent.retired",
+                severity=EventSeverity.INFO,
+                source="sentinel.agents.factory",
+                title=f"Agent Retired: {instance.agent.agent_name}",
+                description=reason or f"Agent {instance.id} was retired",
+                data={
+                    "instance_id": str(instance_id),
+                    "agent_name": instance.agent.agent_name,
+                    "reason": reason,
+                    "final_metrics": instance.to_dict()["metrics"]
+                }
+            ))
 
             # Remove from active instances
             del self._instances[instance_id]
@@ -492,7 +495,10 @@ class AgentFactory:
             return False
 
     async def spawn_for_threat(
-        self, threat_type: str, threat_data: dict, parent_agent: Optional[UUID] = None
+        self,
+        threat_type: str,
+        threat_data: dict,
+        parent_agent: Optional[UUID] = None
     ) -> Optional[AgentInstance]:
         """
         Spawn a specialized agent to handle a specific threat.
@@ -534,7 +540,7 @@ class AgentFactory:
             template_name=template_name,
             config=threat_config,
             parent_id=parent_agent,
-            auto_start=True,
+            auto_start=True
         )
 
         logger.info(f"Spawned {template_name} agent for {threat_type} threat")
@@ -547,14 +553,16 @@ class AgentFactory:
     def get_instances_by_template(self, template_name: str) -> list[AgentInstance]:
         """Get all instances of a specific template."""
         return [
-            inst
-            for inst in self._instances.values()
+            inst for inst in self._instances.values()
             if inst.template and inst.template.name == template_name
         ]
 
     def get_running_instances(self) -> list[AgentInstance]:
         """Get all running agent instances."""
-        return [inst for inst in self._instances.values() if inst.status == "running"]
+        return [
+            inst for inst in self._instances.values()
+            if inst.status == "running"
+        ]
 
     def get_all_instances(self) -> list[AgentInstance]:
         """Get all agent instances."""
@@ -580,5 +588,5 @@ class AgentFactory:
             "stopped_instances": len([i for i in instances if i.status == "stopped"]),
             "error_instances": len([i for i in instances if i.status == "error"]),
             "total_actions": sum(i.actions_taken for i in instances),
-            "total_decisions": sum(i.decisions_made for i in instances),
+            "total_decisions": sum(i.decisions_made for i in instances)
         }

@@ -3,7 +3,6 @@ Comprehensive tests for integration modules.
 
 Tests cover base integration classes and all integration implementations.
 """
-
 import pytest
 from unittest.mock import MagicMock, patch, AsyncMock
 from typing import Any
@@ -20,7 +19,6 @@ from sentinel.integrations.base import (
 # =============================================================================
 # Test Implementations for Abstract Classes
 # =============================================================================
-
 
 class ConcreteIntegration(BaseIntegration):
     """Concrete implementation for testing BaseIntegration."""
@@ -153,7 +151,6 @@ class ConcreteStorageIntegration(StorageIntegration):
 # Base Integration Tests
 # =============================================================================
 
-
 class TestBaseIntegration:
     """Tests for BaseIntegration abstract class."""
 
@@ -243,7 +240,6 @@ class TestBaseIntegration:
 # Router Integration Tests
 # =============================================================================
 
-
 class TestRouterIntegration:
     """Tests for RouterIntegration class."""
 
@@ -309,7 +305,6 @@ class TestRouterIntegration:
 # Switch Integration Tests
 # =============================================================================
 
-
 class TestSwitchIntegration:
     """Tests for SwitchIntegration class."""
 
@@ -374,7 +369,6 @@ class TestSwitchIntegration:
 # Hypervisor Integration Tests
 # =============================================================================
 
-
 class TestHypervisorIntegration:
     """Tests for HypervisorIntegration class."""
 
@@ -438,7 +432,6 @@ class TestHypervisorIntegration:
 # Storage Integration Tests
 # =============================================================================
 
-
 class TestStorageIntegration:
     """Tests for StorageIntegration class."""
 
@@ -494,7 +487,6 @@ class TestStorageIntegration:
 # OPNsense Integration Tests
 # =============================================================================
 
-
 class TestOPNsenseIntegration:
     """Tests for OPNsense router integration."""
 
@@ -507,7 +499,7 @@ class TestOPNsenseIntegration:
             "host": "192.168.1.1",
             "api_key": "test-key",
             "api_secret": "test-secret",
-            "verify_ssl": False,
+            "verify_ssl": False
         }
         integration = OPNsenseIntegration(config)
 
@@ -567,7 +559,6 @@ class TestOPNsenseIntegration:
 # Ubiquiti Switch Integration Tests
 # =============================================================================
 
-
 class TestUnifiIntegration:
     """Tests for Unifi switch integration."""
 
@@ -579,7 +570,7 @@ class TestUnifiIntegration:
             "controller_url": "https://192.168.1.2:8443",
             "username": "admin",
             "password": "secret",
-            "site": "default",
+            "site": "default"
         }
         integration = UnifiIntegration(config)
 
@@ -593,11 +584,7 @@ class TestUnifiIntegration:
         """Test Unifi health check."""
         from sentinel.integrations.switches.ubiquiti import UnifiIntegration
 
-        config = {
-            "controller_url": "https://192.168.1.2:8443",
-            "username": "admin",
-            "password": "secret",
-        }
+        config = {"controller_url": "https://192.168.1.2:8443", "username": "admin", "password": "secret"}
         integration = UnifiIntegration(config)
 
         # Mock the client
@@ -618,7 +605,6 @@ class TestUnifiIntegration:
 # Proxmox Integration Tests
 # =============================================================================
 
-
 class TestProxmoxIntegration:
     """Tests for Proxmox hypervisor integration."""
 
@@ -630,7 +616,7 @@ class TestProxmoxIntegration:
             "host": "proxmox.local",
             "token_id": "sentinel@pam!token",
             "token_secret": "abc123",
-            "verify_ssl": False,
+            "verify_ssl": False
         }
         integration = ProxmoxIntegration(config)
 
@@ -664,7 +650,6 @@ class TestProxmoxIntegration:
 # TrueNAS Integration Tests
 # =============================================================================
 
-
 class TestTrueNASIntegration:
     """Tests for TrueNAS storage integration."""
 
@@ -672,7 +657,11 @@ class TestTrueNASIntegration:
         """Test TrueNAS integration initialization."""
         from sentinel.integrations.storage.truenas import TrueNASIntegration
 
-        config = {"host": "truenas.local", "api_key": "secret-key", "verify_ssl": False}
+        config = {
+            "host": "truenas.local",
+            "api_key": "secret-key",
+            "verify_ssl": False
+        }
         integration = TrueNASIntegration(config)
 
         assert integration.config == config
@@ -705,7 +694,6 @@ class TestTrueNASIntegration:
 # LLM Manager Tests
 # =============================================================================
 
-
 class TestLLMManager:
     """Tests for LLM manager."""
 
@@ -714,12 +702,16 @@ class TestLLMManager:
         from sentinel.integrations.llm.manager import LLMManager
 
         config = {
-            "primary": {"type": "ollama", "host": "http://localhost:11434", "model": "llama3.1:8b"},
+            "primary": {
+                "type": "ollama",
+                "host": "http://localhost:11434",
+                "model": "llama3.1:8b"
+            },
             "fallback": {
                 "type": "anthropic",
                 "model": "claude-3-5-sonnet-20241022",
-                "api_key": "test-key",
-            },
+                "api_key": "test-key"
+            }
         }
         manager = LLMManager(config)
 
@@ -746,7 +738,7 @@ class TestLLMManager:
 
         config = {
             "primary": {"host": "http://localhost:11434"},
-            "fallback": {"api_key": "test-key"},
+            "fallback": {"api_key": "test-key"}
         }
         manager = LLMManager(config)
 
@@ -769,7 +761,6 @@ class TestLLMManager:
 # Extended OPNsense Tests
 # =============================================================================
 
-
 class TestOPNsenseExtended:
     """Extended tests for OPNsense integration."""
 
@@ -785,7 +776,9 @@ class TestOPNsenseExtended:
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
-            "rows": [{"ip": "192.168.1.10", "mac": "00:11:22:33:44:55", "intf": "igb0"}]
+            "rows": [
+                {"ip": "192.168.1.10", "mac": "00:11:22:33:44:55", "intf": "igb0"}
+            ]
         }
         mock_client.get = AsyncMock(return_value=mock_response)
         integration._client = mock_client
@@ -806,7 +799,9 @@ class TestOPNsenseExtended:
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
-            "leases": [{"ip": "192.168.1.20", "hostname": "device1", "mac": "aa:bb:cc:dd:ee:ff"}]
+            "leases": [
+                {"ip": "192.168.1.20", "hostname": "device1", "mac": "aa:bb:cc:dd:ee:ff"}
+            ]
         }
         mock_client.get = AsyncMock(return_value=mock_response)
         integration._client = mock_client
@@ -856,7 +851,6 @@ class TestOPNsenseExtended:
 # Extended Proxmox Tests
 # =============================================================================
 
-
 class TestProxmoxExtended:
     """Extended tests for Proxmox integration."""
 
@@ -892,9 +886,7 @@ class TestProxmoxExtended:
         # Mock the internal methods
         with patch.object(integration, "_parse_vm_id", return_value=("qemu", "100")):
             with patch.object(integration, "_find_vm_node", new=AsyncMock(return_value="pve")):
-                with patch.object(
-                    integration, "_api_post", new=AsyncMock(return_value={"data": "UPID:xxx"})
-                ):
+                with patch.object(integration, "_api_post", new=AsyncMock(return_value={"data": "UPID:xxx"})):
                     result = await integration.start_vm("qemu/100")
                     assert result is True
 
@@ -909,9 +901,7 @@ class TestProxmoxExtended:
         # Mock the internal methods
         with patch.object(integration, "_parse_vm_id", return_value=("qemu", "100")):
             with patch.object(integration, "_find_vm_node", new=AsyncMock(return_value="pve")):
-                with patch.object(
-                    integration, "_api_post", new=AsyncMock(return_value={"data": "UPID:xxx"})
-                ):
+                with patch.object(integration, "_api_post", new=AsyncMock(return_value={"data": "UPID:xxx"})):
                     result = await integration.stop_vm("qemu/100")
                     assert result is True
 
@@ -942,7 +932,6 @@ class TestProxmoxExtended:
 # Extended TrueNAS Tests
 # =============================================================================
 
-
 class TestTrueNASExtended:
     """Extended tests for TrueNAS integration."""
 
@@ -957,7 +946,9 @@ class TestTrueNASExtended:
         mock_client = AsyncMock()
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json.return_value = [{"name": "tank", "healthy": True, "status": "ONLINE"}]
+        mock_response.json.return_value = [
+            {"name": "tank", "healthy": True, "status": "ONLINE"}
+        ]
         mock_client.get = AsyncMock(return_value=mock_response)
         integration._client = mock_client
         integration._connected = True
@@ -976,7 +967,9 @@ class TestTrueNASExtended:
         mock_client = AsyncMock()
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json.return_value = [{"name": "tank/data", "used": {"rawvalue": "100GB"}}]
+        mock_response.json.return_value = [
+            {"name": "tank/data", "used": {"rawvalue": "100GB"}}
+        ]
         mock_client.get = AsyncMock(return_value=mock_response)
         integration._client = mock_client
         integration._connected = True
@@ -1013,7 +1006,10 @@ class TestTrueNASExtended:
         mock_client = AsyncMock()
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {"pools": [{"status": "ONLINE"}], "alerts": []}
+        mock_response.json.return_value = {
+            "pools": [{"status": "ONLINE"}],
+            "alerts": []
+        }
         mock_client.get = AsyncMock(return_value=mock_response)
         integration._client = mock_client
         integration._connected = True
@@ -1025,7 +1021,6 @@ class TestTrueNASExtended:
 # =============================================================================
 # Extended Unifi Tests
 # =============================================================================
-
 
 class TestUnifiExtended:
     """Extended tests for Unifi integration."""
@@ -1041,7 +1036,9 @@ class TestUnifiExtended:
         mock_client = AsyncMock()
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {"data": [{"port_idx": 1, "up": True, "speed": 1000}]}
+        mock_response.json.return_value = {
+            "data": [{"port_idx": 1, "up": True, "speed": 1000}]
+        }
         mock_client.get = AsyncMock(return_value=mock_response)
         integration._client = mock_client
         integration._connected = True
@@ -1108,7 +1105,6 @@ class TestUnifiExtended:
 # Extended LLM Tests
 # =============================================================================
 
-
 class TestLLMManagerExtended:
     """Extended tests for LLM Manager."""
 
@@ -1145,14 +1141,16 @@ class TestLLMManagerExtended:
         mock_client.post = AsyncMock(return_value=mock_response)
         manager._ollama_client = mock_client
 
-        result = await manager.complete("Analyze this", system_prompt="You are a security analyst")
+        result = await manager.complete(
+            "Analyze this",
+            system_prompt="You are a security analyst"
+        )
         assert result is not None
 
 
 # =============================================================================
 # Integration Factory Tests
 # =============================================================================
-
 
 class TestIntegrationLifecycle:
     """Tests for integration lifecycle management."""

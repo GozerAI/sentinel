@@ -3,7 +3,6 @@ Sentinel Core Models Package.
 
 This package contains all the data models used throughout the Sentinel platform.
 """
-
 from sentinel.core.models.device import (
     Device,
     DeviceType,

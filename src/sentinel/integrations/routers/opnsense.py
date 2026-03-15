@@ -4,7 +4,6 @@ OPNsense Router Integration for Sentinel.
 This module provides integration with OPNsense firewalls via their REST API.
 Supports firewall rules, ARP table, DHCP leases, and system status.
 """
-
 import asyncio
 import logging
 from datetime import datetime
@@ -70,7 +69,7 @@ class OPNsenseIntegration(RouterIntegration):
             base_url=self._base_url,
             auth=(self.api_key, self.api_secret),
             verify=self.verify_ssl,
-            timeout=self.timeout,
+            timeout=self.timeout
         )
 
         # Test connection
@@ -137,16 +136,14 @@ class OPNsenseIntegration(RouterIntegration):
 
             entries = []
             for entry in data.get("arp", []):
-                entries.append(
-                    {
-                        "ip": entry.get("ip"),
-                        "mac": entry.get("mac"),
-                        "interface": entry.get("intf"),
-                        "hostname": entry.get("hostname", ""),
-                        "expires": entry.get("expires", ""),
-                        "type": entry.get("type", "dynamic"),
-                    }
-                )
+                entries.append({
+                    "ip": entry.get("ip"),
+                    "mac": entry.get("mac"),
+                    "interface": entry.get("intf"),
+                    "hostname": entry.get("hostname", ""),
+                    "expires": entry.get("expires", ""),
+                    "type": entry.get("type", "dynamic")
+                })
 
             return entries
 
@@ -166,18 +163,16 @@ class OPNsenseIntegration(RouterIntegration):
 
             leases = []
             for lease in data.get("rows", []):
-                leases.append(
-                    {
-                        "ip": lease.get("address"),
-                        "mac": lease.get("mac"),
-                        "hostname": lease.get("hostname", ""),
-                        "start": lease.get("starts"),
-                        "end": lease.get("ends"),
-                        "state": lease.get("state", "active"),
-                        "interface": lease.get("if", ""),
-                        "active": lease.get("state") == "active",
-                    }
-                )
+                leases.append({
+                    "ip": lease.get("address"),
+                    "mac": lease.get("mac"),
+                    "hostname": lease.get("hostname", ""),
+                    "start": lease.get("starts"),
+                    "end": lease.get("ends"),
+                    "state": lease.get("state", "active"),
+                    "interface": lease.get("if", ""),
+                    "active": lease.get("state") == "active"
+                })
 
             return leases
 
@@ -207,7 +202,7 @@ class OPNsenseIntegration(RouterIntegration):
                     "protocol": rule.get("protocol", "any"),
                     "source_net": rule.get("source_ip", "any"),
                     "destination_net": rule.get("destination_ip", "any"),
-                    "description": rule.get("description", rule.get("name", "")),
+                    "description": rule.get("description", rule.get("name", ""))
                 }
             }
 
@@ -263,21 +258,19 @@ class OPNsenseIntegration(RouterIntegration):
 
             rules = []
             for rule in data.get("rows", []):
-                rules.append(
-                    {
-                        "id": rule.get("uuid"),
-                        "enabled": rule.get("enabled") == "1",
-                        "action": rule.get("action"),
-                        "interface": rule.get("interface"),
-                        "direction": rule.get("direction"),
-                        "protocol": rule.get("protocol"),
-                        "source": rule.get("source_net"),
-                        "source_port": rule.get("source_port"),
-                        "destination": rule.get("destination_net"),
-                        "destination_port": rule.get("destination_port"),
-                        "description": rule.get("description", ""),
-                    }
-                )
+                rules.append({
+                    "id": rule.get("uuid"),
+                    "enabled": rule.get("enabled") == "1",
+                    "action": rule.get("action"),
+                    "interface": rule.get("interface"),
+                    "direction": rule.get("direction"),
+                    "protocol": rule.get("protocol"),
+                    "source": rule.get("source_net"),
+                    "source_port": rule.get("source_port"),
+                    "destination": rule.get("destination_net"),
+                    "destination_port": rule.get("destination_port"),
+                    "description": rule.get("description", "")
+                })
 
             return rules
 
@@ -304,7 +297,7 @@ class OPNsenseIntegration(RouterIntegration):
                 "cpu_usage": data.get("cpu"),
                 "memory_usage": data.get("memory"),
                 "disk_usage": data.get("disk"),
-                "temperature": data.get("temperature"),
+                "temperature": data.get("temperature")
             }
         except Exception as e:
             logger.error(f"Failed to get system status: {e}")
@@ -322,17 +315,15 @@ class OPNsenseIntegration(RouterIntegration):
 
             interfaces = []
             for name, stats in data.get("statistics", {}).items():
-                interfaces.append(
-                    {
-                        "name": name,
-                        "bytes_in": stats.get("bytes received", 0),
-                        "bytes_out": stats.get("bytes transmitted", 0),
-                        "packets_in": stats.get("packets received", 0),
-                        "packets_out": stats.get("packets transmitted", 0),
-                        "errors_in": stats.get("input errors", 0),
-                        "errors_out": stats.get("output errors", 0),
-                    }
-                )
+                interfaces.append({
+                    "name": name,
+                    "bytes_in": stats.get("bytes received", 0),
+                    "bytes_out": stats.get("bytes transmitted", 0),
+                    "packets_in": stats.get("packets received", 0),
+                    "packets_out": stats.get("packets transmitted", 0),
+                    "errors_in": stats.get("input errors", 0),
+                    "errors_out": stats.get("output errors", 0)
+                })
 
             return interfaces
 
@@ -352,16 +343,14 @@ class OPNsenseIntegration(RouterIntegration):
 
             gateways = []
             for gw in data.get("items", []):
-                gateways.append(
-                    {
-                        "name": gw.get("name"),
-                        "address": gw.get("address"),
-                        "status": gw.get("status_translated", gw.get("status")),
-                        "delay": gw.get("delay"),
-                        "stddev": gw.get("stddev"),
-                        "loss": gw.get("loss"),
-                    }
-                )
+                gateways.append({
+                    "name": gw.get("name"),
+                    "address": gw.get("address"),
+                    "status": gw.get("status_translated", gw.get("status")),
+                    "delay": gw.get("delay"),
+                    "stddev": gw.get("stddev"),
+                    "loss": gw.get("loss")
+                })
 
             return gateways
 
@@ -398,9 +387,7 @@ class OPNsenseIntegration(RouterIntegration):
             logger.error(f"Failed to flush ARP cache: {e}")
             return False
 
-    async def create_alias(
-        self, name: str, alias_type: str, content: list[str], description: str = ""
-    ) -> str:
+    async def create_alias(self, name: str, alias_type: str, content: list[str], description: str = "") -> str:
         """
         Create a firewall alias.
 
@@ -420,7 +407,7 @@ class OPNsenseIntegration(RouterIntegration):
                     "name": name,
                     "type": alias_type,
                     "content": "\n".join(content),
-                    "description": description,
+                    "description": description
                 }
             }
 
@@ -468,157 +455,19 @@ class OPNsenseIntegration(RouterIntegration):
 
             aliases = []
             for alias in data.get("rows", []):
-                aliases.append(
-                    {
-                        "uuid": alias.get("uuid"),
-                        "name": alias.get("name"),
-                        "type": alias.get("type"),
-                        "content": alias.get("content", "").split("\n"),
-                        "description": alias.get("description", ""),
-                        "enabled": alias.get("enabled") == "1",
-                    }
-                )
+                aliases.append({
+                    "uuid": alias.get("uuid"),
+                    "name": alias.get("name"),
+                    "type": alias.get("type"),
+                    "content": alias.get("content", "").split("\n"),
+                    "description": alias.get("description", ""),
+                    "enabled": alias.get("enabled") == "1"
+                })
 
             return aliases
 
         except Exception as e:
             logger.error(f"Failed to get aliases: {e}")
-            return []
-
-    # =========================================================================
-    # Traffic Shaping / QoS Methods
-    # =========================================================================
-
-    async def add_traffic_shaper(self, policy: dict) -> str:
-        """
-        Add a traffic shaping pipe/queue for QoS.
-
-        OPNsense uses a pipe+queue model for traffic shaping:
-        - Pipes define bandwidth limits
-        - Queues define priority within pipes
-        - Rules match traffic to queues
-
-        Args:
-            policy: QoS policy definition
-
-        Returns:
-            Pipe UUID for tracking
-        """
-        try:
-            # Create a traffic shaper pipe for bandwidth control
-            pipe_data = {
-                "pipe": {
-                    "enabled": "1",
-                    "bandwidth": str(policy.get("bandwidth_limit_mbps", 100)),
-                    "bandwidthMetric": "Mbit",
-                    "description": policy.get("description", policy.get("name", "Auto QoS")),
-                }
-            }
-
-            # Add pipe
-            response = await self._api_post("/trafficshaper/settings/addPipe", pipe_data)
-            pipe_uuid = response.get("uuid", "")
-
-            if not pipe_uuid:
-                logger.error("Failed to create traffic shaper pipe")
-                return ""
-
-            # Create a queue within the pipe for priority
-            queue_data = {
-                "queue": {
-                    "enabled": "1",
-                    "pipe": pipe_uuid,
-                    "weight": str(
-                        100 - (policy.get("priority_queue", 3) * 15)
-                    ),  # Higher weight = more priority
-                    "description": f"Queue for {policy.get('name', 'auto')}",
-                }
-            }
-
-            queue_response = await self._api_post("/trafficshaper/settings/addQueue", queue_data)
-            queue_uuid = queue_response.get("uuid", "")
-
-            # Create a rule to match traffic
-            rule_data = {
-                "rule": {
-                    "enabled": "1",
-                    "sequence": "10",
-                    "interface": "lan",
-                    "target": queue_uuid if queue_uuid else pipe_uuid,
-                    "description": policy.get("name", "Auto QoS Rule"),
-                }
-            }
-
-            # Add port matching if specified
-            if policy.get("destination_port"):
-                rule_data["rule"]["destination_port"] = str(policy.get("destination_port"))
-
-            if policy.get("protocol"):
-                rule_data["rule"]["protocol"] = policy.get("protocol")
-
-            # Add DSCP marking if specified
-            if policy.get("dscp_marking"):
-                rule_data["rule"]["dscp"] = str(policy.get("dscp_marking"))
-
-            await self._api_post("/trafficshaper/settings/addRule", rule_data)
-
-            # Apply changes
-            await self._api_post("/trafficshaper/service/reconfigure")
-
-            logger.info(f"Created traffic shaper: {policy.get('name')} (pipe: {pipe_uuid})")
-            return pipe_uuid
-
-        except Exception as e:
-            logger.error(f"Failed to add traffic shaper: {e}")
-            return ""
-
-    async def delete_traffic_shaper(self, policy_id: str) -> bool:
-        """
-        Delete a traffic shaping pipe/queue.
-
-        Args:
-            policy_id: Pipe UUID
-
-        Returns:
-            True if successful
-        """
-        try:
-            # Delete the pipe (cascades to queue and rules)
-            await self._api_post(f"/trafficshaper/settings/delPipe/{policy_id}")
-            await self._api_post("/trafficshaper/service/reconfigure")
-            logger.info(f"Deleted traffic shaper pipe: {policy_id}")
-            return True
-
-        except Exception as e:
-            logger.error(f"Failed to delete traffic shaper: {e}")
-            return False
-
-    async def get_traffic_shapers(self) -> list[dict]:
-        """
-        Get all traffic shaping pipes.
-
-        Returns:
-            List of traffic shaping policies
-        """
-        try:
-            data = await self._api_get("/trafficshaper/settings/searchPipes")
-
-            shapers = []
-            for pipe in data.get("rows", []):
-                shapers.append(
-                    {
-                        "id": pipe.get("uuid"),
-                        "enabled": pipe.get("enabled") == "1",
-                        "bandwidth": pipe.get("bandwidth"),
-                        "bandwidth_metric": pipe.get("bandwidthMetric"),
-                        "description": pipe.get("description", ""),
-                    }
-                )
-
-            return shapers
-
-        except Exception as e:
-            logger.error(f"Failed to get traffic shapers: {e}")
             return []
 
     # =========================================================================
@@ -634,6 +483,6 @@ class OPNsenseIntegration(RouterIntegration):
             "deny": "block",
             "block": "block",
             "drop": "block",
-            "reject": "reject",
+            "reject": "reject"
         }
         return mapping.get(action.lower(), "block")

@@ -3,7 +3,6 @@ Comprehensive tests for main.py entry point module.
 
 Tests cover SentinelApplication, setup_logging, and entry points.
 """
-
 import pytest
 import asyncio
 import logging
@@ -427,8 +426,7 @@ class TestConfigurationLoading:
         from sentinel.main import SentinelApplication
 
         config_file = tmp_path / "config.yaml"
-        config_file.write_text(
-            """
+        config_file.write_text("""
 api:
   host: localhost
   port: 8000
@@ -437,8 +435,7 @@ agents:
     enabled: true
 logging:
   level: INFO
-"""
-        )
+""")
 
         app = SentinelApplication(config_path=str(config_file))
 
@@ -476,7 +473,6 @@ class TestEngineIntegration:
                     mock_engine_class.return_value = mock_engine
 
                     with patch.object(app, "_setup_signal_handlers"):
-
                         async def run_test():
                             start_task = asyncio.create_task(app.start())
                             await asyncio.sleep(0.05)

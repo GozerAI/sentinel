@@ -8,7 +8,6 @@ These tests achieve full coverage including:
 - Atomic operations
 - Namespace operations
 """
-
 import asyncio
 import pytest
 import tempfile
@@ -16,7 +15,12 @@ import os
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from sentinel.core.state import StateBackend, MemoryBackend, SQLiteBackend, StateManager
+from sentinel.core.state import (
+    StateBackend,
+    MemoryBackend,
+    SQLiteBackend,
+    StateManager
+)
 
 
 class TestMemoryBackend:
@@ -344,7 +348,10 @@ class TestStateManager:
         with tempfile.TemporaryDirectory() as tmpdir:
             db_path = os.path.join(tmpdir, "state.db")
 
-            manager = StateManager({"backend": "sqlite", "path": db_path})
+            manager = StateManager({
+                "backend": "sqlite",
+                "path": db_path
+            })
             await manager.initialize()
 
             assert manager._backend is not None
@@ -562,7 +569,11 @@ class TestStateManager:
 
         await manager.set("counter", 5)
 
-        result = await manager.atomic_update("counter", lambda x: x + 10, 0)
+        result = await manager.atomic_update(
+            "counter",
+            lambda x: x + 10,
+            0
+        )
 
         assert result == 15
 
@@ -577,7 +588,11 @@ class TestStateManager:
         manager = StateManager({"backend": "memory"})
         await manager.initialize()
 
-        result = await manager.atomic_update("new_key", lambda x: x + 10, 5)
+        result = await manager.atomic_update(
+            "new_key",
+            lambda x: x + 10,
+            5
+        )
 
         assert result == 15
         await manager.close()
@@ -609,7 +624,10 @@ class TestStateManager:
             await manager.set(key, value)
 
         # Run many concurrent sets
-        await asyncio.gather(*[set_value(f"key{i}", f"value{i}") for i in range(100)])
+        await asyncio.gather(*[
+            set_value(f"key{i}", f"value{i}")
+            for i in range(100)
+        ])
 
         keys = await manager.keys()
         assert len(keys) == 100

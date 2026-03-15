@@ -4,7 +4,6 @@ Tests for Policy models.
 Tests cover firewall rules, segmentation policies, device policies,
 automation rules, and security zones.
 """
-
 import pytest
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
@@ -85,7 +84,7 @@ class TestFirewallRule:
             log_enabled=True,
             priority=50,
             auto_generated=True,
-            generated_by_agent="guardian",
+            generated_by_agent="guardian"
         )
 
         assert rule.source_zones == ["trusted"]
@@ -104,12 +103,18 @@ class TestFirewallRule:
 
     def test_is_expired_future_expiration(self):
         """Test is_expired with future expiration."""
-        rule = FirewallRule(name="Test", expires_at=_utc_now() + timedelta(hours=1))
+        rule = FirewallRule(
+            name="Test",
+            expires_at=_utc_now() + timedelta(hours=1)
+        )
         assert rule.is_expired is False
 
     def test_is_expired_past_expiration(self):
         """Test is_expired with past expiration."""
-        rule = FirewallRule(name="Test", expires_at=_utc_now() - timedelta(hours=1))
+        rule = FirewallRule(
+            name="Test",
+            expires_at=_utc_now() - timedelta(hours=1)
+        )
         assert rule.is_expired is True
 
     def test_matches_any_protocol(self):
@@ -136,7 +141,11 @@ class TestSegmentationPolicy:
 
     def test_default_values(self):
         """Test default values."""
-        policy = SegmentationPolicy(name="Test Policy", source_vlan=10, destination_vlan=20)
+        policy = SegmentationPolicy(
+            name="Test Policy",
+            source_vlan=10,
+            destination_vlan=20
+        )
 
         assert policy.id is not None
         assert policy.name == "Test Policy"
@@ -150,7 +159,10 @@ class TestSegmentationPolicy:
     def test_is_service_allowed_explicit_allow(self):
         """Test service is allowed when explicitly listed."""
         policy = SegmentationPolicy(
-            name="Test", source_vlan=10, destination_vlan=20, allowed_services=["http", "https"]
+            name="Test",
+            source_vlan=10,
+            destination_vlan=20,
+            allowed_services=["http", "https"]
         )
 
         assert policy.is_service_allowed("http") is True
@@ -163,7 +175,7 @@ class TestSegmentationPolicy:
             source_vlan=10,
             destination_vlan=20,
             allowed_services=["http"],
-            denied_services=["ssh"],
+            denied_services=["ssh"]
         )
 
         assert policy.is_service_allowed("ssh") is False
@@ -175,7 +187,7 @@ class TestSegmentationPolicy:
             source_vlan=10,
             destination_vlan=20,
             allowed_services=["http"],
-            default_action=PolicyAction.DENY,
+            default_action=PolicyAction.DENY
         )
 
         assert policy.is_service_allowed("ftp") is False
@@ -187,7 +199,7 @@ class TestSegmentationPolicy:
             source_vlan=10,
             destination_vlan=20,
             denied_services=["ssh"],
-            default_action=PolicyAction.ALLOW,
+            default_action=PolicyAction.ALLOW
         )
 
         assert policy.is_service_allowed("ftp") is True
@@ -212,7 +224,10 @@ class TestDevicePolicy:
 
     def test_matches_device_by_type(self):
         """Test matching device by type."""
-        policy = DevicePolicy(name="Test", match_device_types=["workstation", "laptop"])
+        policy = DevicePolicy(
+            name="Test",
+            match_device_types=["workstation", "laptop"]
+        )
 
         assert policy.matches_device("workstation") is True
         assert policy.matches_device("laptop") is True
@@ -220,7 +235,10 @@ class TestDevicePolicy:
 
     def test_matches_device_by_vendor(self):
         """Test matching device by vendor."""
-        policy = DevicePolicy(name="Test", match_vendors=["Apple", "Dell"])
+        policy = DevicePolicy(
+            name="Test",
+            match_vendors=["Apple", "Dell"]
+        )
 
         assert policy.matches_device("workstation", vendor="Apple Inc.") is True
         assert policy.matches_device("workstation", vendor="Dell Technologies") is True
@@ -228,7 +246,10 @@ class TestDevicePolicy:
 
     def test_matches_device_by_tags(self):
         """Test matching device by tags."""
-        policy = DevicePolicy(name="Test", match_tags=["production", "critical"])
+        policy = DevicePolicy(
+            name="Test",
+            match_tags=["production", "critical"]
+        )
 
         assert policy.matches_device("workstation", tags=["production"]) is True
         assert policy.matches_device("workstation", tags=["critical"]) is True
@@ -244,7 +265,9 @@ class TestDevicePolicy:
     def test_matches_device_combined_criteria(self):
         """Test matching device with combined criteria."""
         policy = DevicePolicy(
-            name="Test", match_device_types=["workstation"], match_vendors=["Dell"]
+            name="Test",
+            match_device_types=["workstation"],
+            match_vendors=["Dell"]
         )
 
         assert policy.matches_device("workstation", vendor="Dell Inc.") is True
@@ -258,7 +281,9 @@ class TestAutomationRule:
     def test_default_values(self):
         """Test default values."""
         rule = AutomationRule(
-            name="Test Rule", trigger_event="device.discovered", action_type="assign_vlan"
+            name="Test Rule",
+            trigger_event="device.discovered",
+            action_type="assign_vlan"
         )
 
         assert rule.name == "Test Rule"
@@ -278,20 +303,32 @@ class TestAutomationRule:
 
     def test_can_execute_enabled(self):
         """Test can_execute when enabled."""
-        rule = AutomationRule(name="Test", trigger_event="test", action_type="test")
+        rule = AutomationRule(
+            name="Test",
+            trigger_event="test",
+            action_type="test"
+        )
 
         assert rule.can_execute(0) is True
 
     def test_can_execute_disabled(self):
         """Test can_execute when disabled."""
-        rule = AutomationRule(name="Test", trigger_event="test", action_type="test", enabled=False)
+        rule = AutomationRule(
+            name="Test",
+            trigger_event="test",
+            action_type="test",
+            enabled=False
+        )
 
         assert rule.can_execute(0) is False
 
     def test_can_execute_rate_limited(self):
         """Test can_execute with rate limiting."""
         rule = AutomationRule(
-            name="Test", trigger_event="test", action_type="test", max_executions_per_hour=5
+            name="Test",
+            trigger_event="test",
+            action_type="test",
+            max_executions_per_hour=5
         )
 
         assert rule.can_execute(4) is True
@@ -300,7 +337,11 @@ class TestAutomationRule:
 
     def test_record_execution(self):
         """Test recording execution."""
-        rule = AutomationRule(name="Test", trigger_event="test", action_type="test")
+        rule = AutomationRule(
+            name="Test",
+            trigger_event="test",
+            action_type="test"
+        )
 
         assert rule.execution_count == 0
         assert rule.last_executed is None
@@ -340,7 +381,7 @@ class TestSecurityZone:
             trust_level="untrusted",
             vlans=[10, 20, 30],
             default_ingress_policy=PolicyAction.DENY,
-            default_egress_policy=PolicyAction.DENY,
+            default_egress_policy=PolicyAction.DENY
         )
 
         assert zone.name == "DMZ"
@@ -369,10 +410,16 @@ class TestPolicySet:
         """Test PolicySet with policies."""
         rule1 = FirewallRule(name="Rule 1", priority=50)
         rule2 = FirewallRule(name="Rule 2", priority=10)
-        seg_policy = SegmentationPolicy(name="Seg Policy", source_vlan=10, destination_vlan=20)
+        seg_policy = SegmentationPolicy(
+            name="Seg Policy",
+            source_vlan=10,
+            destination_vlan=20
+        )
 
         policy_set = PolicySet(
-            name="Test Set", firewall_rules=[rule1, rule2], segmentation_policies=[seg_policy]
+            name="Test Set",
+            firewall_rules=[rule1, rule2],
+            segmentation_policies=[seg_policy]
         )
 
         assert len(policy_set.firewall_rules) == 2
@@ -385,7 +432,10 @@ class TestPolicySet:
         rule3 = FirewallRule(name="Rule 3", priority=50, enabled=False)
         rule4 = FirewallRule(name="Rule 4", priority=25)
 
-        policy_set = PolicySet(name="Test Set", firewall_rules=[rule1, rule2, rule3, rule4])
+        policy_set = PolicySet(
+            name="Test Set",
+            firewall_rules=[rule1, rule2, rule3, rule4]
+        )
 
         sorted_rules = policy_set.get_firewall_rules_sorted()
 

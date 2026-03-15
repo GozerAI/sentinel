@@ -1,7 +1,6 @@
 """
 Tests for Sentinel metrics collection.
 """
-
 import pytest
 from unittest.mock import MagicMock, AsyncMock
 
@@ -131,12 +130,10 @@ class TestMetricsCollector:
         collector.record_agent_event("guardian", "threat.detected")
 
         # Counters should be incremented
-        assert (
-            AGENT_EVENTS_PROCESSED.labels(
-                agent_name="discovery", event_type="device.discovered"
-            )._value.get()
-            >= 2
-        )
+        assert AGENT_EVENTS_PROCESSED.labels(
+            agent_name="discovery",
+            event_type="device.discovered"
+        )._value.get() >= 2
 
     def test_record_agent_action(self):
         """Test recording agent actions."""
@@ -146,12 +143,11 @@ class TestMetricsCollector:
         collector.record_agent_action("guardian", "block_ip", "failed")
 
         # Counters should be incremented
-        assert (
-            AGENT_ACTIONS_TAKEN.labels(
-                agent_name="guardian", action_type="block_ip", status="success"
-            )._value.get()
-            >= 1
-        )
+        assert AGENT_ACTIONS_TAKEN.labels(
+            agent_name="guardian",
+            action_type="block_ip",
+            status="success"
+        )._value.get() >= 1
 
     def test_generate_metrics(self):
         """Test metrics generation."""
@@ -206,7 +202,7 @@ class TestAPIMetricsEndpoint:
         engine = MockEngine()
 
         # Disable auth for testing
-        original_auth = getattr(auth_module, "_auth_config", None)
+        original_auth = getattr(auth_module, '_auth_config', None)
         auth_module._auth_config = None
 
         app = create_app(engine)

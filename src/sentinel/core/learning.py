@@ -4,7 +4,6 @@ Learning System for Sentinel.
 This module provides outcome-based learning capabilities that allow Sentinel
 to improve its decision-making over time based on the results of actions taken.
 """
-
 import asyncio
 import json
 import logging
@@ -46,7 +45,7 @@ class ActionOutcome:
         action_type: str,
         parameters: dict,
         initial_confidence: float,
-        context: dict = None,
+        context: dict = None
     ):
         self.id = uuid4()
         self.action_id = action_id
@@ -71,7 +70,7 @@ class ActionOutcome:
         outcome: str,
         effectiveness: float,
         side_effects: list[str] = None,
-        resolution_time: timedelta = None,
+        resolution_time: timedelta = None
     ) -> None:
         """Record the outcome of the action."""
         self.outcome = outcome
@@ -100,7 +99,7 @@ class ActionOutcome:
             "resolution_time": str(self.resolution_time) if self.resolution_time else None,
             "required_followup": self.required_followup,
             "feedback": self.feedback,
-            "feedback_score": self.feedback_score,
+            "feedback_score": self.feedback_score
         }
 
 
@@ -123,7 +122,7 @@ class Pattern:
         conditions: dict,
         recommendation: str,
         confidence_adjustment: float = 0.0,
-        sample_size: int = 0,
+        sample_size: int = 0
     ):
         self.id = uuid4()
         self.pattern_type = pattern_type  # success, failure, optimization
@@ -148,7 +147,7 @@ class Pattern:
             "confidence_adjustment": self.confidence_adjustment,
             "sample_size": self.sample_size,
             "created_at": self.created_at.isoformat(),
-            "application_count": self.application_count,
+            "application_count": self.application_count
         }
 
 
@@ -197,9 +196,10 @@ class LearningSystem:
         # Configuration
         self.min_samples_for_pattern = self.config.get("min_samples", 10)
         self.learning_rate = self.config.get("learning_rate", 0.1)
-        self.persistence_path = Path(
-            self.config.get("persistence_path", "/var/lib/sentinel/learning.json")
-        )
+        self.persistence_path = Path(self.config.get(
+            "persistence_path",
+            "/var/lib/sentinel/learning.json"
+        ))
         self.auto_persist_interval = self.config.get("auto_persist_interval", 300)
 
         # Outcome storage
@@ -207,25 +207,21 @@ class LearningSystem:
         self._patterns: list[Pattern] = []
 
         # Aggregated statistics
-        self._stats_by_agent: dict[str, dict] = defaultdict(
-            lambda: {
-                "total_actions": 0,
-                "successes": 0,
-                "failures": 0,
-                "avg_effectiveness": 0.0,
-                "avg_confidence": 0.0,
-            }
-        )
+        self._stats_by_agent: dict[str, dict] = defaultdict(lambda: {
+            "total_actions": 0,
+            "successes": 0,
+            "failures": 0,
+            "avg_effectiveness": 0.0,
+            "avg_confidence": 0.0
+        })
 
-        self._stats_by_action: dict[str, dict] = defaultdict(
-            lambda: {
-                "total": 0,
-                "successes": 0,
-                "failures": 0,
-                "avg_effectiveness": 0.0,
-                "optimal_confidence": 0.85,
-            }
-        )
+        self._stats_by_action: dict[str, dict] = defaultdict(lambda: {
+            "total": 0,
+            "successes": 0,
+            "failures": 0,
+            "avg_effectiveness": 0.0,
+            "optimal_confidence": 0.85
+        })
 
         # Confidence adjustments learned over time
         self._confidence_adjustments: dict[str, float] = {}
@@ -266,7 +262,10 @@ class LearningSystem:
 
     async def _subscribe_events(self) -> None:
         """Subscribe to events for learning."""
-        self.engine.event_bus.subscribe(self._handle_action_event, category=EventCategory.AGENT)
+        self.engine.event_bus.subscribe(
+            self._handle_action_event,
+            category=EventCategory.AGENT
+        )
 
     async def _handle_action_event(self, event: Event) -> None:
         """Handle agent action events for learning."""
@@ -287,7 +286,7 @@ class LearningSystem:
             action_type=event.data.get("action_type", "unknown"),
             parameters=event.data.get("parameters", {}),
             initial_confidence=event.data.get("confidence", 0.5),
-            context={"event_id": str(event.id)},
+            context={"event_id": str(event.id)}
         )
         outcome.record_outcome("success", effectiveness=1.0)
 
@@ -301,7 +300,10 @@ class LearningSystem:
             action_type=event.data.get("action_type", "unknown"),
             parameters=event.data.get("parameters", {}),
             initial_confidence=event.data.get("confidence", 0.5),
-            context={"event_id": str(event.id), "error": event.data.get("error")},
+            context={
+                "event_id": str(event.id),
+                "error": event.data.get("error")
+            }
         )
         outcome.record_outcome("failure", effectiveness=0.0)
 
@@ -315,7 +317,7 @@ class LearningSystem:
             action_type=event.data.get("action_type", "unknown"),
             parameters=event.data.get("parameters", {}),
             initial_confidence=event.data.get("confidence", 0.5),
-            context={"event_id": str(event.id)},
+            context={"event_id": str(event.id)}
         )
         outcome.record_outcome("rolled_back", effectiveness=0.2)
 
@@ -342,9 +344,7 @@ class LearningSystem:
         if len(self._outcomes) > 50000:
             self._outcomes = self._outcomes[-25000:]
 
-        logger.debug(
-            f"Recorded outcome for {outcome.agent_name}/{outcome.action_type}: {outcome.outcome}"
-        )
+        logger.debug(f"Recorded outcome for {outcome.agent_name}/{outcome.action_type}: {outcome.outcome}")
 
     def _update_statistics(self, outcome: ActionOutcome) -> None:
         """Update aggregated statistics from an outcome."""
@@ -359,11 +359,11 @@ class LearningSystem:
         # Update running averages
         n = agent_stats["total_actions"]
         agent_stats["avg_effectiveness"] = (
-            agent_stats["avg_effectiveness"] * (n - 1) + outcome.effectiveness
-        ) / n
+            (agent_stats["avg_effectiveness"] * (n - 1) + outcome.effectiveness) / n
+        )
         agent_stats["avg_confidence"] = (
-            agent_stats["avg_confidence"] * (n - 1) + outcome.initial_confidence
-        ) / n
+            (agent_stats["avg_confidence"] * (n - 1) + outcome.initial_confidence) / n
+        )
 
         # Update action stats
         action_key = f"{outcome.agent_name}:{outcome.action_type}"
@@ -376,14 +376,15 @@ class LearningSystem:
 
         n = action_stats["total"]
         action_stats["avg_effectiveness"] = (
-            action_stats["avg_effectiveness"] * (n - 1) + outcome.effectiveness
-        ) / n
+            (action_stats["avg_effectiveness"] * (n - 1) + outcome.effectiveness) / n
+        )
 
     async def _analyze_patterns(self, agent_name: str, action_type: str) -> None:
         """Analyze outcomes to identify patterns."""
         # Get relevant outcomes
         relevant_outcomes = [
-            o for o in self._outcomes if o.agent_name == agent_name and o.action_type == action_type
+            o for o in self._outcomes
+            if o.agent_name == agent_name and o.action_type == action_type
         ]
 
         if len(relevant_outcomes) < self.min_samples_for_pattern:
@@ -415,7 +416,7 @@ class LearningSystem:
                 conditions={"confidence_bucket": best_bucket},
                 recommendation=f"Optimal confidence for {action_type} is in {best_bucket} range",
                 confidence_adjustment=self._bucket_to_adjustment(best_bucket),
-                sample_size=len(relevant_outcomes),
+                sample_size=len(relevant_outcomes)
             )
 
             # Update or add pattern
@@ -454,7 +455,7 @@ class LearningSystem:
             "high": 0.02,
             "medium": 0.0,
             "low": -0.05,
-            "very_low": -0.10,
+            "very_low": -0.10
         }
         return adjustments.get(bucket, 0.0)
 
@@ -480,7 +481,10 @@ class LearningSystem:
         return self._confidence_adjustments.get(key, 0.0)
 
     def get_adjusted_confidence(
-        self, agent_name: str, action_type: str, base_confidence: float
+        self,
+        agent_name: str,
+        action_type: str,
+        base_confidence: float
     ) -> float:
         """
         Get adjusted confidence based on learning.
@@ -498,7 +502,9 @@ class LearningSystem:
         return max(0.0, min(1.0, adjusted))
 
     async def get_recommendations(
-        self, agent_name: str, action_type: Optional[str] = None
+        self,
+        agent_name: str,
+        action_type: Optional[str] = None
     ) -> list[dict]:
         """
         Get recommendations based on learned patterns.
@@ -516,32 +522,33 @@ class LearningSystem:
         for pattern in self._patterns:
             if pattern.agent_name == agent_name:
                 if action_type is None or pattern.action_type == action_type:
-                    recommendations.append(
-                        {
-                            "type": pattern.pattern_type,
-                            "action_type": pattern.action_type,
-                            "recommendation": pattern.recommendation,
-                            "confidence_adjustment": pattern.confidence_adjustment,
-                            "sample_size": pattern.sample_size,
-                        }
-                    )
+                    recommendations.append({
+                        "type": pattern.pattern_type,
+                        "action_type": pattern.action_type,
+                        "recommendation": pattern.recommendation,
+                        "confidence_adjustment": pattern.confidence_adjustment,
+                        "sample_size": pattern.sample_size
+                    })
 
         # Add statistical recommendations
         agent_stats = self._stats_by_agent.get(agent_name)
         if agent_stats and agent_stats["total_actions"] > 0:
             success_rate = agent_stats["successes"] / agent_stats["total_actions"]
             if success_rate < 0.7:
-                recommendations.append(
-                    {
-                        "type": "performance",
-                        "recommendation": f"Agent success rate is low ({success_rate:.1%}). Consider reviewing action criteria.",
-                        "success_rate": success_rate,
-                    }
-                )
+                recommendations.append({
+                    "type": "performance",
+                    "recommendation": f"Agent success rate is low ({success_rate:.1%}). Consider reviewing action criteria.",
+                    "success_rate": success_rate
+                })
 
         return recommendations
 
-    async def provide_feedback(self, action_id: UUID, feedback: str, score: float) -> bool:
+    async def provide_feedback(
+        self,
+        action_id: UUID,
+        feedback: str,
+        score: float
+    ) -> bool:
         """
         Provide human feedback on an action outcome.
 
@@ -584,7 +591,7 @@ class LearningSystem:
             "agent_stats": dict(self._stats_by_agent),
             "action_stats": dict(self._stats_by_action),
             "patterns": [p.to_dict() for p in self._patterns],
-            "recent_outcomes": [o.to_dict() for o in self._outcomes[-100:]],
+            "recent_outcomes": [o.to_dict() for o in self._outcomes[-100:]]
         }
 
         prompt = f"""Analyze the following learning data from Sentinel's agents:
@@ -618,10 +625,10 @@ Provide insights and recommendations based on the data."""
                 "confidence_adjustments": self._confidence_adjustments,
                 "stats_by_agent": dict(self._stats_by_agent),
                 "stats_by_action": dict(self._stats_by_action),
-                "persisted_at": utc_now().isoformat(),
+                "persisted_at": utc_now().isoformat()
             }
 
-            with open(self.persistence_path, "w") as f:
+            with open(self.persistence_path, 'w') as f:
                 json.dump(data, f, indent=2)
 
             logger.debug(f"Persisted learning data to {self.persistence_path}")
@@ -636,7 +643,7 @@ Provide insights and recommendations based on the data."""
                 logger.debug("No persisted learning data found")
                 return
 
-            with open(self.persistence_path, "r") as f:
+            with open(self.persistence_path, 'r') as f:
                 data = json.load(f)
 
             # Restore confidence adjustments
@@ -658,7 +665,7 @@ Provide insights and recommendations based on the data."""
                     conditions=pattern_data["conditions"],
                     recommendation=pattern_data["recommendation"],
                     confidence_adjustment=pattern_data.get("confidence_adjustment", 0.0),
-                    sample_size=pattern_data.get("sample_size", 0),
+                    sample_size=pattern_data.get("sample_size", 0)
                 )
                 self._patterns.append(pattern)
 
@@ -684,5 +691,5 @@ Provide insights and recommendations based on the data."""
             "total_patterns": len(self._patterns),
             "agents_tracked": len(self._stats_by_agent),
             "actions_tracked": len(self._stats_by_action),
-            "confidence_adjustments": len(self._confidence_adjustments),
+            "confidence_adjustments": len(self._confidence_adjustments)
         }

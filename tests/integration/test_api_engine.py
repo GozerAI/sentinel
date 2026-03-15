@@ -3,7 +3,6 @@ Integration tests for API with SentinelEngine.
 
 Tests the full API functionality when connected to a real engine instance.
 """
-
 import asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -33,7 +32,9 @@ class TestAPIEngineIntegration:
                 "healer": {"enabled": True},
             },
             "state": {"backend": "memory"},
-            "api": {"auth": {"enabled": False}},  # Disable auth for testing
+            "api": {
+                "auth": {"enabled": False}  # Disable auth for testing
+            },
         }
 
     @pytest.fixture
@@ -48,7 +49,7 @@ class TestAPIEngineIntegration:
     def client(self, engine):
         """Create test client with real engine."""
         # Disable auth
-        original_auth = getattr(auth_module, "_auth_config", None)
+        original_auth = getattr(auth_module, '_auth_config', None)
         auth_module._auth_config = None
 
         app = create_app(engine)
@@ -188,16 +189,13 @@ class TestAPIEngineIntegration:
 
     def test_create_vlan_updates_planner(self, client, engine):
         """Test that creating a VLAN updates planner state."""
-        response = client.post(
-            "/vlans",
-            json={
-                "id": 100,
-                "name": "Test VLAN",
-                "subnet": "192.168.100.0/24",
-                "purpose": "testing",
-                "isolated": True,
-            },
-        )
+        response = client.post("/vlans", json={
+            "id": 100,
+            "name": "Test VLAN",
+            "subnet": "192.168.100.0/24",
+            "purpose": "testing",
+            "isolated": True,
+        })
 
         assert response.status_code == 200
 
@@ -304,7 +302,7 @@ class TestAPIScanIntegration:
 
     @pytest.fixture
     def client(self, engine):
-        original_auth = getattr(auth_module, "_auth_config", None)
+        original_auth = getattr(auth_module, '_auth_config', None)
         auth_module._auth_config = None
         app = create_app(engine)
         try:
@@ -374,7 +372,7 @@ class TestAPIEventIntegration:
 
     @pytest.fixture
     def client(self, engine):
-        original_auth = getattr(auth_module, "_auth_config", None)
+        original_auth = getattr(auth_module, '_auth_config', None)
         auth_module._auth_config = None
         app = create_app(engine)
         try:
@@ -384,7 +382,6 @@ class TestAPIEventIntegration:
 
     def test_events_list_shows_bus_history(self, client, engine):
         """Test that events endpoint shows event bus history."""
-
         # Publish some events to the bus
         async def publish_events():
             for i in range(3):
@@ -404,27 +401,22 @@ class TestAPIEventIntegration:
 
     def test_events_filter_by_category(self, client, engine):
         """Test filtering events by category."""
-
         # Publish events of different categories
         async def publish_events():
-            await engine.event_bus.publish(
-                Event(
-                    category=EventCategory.SECURITY,
-                    event_type="security.alert",
-                    severity=EventSeverity.WARNING,
-                    source="test",
-                    title="Security event",
-                )
-            )
-            await engine.event_bus.publish(
-                Event(
-                    category=EventCategory.NETWORK,
-                    event_type="network.change",
-                    severity=EventSeverity.INFO,
-                    source="test",
-                    title="Network event",
-                )
-            )
+            await engine.event_bus.publish(Event(
+                category=EventCategory.SECURITY,
+                event_type="security.alert",
+                severity=EventSeverity.WARNING,
+                source="test",
+                title="Security event",
+            ))
+            await engine.event_bus.publish(Event(
+                category=EventCategory.NETWORK,
+                event_type="network.change",
+                severity=EventSeverity.INFO,
+                source="test",
+                title="Network event",
+            ))
 
         asyncio.get_event_loop().run_until_complete(publish_events())
 
@@ -453,7 +445,7 @@ class TestAPIPolicyIntegration:
 
     @pytest.fixture
     def client(self, engine):
-        original_auth = getattr(auth_module, "_auth_config", None)
+        original_auth = getattr(auth_module, '_auth_config', None)
         auth_module._auth_config = None
         app = create_app(engine)
         try:

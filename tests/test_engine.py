@@ -1,7 +1,6 @@
 """
 Tests for Sentinel Engine.
 """
-
 import asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -17,7 +16,9 @@ class TestSentinelEngine:
     def basic_config(self):
         """Create a basic configuration for testing."""
         return {
-            "state": {"backend": "memory"},
+            "state": {
+                "backend": "memory"
+            },
             "agents": {
                 "discovery": {"enabled": False},
                 "optimizer": {"enabled": False},
@@ -25,19 +26,21 @@ class TestSentinelEngine:
                 "healer": {"enabled": False},
                 "guardian": {"enabled": False},
             },
-            "integrations": {},
+            "integrations": {}
         }
 
     @pytest.fixture
     def full_config(self):
         """Create a full configuration with agents enabled."""
         return {
-            "state": {"backend": "memory"},
+            "state": {
+                "backend": "memory"
+            },
             "agents": {
                 "discovery": {
                     "enabled": True,
                     "scan_interval_seconds": 60,
-                    "networks": ["192.168.1.0/24"],
+                    "networks": ["192.168.1.0/24"]
                 },
                 "optimizer": {"enabled": True},
                 "planner": {"enabled": True},
@@ -48,7 +51,7 @@ class TestSentinelEngine:
             "vlans": [
                 {"id": 10, "name": "Workstations", "subnet": "192.168.10.0/24"},
                 {"id": 20, "name": "Servers", "subnet": "192.168.20.0/24"},
-            ],
+            ]
         }
 
     @pytest.mark.asyncio
@@ -160,10 +163,10 @@ class TestEngineIntegrationLoading:
                     "primary": {
                         "type": "ollama",
                         "host": "http://localhost:11434",
-                        "model": "llama3.1:8b",
+                        "model": "llama3.1:8b"
                     }
                 }
-            },
+            }
         }
 
         engine = SentinelEngine(config)
@@ -186,7 +189,11 @@ class TestEngineIntegrationLoading:
         config = {
             "state": {"backend": "memory"},
             "agents": {},
-            "integrations": {"router": {"type": "nonexistent_router"}},
+            "integrations": {
+                "router": {
+                    "type": "nonexistent_router"
+                }
+            }
         }
 
         engine = SentinelEngine(config)

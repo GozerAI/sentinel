@@ -8,14 +8,13 @@ Provides comprehensive management of WAN/ISP connections:
 - Speed testing and quality measurements
 - Cost optimization recommendations
 """
-
 import asyncio
 import logging
 import json
 import subprocess
 import statistics
 from typing import Optional, Any, TYPE_CHECKING
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from pathlib import Path
 from uuid import UUID
 
@@ -39,7 +38,10 @@ class FailoverEvent:
     """Records a failover event."""
 
     def __init__(
-        self, from_connection: Optional[WANConnection], to_connection: WANConnection, reason: str
+        self,
+        from_connection: Optional[WANConnection],
+        to_connection: WANConnection,
+        reason: str
     ):
         self.timestamp = utc_now()
         self.from_connection_id = from_connection.id if from_connection else None
@@ -113,43 +115,27 @@ class WANManager(BaseIntegration):
 
         self.speedtest_interval = config.get("speedtest_interval", 3600)  # 1 hour
         if not isinstance(self.speedtest_interval, (int, float)) or self.speedtest_interval < 60:
-            raise ValueError(
-                f"speedtest_interval must be >= 60 seconds, got {self.speedtest_interval}"
-            )
+            raise ValueError(f"speedtest_interval must be >= 60 seconds, got {self.speedtest_interval}")
 
         # Failover thresholds with validation
         self.failover_latency_threshold_ms = config.get("failover_threshold_ms", 200)
-        if (
-            not isinstance(self.failover_latency_threshold_ms, (int, float))
-            or self.failover_latency_threshold_ms <= 0
-        ):
-            raise ValueError(
-                f"failover_threshold_ms must be > 0, got {self.failover_latency_threshold_ms}"
-            )
+        if not isinstance(self.failover_latency_threshold_ms, (int, float)) or self.failover_latency_threshold_ms <= 0:
+            raise ValueError(f"failover_threshold_ms must be > 0, got {self.failover_latency_threshold_ms}")
 
         self.failover_packet_loss_threshold = config.get("failover_packet_loss_threshold", 5.0)
-        if (
-            not isinstance(self.failover_packet_loss_threshold, (int, float))
-            or not 0 <= self.failover_packet_loss_threshold <= 100
-        ):
-            raise ValueError(
-                f"failover_packet_loss_threshold must be 0-100, got {self.failover_packet_loss_threshold}"
-            )
+        if not isinstance(self.failover_packet_loss_threshold, (int, float)) or not 0 <= self.failover_packet_loss_threshold <= 100:
+            raise ValueError(f"failover_packet_loss_threshold must be 0-100, got {self.failover_packet_loss_threshold}")
 
         self.failover_consecutive_failures = config.get("failover_consecutive_failures", 3)
-        if (
-            not isinstance(self.failover_consecutive_failures, int)
-            or self.failover_consecutive_failures < 1
-        ):
-            raise ValueError(
-                f"failover_consecutive_failures must be >= 1, got {self.failover_consecutive_failures}"
-            )
+        if not isinstance(self.failover_consecutive_failures, int) or self.failover_consecutive_failures < 1:
+            raise ValueError(f"failover_consecutive_failures must be >= 1, got {self.failover_consecutive_failures}")
 
         # Test targets for connectivity checks with validation
-        self.ping_targets = config.get(
-            "ping_targets",
-            ["8.8.8.8", "1.1.1.1", "208.67.222.222"],  # Google DNS  # Cloudflare DNS  # OpenDNS
-        )
+        self.ping_targets = config.get("ping_targets", [
+            "8.8.8.8",      # Google DNS
+            "1.1.1.1",      # Cloudflare DNS
+            "208.67.222.222"  # OpenDNS
+        ])
         if not self.ping_targets:
             raise ValueError("At least one ping_target is required for connectivity monitoring")
         # Validate IP addresses
@@ -160,7 +146,10 @@ class WANManager(BaseIntegration):
             raise ValueError("dns_test_domain must be a valid domain name")
 
         # Persistence
-        self.persistence_path = Path(config.get("persistence_path", "/var/lib/sentinel/wan.json"))
+        self.persistence_path = Path(config.get(
+            "persistence_path",
+            "/var/lib/sentinel/wan.json"
+        ))
 
         # Connections registry
         self._connections: dict[UUID, WANConnection] = {}
@@ -189,7 +178,6 @@ class WANManager(BaseIntegration):
     def _validate_ping_targets(self) -> None:
         """Validate that ping targets are valid IP addresses."""
         import ipaddress
-
         for target in self.ping_targets:
             try:
                 ipaddress.ip_address(target)
@@ -352,16 +340,17 @@ class WANManager(BaseIntegration):
         # Determine status
         if losses == total_pings:
             return ConnectionStatus.DOWN
-        elif (
-            connection.quality.latency_ms > self.failover_latency_threshold_ms
-            or connection.quality.packet_loss_percent > self.failover_packet_loss_threshold
-        ):
+        elif (connection.quality.latency_ms > self.failover_latency_threshold_ms or
+              connection.quality.packet_loss_percent > self.failover_packet_loss_threshold):
             return ConnectionStatus.DEGRADED
         else:
             return ConnectionStatus.UP
 
     async def _ping(
-        self, target: str, connection: WANConnection, timeout: int = 2
+        self,
+        target: str,
+        connection: WANConnection,
+        timeout: int = 2
     ) -> Optional[float]:
         """
         Ping a target through a specific connection.
@@ -375,14 +364,9 @@ class WANManager(BaseIntegration):
             # Use ping command with timeout
             # On Linux with multiple interfaces, we'd use -I to specify interface
             proc = await asyncio.create_subprocess_exec(
-                "ping",
-                "-c",
-                "1",
-                "-W",
-                str(timeout),
-                target,
+                "ping", "-c", "1", "-W", str(timeout), target,
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
             )
             stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=timeout + 1)
 
@@ -408,14 +392,16 @@ class WANManager(BaseIntegration):
         Returns resolution time in ms or None if failed.
         """
         import socket
-
-        start = datetime.now(timezone.utc)
+        start = utc_now()
 
         try:
             # In production, this would use the connection's DNS servers
             loop = asyncio.get_event_loop()
-            await loop.getaddrinfo(self.dns_test_domain, 80, family=socket.AF_INET)
-            duration = (datetime.now(timezone.utc) - start).total_seconds() * 1000
+            await loop.getaddrinfo(
+                self.dns_test_domain, 80,
+                family=socket.AF_INET
+            )
+            duration = (utc_now() - start).total_seconds() * 1000
             return duration
 
         except Exception as e:
@@ -426,7 +412,10 @@ class WANManager(BaseIntegration):
     # Speed Testing
     # =========================================================================
 
-    async def run_speedtest(self, connection: Optional[WANConnection] = None) -> dict:
+    async def run_speedtest(
+        self,
+        connection: Optional[WANConnection] = None
+    ) -> dict:
         """
         Run a speed test on a connection.
 
@@ -456,13 +445,13 @@ class WANManager(BaseIntegration):
         try:
             # Try speedtest-cli first
             proc = await asyncio.create_subprocess_exec(
-                "speedtest-cli",
-                "--json",
+                "speedtest-cli", "--json",
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
             )
             stdout, _ = await asyncio.wait_for(
-                proc.communicate(), timeout=120  # Speed tests can take a while
+                proc.communicate(),
+                timeout=120  # Speed tests can take a while
             )
 
             if proc.returncode == 0:
@@ -490,7 +479,7 @@ class WANManager(BaseIntegration):
             # Store in history
             self._speedtest_history.append(results)
             if len(self._speedtest_history) > self._max_speedtest_history:
-                self._speedtest_history = self._speedtest_history[-self._max_speedtest_history :]
+                self._speedtest_history = self._speedtest_history[-self._max_speedtest_history:]
 
         await self._save_state()
         return results
@@ -516,14 +505,16 @@ class WANManager(BaseIntegration):
         for url in test_urls:
             try:
                 import urllib.request
+                start = utc_now()
 
-                start = datetime.now(timezone.utc)
+                # Download with timeout - run in executor to avoid blocking event loop
+                loop = asyncio.get_running_loop()
+                def _download(u):
+                    resp = urllib.request.urlopen(u, timeout=30)
+                    return resp.read()
+                data = await loop.run_in_executor(None, _download, url)
 
-                # Download with timeout
-                response = urllib.request.urlopen(url, timeout=30)
-                data = response.read()
-
-                duration = (datetime.now(timezone.utc) - start).total_seconds()
+                duration = (utc_now() - start).total_seconds()
                 size_mb = len(data) / 1_000_000
                 speed_mbps = (size_mb * 8) / duration
 
@@ -542,7 +533,10 @@ class WANManager(BaseIntegration):
 
     async def _select_best_connection(self) -> Optional[WANConnection]:
         """Select the best available connection based on priority and health."""
-        candidates = [c for c in self._connections.values() if c.is_up and c.failover_enabled]
+        candidates = [
+            c for c in self._connections.values()
+            if c.is_up and c.failover_enabled
+        ]
 
         if not candidates:
             logger.warning("No healthy WAN connections available!")
@@ -594,7 +588,8 @@ class WANManager(BaseIntegration):
         try:
             # Get current routes
             routes = await self._router_integration.execute(
-                "/ip/route/print", params={"?dst-address": "0.0.0.0/0"}
+                "/ip/route/print",
+                params={"?dst-address": "0.0.0.0/0"}
             )
 
             # Find and update the default route
@@ -602,12 +597,14 @@ class WANManager(BaseIntegration):
                 if route.get("gateway") == connection.gateway_ip:
                     # Enable this route
                     await self._router_integration.execute(
-                        f"/ip/route/enable", params={".id": route[".id"]}
+                        f"/ip/route/enable",
+                        params={".id": route[".id"]}
                     )
                 else:
                     # Disable other default routes
                     await self._router_integration.execute(
-                        f"/ip/route/disable", params={".id": route[".id"]}
+                        f"/ip/route/disable",
+                        params={".id": route[".id"]}
                     )
 
         except Exception as e:
@@ -627,8 +624,7 @@ class WANManager(BaseIntegration):
 
         # Find next best connection
         candidates = [
-            c
-            for c in self._connections.values()
+            c for c in self._connections.values()
             if c.is_up and c.failover_enabled and c.id != self._active_connection_id
         ]
 
@@ -643,7 +639,7 @@ class WANManager(BaseIntegration):
         event = FailoverEvent(current, new_active, reason)
         self._failover_events.append(event)
         if len(self._failover_events) > self._max_failover_history:
-            self._failover_events = self._failover_events[-self._max_failover_history :]
+            self._failover_events = self._failover_events[-self._max_failover_history:]
 
         # Activate new connection
         await self._activate_connection(new_active)
@@ -668,7 +664,11 @@ class WANManager(BaseIntegration):
         if target_id:
             target = self._connections.get(target_id)
             if target and target.is_up:
-                event = FailoverEvent(self.get_active_connection(), target, "Manual failover")
+                event = FailoverEvent(
+                    self.get_active_connection(),
+                    target,
+                    "Manual failover"
+                )
                 self._failover_events.append(event)
                 await self._activate_connection(target)
                 return target
@@ -688,7 +688,6 @@ class WANManager(BaseIntegration):
             try:
                 # Add jitter to prevent thundering herd
                 import random
-
                 jitter = random.uniform(0, self.monitor_interval * 0.1)
                 await asyncio.sleep(self.monitor_interval + jitter)
 
@@ -738,31 +737,25 @@ class WANManager(BaseIntegration):
                 self._consecutive_monitor_errors += 1
                 backoff = min(
                     self._max_backoff_seconds,
-                    self.monitor_interval * (2**self._consecutive_monitor_errors),
+                    self.monitor_interval * (2 ** self._consecutive_monitor_errors)
                 )
-                logger.warning(
-                    f"Monitor connection error (attempt {self._consecutive_monitor_errors}): {e}. Backing off {backoff:.0f}s"
-                )
+                logger.warning(f"Monitor connection error (attempt {self._consecutive_monitor_errors}): {e}. Backing off {backoff:.0f}s")
                 await asyncio.sleep(backoff)
             except OSError as e:
                 self._consecutive_monitor_errors += 1
                 backoff = min(
                     self._max_backoff_seconds,
-                    self.monitor_interval * (2**self._consecutive_monitor_errors),
+                    self.monitor_interval * (2 ** self._consecutive_monitor_errors)
                 )
-                logger.warning(
-                    f"Monitor OS error (attempt {self._consecutive_monitor_errors}): {e}. Backing off {backoff:.0f}s"
-                )
+                logger.warning(f"Monitor OS error (attempt {self._consecutive_monitor_errors}): {e}. Backing off {backoff:.0f}s")
                 await asyncio.sleep(backoff)
             except Exception as e:
                 self._consecutive_monitor_errors += 1
                 backoff = min(
                     self._max_backoff_seconds,
-                    self.monitor_interval * (2**self._consecutive_monitor_errors),
+                    self.monitor_interval * (2 ** self._consecutive_monitor_errors)
                 )
-                logger.error(
-                    f"Monitor loop error (attempt {self._consecutive_monitor_errors}): {e}. Backing off {backoff:.0f}s"
-                )
+                logger.error(f"Monitor loop error (attempt {self._consecutive_monitor_errors}): {e}. Backing off {backoff:.0f}s")
 
     async def _speedtest_loop(self) -> None:
         """Background speed testing loop."""
@@ -819,24 +812,22 @@ class WANManager(BaseIntegration):
             "summary": {
                 "total_connections": len(connections),
                 "healthy_connections": len([c for c in connections if c.is_healthy]),
-                "total_bandwidth_mbps": sum(
-                    c.bandwidth.contracted_download_mbps for c in connections if c.is_up
-                ),
+                "total_bandwidth_mbps": sum(c.bandwidth.contracted_download_mbps for c in connections if c.is_up),
                 "monthly_cost": sum(c.monthly_cost for c in connections),
-                "failover_events_30d": len(
-                    [
-                        e
-                        for e in self._failover_events
-                        if e.timestamp > utc_now() - timedelta(days=30)
-                    ]
-                ),
+                "failover_events_30d": len([
+                    e for e in self._failover_events
+                    if e.timestamp > utc_now() - timedelta(days=30)
+                ]),
             },
         }
 
     def get_failover_history(self, days: int = 30) -> list[dict]:
         """Get recent failover events."""
         cutoff = utc_now() - timedelta(days=days)
-        return [e.to_dict() for e in self._failover_events if e.timestamp > cutoff]
+        return [
+            e.to_dict() for e in self._failover_events
+            if e.timestamp > cutoff
+        ]
 
     def get_sla_report(self) -> dict:
         """Generate SLA compliance report for all connections."""
@@ -870,21 +861,18 @@ class WANManager(BaseIntegration):
             "total_contracted_download_mbps": total_download,
             "total_contracted_upload_mbps": total_upload,
             "average_cost_per_mbps": total_cost / total_download if total_download > 0 else 0,
-            "connections": sorted(
-                [
-                    {
-                        "name": c.name,
-                        "isp": c.isp_name,
-                        "monthly_cost": c.monthly_cost,
-                        "download_mbps": c.bandwidth.contracted_download_mbps,
-                        "upload_mbps": c.bandwidth.contracted_upload_mbps,
-                        "cost_per_mbps": c.cost_effectiveness,
-                        "sla_compliance": c.sla_compliance,
-                    }
-                    for c in connections
-                ],
-                key=lambda x: x["cost_per_mbps"],
-            ),
+            "connections": sorted([
+                {
+                    "name": c.name,
+                    "isp": c.isp_name,
+                    "monthly_cost": c.monthly_cost,
+                    "download_mbps": c.bandwidth.contracted_download_mbps,
+                    "upload_mbps": c.bandwidth.contracted_upload_mbps,
+                    "cost_per_mbps": c.cost_effectiveness,
+                    "sla_compliance": c.sla_compliance,
+                }
+                for c in connections
+            ], key=lambda x: x["cost_per_mbps"]),
         }
 
     # =========================================================================
@@ -898,17 +886,13 @@ class WANManager(BaseIntegration):
 
             data = {
                 "connections": [c.to_dict() for c in self._connections.values()],
-                "active_connection_id": (
-                    str(self._active_connection_id) if self._active_connection_id else None
-                ),
-                "failover_events": [
-                    e.to_dict() for e in self._failover_events[-self._max_failover_history :]
-                ],
-                "speedtest_history": self._speedtest_history[-self._max_speedtest_history :],
+                "active_connection_id": str(self._active_connection_id) if self._active_connection_id else None,
+                "failover_events": [e.to_dict() for e in self._failover_events[-self._max_failover_history:]],
+                "speedtest_history": self._speedtest_history[-self._max_speedtest_history:],
                 "saved_at": utc_now().isoformat(),
             }
 
-            with open(self.persistence_path, "w") as f:
+            with open(self.persistence_path, 'w') as f:
                 json.dump(data, f, indent=2)
 
         except Exception as e:
@@ -920,7 +904,7 @@ class WANManager(BaseIntegration):
             if not self.persistence_path.exists():
                 return
 
-            with open(self.persistence_path, "r") as f:
+            with open(self.persistence_path, 'r') as f:
                 data = json.load(f)
 
             # Load connections
@@ -951,12 +935,6 @@ class WANManager(BaseIntegration):
             "total_connections": len(connections),
             "active_connection": active.name if active else None,
             "healthy_connections": len([c for c in connections if c.is_healthy]),
-            "total_bandwidth_mbps": sum(
-                c.bandwidth.contracted_download_mbps for c in connections if c.is_up
-            ),
-            "overall_quality": (
-                statistics.mean([c.quality.quality_score for c in connections])
-                if connections
-                else 0
-            ),
+            "total_bandwidth_mbps": sum(c.bandwidth.contracted_download_mbps for c in connections if c.is_up),
+            "overall_quality": statistics.mean([c.quality.quality_score for c in connections]) if connections else 0,
         }

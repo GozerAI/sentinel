@@ -1,7 +1,6 @@
 """
 Tests for StateManager and backends.
 """
-
 import asyncio
 import pytest
 import tempfile
@@ -161,7 +160,10 @@ class TestStateManager:
         """Test StateManager with SQLite backend."""
         with tempfile.TemporaryDirectory() as tmpdir:
             db_path = Path(tmpdir) / "state.db"
-            config = {"backend": "sqlite", "path": str(db_path)}
+            config = {
+                "backend": "sqlite",
+                "path": str(db_path)
+            }
 
             manager = StateManager(config)
             await manager.initialize()
@@ -246,7 +248,10 @@ class TestStateManager:
         await manager.set("list_key", [1, 2, 3])
 
         # Atomic update to append
-        result = await manager.atomic_update("list_key", lambda x: x + [4, 5])
+        result = await manager.atomic_update(
+            "list_key",
+            lambda x: x + [4, 5]
+        )
         assert result == [1, 2, 3, 4, 5]
 
         # Verify persisted

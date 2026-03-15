@@ -7,7 +7,6 @@ This agent monitors the network state and enforces security policies:
 - Device policy application
 - Automation rule execution
 """
-
 import asyncio
 import logging
 from datetime import datetime, timedelta
@@ -17,19 +16,12 @@ from uuid import UUID
 from sentinel.agents.base import BaseAgent
 from sentinel.core.utils import utc_now
 from sentinel.core.models.event import (
-    Event,
-    EventCategory,
-    EventSeverity,
-    AgentAction,
-    AgentDecision,
+    Event, EventCategory, EventSeverity,
+    AgentAction, AgentDecision
 )
 from sentinel.core.models.policy import (
-    PolicyAction,
-    PolicySet,
-    FirewallRule,
-    SegmentationPolicy,
-    DevicePolicy,
-    AutomationRule,
+    PolicyAction, PolicySet, FirewallRule, SegmentationPolicy,
+    DevicePolicy, AutomationRule
 )
 
 logger = logging.getLogger(__name__)
@@ -85,16 +77,20 @@ class PolicyEnforcerAgent(BaseAgent):
     async def _subscribe_events(self) -> None:
         """Subscribe to policy-relevant events."""
         self.engine.event_bus.subscribe(
-            self._handle_device_discovered, event_type="device.discovered"
+            self._handle_device_discovered,
+            event_type="device.discovered"
         )
         self.engine.event_bus.subscribe(
-            self._handle_device_classified, event_type="device.classified"
+            self._handle_device_classified,
+            event_type="device.classified"
         )
         self.engine.event_bus.subscribe(
-            self._handle_traffic_anomaly, event_type="network.traffic.anomaly"
+            self._handle_traffic_anomaly,
+            event_type="network.traffic.anomaly"
         )
         self.engine.event_bus.subscribe(
-            self._handle_segmentation_violation, event_type="segmentation.violation"
+            self._handle_segmentation_violation,
+            event_type="segmentation.violation"
         )
 
     async def _main_loop(self) -> None:
@@ -105,8 +101,8 @@ class PolicyEnforcerAgent(BaseAgent):
 
                 # Run enforcement periodically
                 if (
-                    self._last_enforcement is None
-                    or (now - self._last_enforcement).total_seconds() > self.enforcement_interval
+                    self._last_enforcement is None or
+                    (now - self._last_enforcement).total_seconds() > self.enforcement_interval
                 ):
                     await self._run_enforcement_cycle()
                     self._last_enforcement = now
@@ -171,20 +167,18 @@ class PolicyEnforcerAgent(BaseAgent):
                     parameters={"rule_name": rule.name},
                     reasoning=f"Firewall rule '{rule.name}' has expired (expired at {rule.expires_at})",
                     confidence=0.95,
-                    reversible=True,
+                    reversible=True
                 )
 
-                await self.engine.event_bus.publish(
-                    Event(
-                        category=EventCategory.SECURITY,
-                        event_type="policy.rule.expired",
-                        severity=EventSeverity.INFO,
-                        source=f"sentinel.agents.{self.agent_name}",
-                        title=f"Firewall rule expired: {rule.name}",
-                        description=f"Automatically disabled expired firewall rule",
-                        data={"rule_id": str(rule.id), "rule_name": rule.name},
-                    )
-                )
+                await self.engine.event_bus.publish(Event(
+                    category=EventCategory.SECURITY,
+                    event_type="policy.rule.expired",
+                    severity=EventSeverity.INFO,
+                    source=f"sentinel.agents.{self.agent_name}",
+                    title=f"Firewall rule expired: {rule.name}",
+                    description=f"Automatically disabled expired firewall rule",
+                    data={"rule_id": str(rule.id), "rule_name": rule.name}
+                ))
 
     async def _verify_device_compliance(self) -> None:
         """Verify devices comply with device policies."""
@@ -214,7 +208,11 @@ class PolicyEnforcerAgent(BaseAgent):
                     )
 
     async def _handle_vlan_violation(
-        self, device_id: str, device: dict, policy: DevicePolicy, current_vlan: Optional[int]
+        self,
+        device_id: str,
+        device: dict,
+        policy: DevicePolicy,
+        current_vlan: Optional[int]
     ) -> None:
         """Handle a device VLAN policy violation."""
         # Track violations
@@ -226,24 +224,22 @@ class PolicyEnforcerAgent(BaseAgent):
             f"expected={policy.assign_vlan} (violation #{violation_count})"
         )
 
-        await self.engine.event_bus.publish(
-            Event(
-                category=EventCategory.SECURITY,
-                event_type="policy.violation.detected",
-                severity=EventSeverity.WARNING,
-                source=f"sentinel.agents.{self.agent_name}",
-                title=f"VLAN policy violation: {device.get('name', device_id)}",
-                description=f"Device should be in VLAN {policy.assign_vlan} but is in {current_vlan}",
-                data={
-                    "device_id": device_id,
-                    "device_name": device.get("name"),
-                    "policy_name": policy.name,
-                    "expected_vlan": policy.assign_vlan,
-                    "current_vlan": current_vlan,
-                    "violation_count": violation_count,
-                },
-            )
-        )
+        await self.engine.event_bus.publish(Event(
+            category=EventCategory.SECURITY,
+            event_type="policy.violation.detected",
+            severity=EventSeverity.WARNING,
+            source=f"sentinel.agents.{self.agent_name}",
+            title=f"VLAN policy violation: {device.get('name', device_id)}",
+            description=f"Device should be in VLAN {policy.assign_vlan} but is in {current_vlan}",
+            data={
+                "device_id": device_id,
+                "device_name": device.get("name"),
+                "policy_name": policy.name,
+                "expected_vlan": policy.assign_vlan,
+                "current_vlan": current_vlan,
+                "violation_count": violation_count
+            }
+        ))
 
         # Auto-remediate if threshold reached and not in audit mode
         if self.auto_remediate and not self.audit_mode:
@@ -251,7 +247,10 @@ class PolicyEnforcerAgent(BaseAgent):
                 await self._remediate_vlan_violation(device_id, device, policy)
 
     async def _remediate_vlan_violation(
-        self, device_id: str, device: dict, policy: DevicePolicy
+        self,
+        device_id: str,
+        device: dict,
+        policy: DevicePolicy
     ) -> None:
         """Remediate a VLAN policy violation."""
         # Calculate confidence based on how many times we've seen this device
@@ -265,16 +264,16 @@ class PolicyEnforcerAgent(BaseAgent):
             input_state={
                 "device_id": device_id,
                 "current_vlan": device.get("vlan"),
-                "target_vlan": policy.assign_vlan,
+                "target_vlan": policy.assign_vlan
             },
             analysis=f"Device {device_id} has been in wrong VLAN for {violation_count} checks. Moving to VLAN {policy.assign_vlan} per policy '{policy.name}'.",
             options_considered=[
                 {"action": "move_vlan", "vlan": policy.assign_vlan},
                 {"action": "quarantine", "vlan": 999},
-                {"action": "ignore", "reason": "Manual review"},
+                {"action": "ignore", "reason": "Manual review"}
             ],
             selected_option={"action": "move_vlan", "vlan": policy.assign_vlan},
-            confidence=confidence,
+            confidence=confidence
         )
         self._decisions.append(decision)
 
@@ -286,31 +285,29 @@ class PolicyEnforcerAgent(BaseAgent):
                 "vlan_id": policy.assign_vlan,
                 "policy_name": policy.name,
                 "mac_address": device.get("mac_address"),
-                "port": device.get("port"),
+                "port": device.get("port")
             },
             reasoning=f"Enforcing policy '{policy.name}': moving device to VLAN {policy.assign_vlan}",
             confidence=confidence,
-            reversible=True,
+            reversible=True
         )
 
         # Reset violation count after remediation
         self._violation_counts[device_id] = 0
 
-        await self.engine.event_bus.publish(
-            Event(
-                category=EventCategory.SECURITY,
-                event_type="policy.violation.remediated",
-                severity=EventSeverity.INFO,
-                source=f"sentinel.agents.{self.agent_name}",
-                title=f"Policy violation remediated: {device.get('name', device_id)}",
-                description=f"Device moved to VLAN {policy.assign_vlan} per policy '{policy.name}'",
-                data={
-                    "device_id": device_id,
-                    "device_name": device.get("name"),
-                    "new_vlan": policy.assign_vlan,
-                },
-            )
-        )
+        await self.engine.event_bus.publish(Event(
+            category=EventCategory.SECURITY,
+            event_type="policy.violation.remediated",
+            severity=EventSeverity.INFO,
+            source=f"sentinel.agents.{self.agent_name}",
+            title=f"Policy violation remediated: {device.get('name', device_id)}",
+            description=f"Device moved to VLAN {policy.assign_vlan} per policy '{policy.name}'",
+            data={
+                "device_id": device_id,
+                "device_name": device.get("name"),
+                "new_vlan": policy.assign_vlan
+            }
+        ))
 
     async def _verify_segmentation_compliance(self) -> None:
         """Verify segmentation policies are being enforced."""
@@ -346,7 +343,10 @@ class PolicyEnforcerAgent(BaseAgent):
             return 0
 
         cutoff = utc_now() - timedelta(hours=1)
-        executions = [ts for ts in self._automation_executions[rule_id] if ts > cutoff]
+        executions = [
+            ts for ts in self._automation_executions[rule_id]
+            if ts > cutoff
+        ]
         self._automation_executions[rule_id] = executions
         return len(executions)
 
@@ -361,7 +361,7 @@ class PolicyEnforcerAgent(BaseAgent):
             parameters=rule.action_params,
             reasoning=f"Automation rule '{rule.name}': {rule.description or 'No description'}",
             confidence=rule.confidence_threshold,
-            reversible=rule.rollback_enabled,
+            reversible=rule.rollback_enabled
         )
 
         # Track execution
@@ -379,9 +379,8 @@ class PolicyEnforcerAgent(BaseAgent):
         total_devices = len(await self.engine.state.get("device_inventory", {}))
         violations = sum(1 for v in self._violation_counts.values() if v > 0)
 
-        compliance_rate = (
-            (total_devices - violations) / total_devices * 100 if total_devices > 0 else 100
-        )
+        compliance_rate = ((total_devices - violations) / total_devices * 100
+                          if total_devices > 0 else 100)
 
         self._compliance_stats = {
             "timestamp": utc_now().isoformat(),
@@ -390,22 +389,23 @@ class PolicyEnforcerAgent(BaseAgent):
             "compliance_rate": compliance_rate,
             "firewall_rules": len(self._policy_set.firewall_rules),
             "device_policies": len(self._policy_set.device_policies),
-            "automation_rules": len(self._policy_set.automation_rules),
+            "automation_rules": len(self._policy_set.automation_rules)
         }
 
-        await self.engine.state.set("policy_enforcer:compliance_stats", self._compliance_stats)
-
-        await self.engine.event_bus.publish(
-            Event(
-                category=EventCategory.SYSTEM,
-                event_type="policy.compliance.report",
-                severity=EventSeverity.DEBUG,
-                source=f"sentinel.agents.{self.agent_name}",
-                title="Policy Compliance Report",
-                description=f"Compliance rate: {compliance_rate:.1f}%",
-                data=self._compliance_stats,
-            )
+        await self.engine.state.set(
+            "policy_enforcer:compliance_stats",
+            self._compliance_stats
         )
+
+        await self.engine.event_bus.publish(Event(
+            category=EventCategory.SYSTEM,
+            event_type="policy.compliance.report",
+            severity=EventSeverity.DEBUG,
+            source=f"sentinel.agents.{self.agent_name}",
+            title="Policy Compliance Report",
+            description=f"Compliance rate: {compliance_rate:.1f}%",
+            data=self._compliance_stats
+        ))
 
     async def _handle_device_discovered(self, event: Event) -> None:
         """Apply policies to newly discovered devices."""
@@ -432,13 +432,18 @@ class PolicyEnforcerAgent(BaseAgent):
         if self._policy_set:
             for policy in sorted(self._policy_set.device_policies, key=lambda p: p.priority):
                 if policy.enabled and policy.matches_device(
-                    device_type, device.get("vendor"), device.get("tags", [])
+                    device_type,
+                    device.get("vendor"),
+                    device.get("tags", [])
                 ):
                     await self._apply_device_policy(device_id, device, policy)
                     break
 
     async def _apply_device_policy(
-        self, device_id: str, device: dict, policy: DevicePolicy
+        self,
+        device_id: str,
+        device: dict,
+        policy: DevicePolicy
     ) -> None:
         """Apply a device policy to a device."""
         actions_taken = []
@@ -451,11 +456,11 @@ class PolicyEnforcerAgent(BaseAgent):
                 target_id=device_id,
                 parameters={
                     "vlan_id": policy.assign_vlan,
-                    "mac_address": device.get("mac_address"),
+                    "mac_address": device.get("mac_address")
                 },
                 reasoning=f"Applying policy '{policy.name}': assigning VLAN {policy.assign_vlan}",
                 confidence=0.90,
-                reversible=True,
+                reversible=True
             )
             actions_taken.append(f"assign_vlan={policy.assign_vlan}")
 
@@ -468,14 +473,12 @@ class PolicyEnforcerAgent(BaseAgent):
                 parameters={"mac_address": device.get("mac_address")},
                 reasoning=f"Policy '{policy.name}' denies internet access",
                 confidence=0.95,
-                reversible=True,
+                reversible=True
             )
             actions_taken.append("block_internet")
 
         if actions_taken:
-            logger.info(
-                f"Applied policy '{policy.name}' to {device_id}: {', '.join(actions_taken)}"
-            )
+            logger.info(f"Applied policy '{policy.name}' to {device_id}: {', '.join(actions_taken)}")
 
     async def _handle_traffic_anomaly(self, event: Event) -> None:
         """Handle traffic anomalies that may indicate policy violations."""
@@ -504,17 +507,15 @@ class PolicyEnforcerAgent(BaseAgent):
             f"attempted to reach VLAN {dest_vlan}"
         )
 
-        await self.engine.event_bus.publish(
-            Event(
-                category=EventCategory.SECURITY,
-                event_type="policy.violation.detected",
-                severity=EventSeverity.WARNING,
-                source=f"sentinel.agents.{self.agent_name}",
-                title="Segmentation policy violation",
-                description=f"Traffic from VLAN {source_vlan} to VLAN {dest_vlan} blocked",
-                data=violation,
-            )
-        )
+        await self.engine.event_bus.publish(Event(
+            category=EventCategory.SECURITY,
+            event_type="policy.violation.detected",
+            severity=EventSeverity.WARNING,
+            source=f"sentinel.agents.{self.agent_name}",
+            title="Segmentation policy violation",
+            description=f"Traffic from VLAN {source_vlan} to VLAN {dest_vlan} blocked",
+            data=violation
+        ))
 
     async def analyze(self, event: Event) -> Optional[AgentDecision]:
         """Analyze events for policy decisions."""
@@ -586,7 +587,10 @@ class PolicyEnforcerAgent(BaseAgent):
         for rule in self._policy_set.firewall_rules:
             if rule.id == rule_id:
                 rule.enabled = False
-                await self.engine.state.set("policy_set", self._policy_set.model_dump())
+                await self.engine.state.set(
+                    "policy_set",
+                    self._policy_set.model_dump()
+                )
                 return {"success": True, "rule_id": str(rule_id)}
 
         return {"success": False, "error": "Rule not found"}
@@ -623,14 +627,14 @@ class PolicyEnforcerAgent(BaseAgent):
             return {
                 "action": "assign_vlan",
                 "device_id": device_id,
-                "original_vlan": device.get("vlan"),
+                "original_vlan": device.get("vlan")
             }
 
         elif action.action_type == "disable_firewall_rule":
             return {
                 "action": "disable_firewall_rule",
                 "rule_id": action.target_id,
-                "was_enabled": True,
+                "was_enabled": True
             }
 
         return None
@@ -653,7 +657,10 @@ class PolicyEnforcerAgent(BaseAgent):
                 for rule in self._policy_set.firewall_rules:
                     if rule.id == rule_id:
                         rule.enabled = True
-                        await self.engine.state.set("policy_set", self._policy_set.model_dump())
+                        await self.engine.state.set(
+                            "policy_set",
+                            self._policy_set.model_dump()
+                        )
                         break
 
     async def _get_relevant_state(self) -> dict:
@@ -661,7 +668,7 @@ class PolicyEnforcerAgent(BaseAgent):
         return {
             "compliance_stats": self._compliance_stats,
             "violation_counts": dict(self._violation_counts),
-            "policies_loaded": self._policy_set is not None,
+            "policies_loaded": self._policy_set is not None
         }
 
     @property
@@ -674,5 +681,5 @@ class PolicyEnforcerAgent(BaseAgent):
             "compliance_rate": self._compliance_stats.get("compliance_rate", 0),
             "devices_in_violation": len([v for v in self._violation_counts.values() if v > 0]),
             "audit_mode": self.audit_mode,
-            "auto_remediate": self.auto_remediate,
+            "auto_remediate": self.auto_remediate
         }

@@ -11,14 +11,16 @@ Tests cover:
 - Action execution
 - Rollback functionality
 """
-
 import asyncio
 import pytest
 from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, AsyncMock, patch
 
 from sentinel.agents.healer import HealerAgent
-from sentinel.core.models.event import Event, EventCategory, EventSeverity, AgentAction
+from sentinel.core.models.event import (
+    Event, EventCategory, EventSeverity,
+    AgentAction
+)
 
 
 @pytest.fixture
@@ -215,9 +217,10 @@ class TestHealerAgentHealthChecks:
         mock_hypervisor = MagicMock()
         mock_hypervisor.health_check = AsyncMock(return_value=True)
         mock_hypervisor.connected = True
-        mock_hypervisor.get_host_resources = AsyncMock(
-            return_value={"cpu_percent": 50, "memory_percent": 60}
-        )
+        mock_hypervisor.get_host_resources = AsyncMock(return_value={
+            "cpu_percent": 50,
+            "memory_percent": 60
+        })
         mock_engine.get_integration.return_value = mock_hypervisor
 
         result = await agent._check_hypervisor_health()
@@ -233,9 +236,10 @@ class TestHealerAgentHealthChecks:
         mock_hypervisor = MagicMock()
         mock_hypervisor.health_check = AsyncMock(return_value=True)
         mock_hypervisor.connected = True
-        mock_hypervisor.get_host_resources = AsyncMock(
-            return_value={"cpu_percent": 95, "memory_percent": 60}
-        )
+        mock_hypervisor.get_host_resources = AsyncMock(return_value={
+            "cpu_percent": 95,
+            "memory_percent": 60
+        })
         mock_engine.get_integration.return_value = mock_hypervisor
 
         result = await agent._check_hypervisor_health()
@@ -249,9 +253,10 @@ class TestHealerAgentHealthChecks:
         mock_hypervisor = MagicMock()
         mock_hypervisor.health_check = AsyncMock(return_value=True)
         mock_hypervisor.connected = True
-        mock_hypervisor.get_host_resources = AsyncMock(
-            return_value={"cpu_percent": 50, "memory_percent": 95}
-        )
+        mock_hypervisor.get_host_resources = AsyncMock(return_value={
+            "cpu_percent": 50,
+            "memory_percent": 95
+        })
         mock_engine.get_integration.return_value = mock_hypervisor
 
         result = await agent._check_hypervisor_health()
@@ -286,12 +291,10 @@ class TestHealerAgentHealthChecks:
         """Test storage health check success."""
         mock_storage = MagicMock()
         mock_storage.get_health = AsyncMock(return_value={"healthy": True, "status": "OK"})
-        mock_storage.get_pools = AsyncMock(
-            return_value=[
-                {"name": "pool1", "status": "ONLINE"},
-                {"name": "pool2", "status": "ONLINE"},
-            ]
-        )
+        mock_storage.get_pools = AsyncMock(return_value=[
+            {"name": "pool1", "status": "ONLINE"},
+            {"name": "pool2", "status": "ONLINE"}
+        ])
         mock_engine.get_integration.return_value = mock_storage
 
         result = await agent._check_storage_health()
@@ -305,12 +308,10 @@ class TestHealerAgentHealthChecks:
         """Test storage health check with degraded pool."""
         mock_storage = MagicMock()
         mock_storage.get_health = AsyncMock(return_value={"healthy": True, "status": "OK"})
-        mock_storage.get_pools = AsyncMock(
-            return_value=[
-                {"name": "pool1", "status": "ONLINE"},
-                {"name": "pool2", "status": "DEGRADED"},
-            ]
-        )
+        mock_storage.get_pools = AsyncMock(return_value=[
+            {"name": "pool1", "status": "ONLINE"},
+            {"name": "pool2", "status": "DEGRADED"}
+        ])
         mock_engine.get_integration.return_value = mock_storage
 
         result = await agent._check_storage_health()
@@ -360,9 +361,7 @@ class TestHealerAgentRunHealthChecks:
     @pytest.mark.asyncio
     async def test_run_health_checks_unhealthy_triggers_recovery(self, agent, mock_engine):
         """Test that unhealthy check triggers recovery evaluation."""
-        agent._check_router_health = AsyncMock(
-            return_value={"healthy": False, "error": "Connection lost"}
-        )
+        agent._check_router_health = AsyncMock(return_value={"healthy": False, "error": "Connection lost"})
         agent._check_switch_health = AsyncMock(return_value={"healthy": True})
         agent._check_hypervisor_health = AsyncMock(return_value={"healthy": True})
         agent._check_storage_health = AsyncMock(return_value={"healthy": True})
@@ -405,14 +404,12 @@ class TestHealerAgentEventHandlers:
             source="test",
             title="Health Alert",
             description="Component unhealthy",
-            data={"component": "router", "status": "unhealthy"},
+            data={"component": "router", "status": "unhealthy"}
         )
 
         await agent._handle_health_alert(event)
 
-        agent._evaluate_recovery.assert_called_once_with(
-            "router", {"component": "router", "status": "unhealthy"}
-        )
+        agent._evaluate_recovery.assert_called_once_with("router", {"component": "router", "status": "unhealthy"})
 
     @pytest.mark.asyncio
     async def test_handle_health_alert_healthy(self, agent, mock_engine):
@@ -426,7 +423,7 @@ class TestHealerAgentEventHandlers:
             source="test",
             title="Health Alert",
             description="Component healthy",
-            data={"component": "router", "status": "healthy"},
+            data={"component": "router", "status": "healthy"}
         )
 
         await agent._handle_health_alert(event)
@@ -445,7 +442,7 @@ class TestHealerAgentEventHandlers:
             source="test",
             title="Service Down",
             description="Service failed",
-            data={"service": "nginx", "host": "server1"},
+            data={"service": "nginx", "host": "server1"}
         )
 
         await agent._handle_service_down(event)
@@ -466,7 +463,7 @@ class TestHealerAgentEventHandlers:
             source="test",
             title="Service Down",
             description="Service failed",
-            data={"service": "nginx", "host": "server1"},
+            data={"service": "nginx", "host": "server1"}
         )
 
         await agent._handle_service_down(event)
@@ -485,7 +482,7 @@ class TestHealerAgentEventHandlers:
             source="test",
             title="Resource Critical",
             description="High CPU",
-            data={"resource_type": "cpu", "host": "server1", "utilization": 98},
+            data={"resource_type": "cpu", "host": "server1", "utilization": 98}
         )
 
         await agent._handle_resource_critical(event)
@@ -506,10 +503,7 @@ class TestHealerAgentServiceRestart:
 
         # Check the action was created
         action_event = mock_engine.event_bus.publish.call_args[0][0]
-        assert (
-            "service_restart" in action_event.event_type
-            or "agent.action" in action_event.event_type
-        )
+        assert "service_restart" in action_event.event_type or "agent.action" in action_event.event_type
 
     @pytest.mark.asyncio
     async def test_attempt_service_restart_max_attempts_exceeded(self, agent, mock_engine):
@@ -555,9 +549,10 @@ class TestHealerAgentRecovery:
         """Test recovery evaluation with warnings."""
         agent._evaluate_resource_action = AsyncMock()
 
-        await agent._evaluate_recovery(
-            "hypervisor", {"healthy": False, "warnings": ["High CPU: 95%"]}
-        )
+        await agent._evaluate_recovery("hypervisor", {
+            "healthy": False,
+            "warnings": ["High CPU: 95%"]
+        })
 
         # Should evaluate resource action
         agent._evaluate_resource_action.assert_called_once()
@@ -567,9 +562,11 @@ class TestHealerAgentRecovery:
         """Test resource action for high CPU."""
         agent._propose_vm_migration = AsyncMock()
 
-        await agent._evaluate_resource_action(
-            {"resource_type": "cpu", "host": "server1", "utilization": 98}
-        )
+        await agent._evaluate_resource_action({
+            "resource_type": "cpu",
+            "host": "server1",
+            "utilization": 98
+        })
 
         agent._propose_vm_migration.assert_called_once_with("server1", "cpu")
 
@@ -578,18 +575,22 @@ class TestHealerAgentRecovery:
         """Test resource action for high memory."""
         agent._propose_vm_migration = AsyncMock()
 
-        await agent._evaluate_resource_action(
-            {"resource_type": "memory", "host": "server1", "utilization": 98}
-        )
+        await agent._evaluate_resource_action({
+            "resource_type": "memory",
+            "host": "server1",
+            "utilization": 98
+        })
 
         agent._propose_vm_migration.assert_called_once_with("server1", "memory")
 
     @pytest.mark.asyncio
     async def test_evaluate_resource_action_disk_warning(self, agent, mock_engine):
         """Test resource action for disk space."""
-        await agent._evaluate_resource_action(
-            {"resource_type": "disk", "host": "server1", "utilization": 92}
-        )
+        await agent._evaluate_resource_action({
+            "resource_type": "disk",
+            "host": "server1",
+            "utilization": 92
+        })
 
         # Should publish warning event
         mock_engine.event_bus.publish.assert_called()
@@ -601,9 +602,11 @@ class TestHealerAgentRecovery:
         """Test no action for normal resource levels."""
         agent._propose_vm_migration = AsyncMock()
 
-        await agent._evaluate_resource_action(
-            {"resource_type": "cpu", "host": "server1", "utilization": 50}
-        )
+        await agent._evaluate_resource_action({
+            "resource_type": "cpu",
+            "host": "server1",
+            "utilization": 50
+        })
 
         agent._propose_vm_migration.assert_not_called()
 
@@ -636,12 +639,10 @@ class TestHealerAgentVMMigration:
     async def test_propose_vm_migration_success(self, agent, mock_engine):
         """Test successful VM migration proposal."""
         mock_hypervisor = MagicMock()
-        mock_hypervisor.get_vms = AsyncMock(
-            return_value=[
-                {"id": "vm1", "name": "web-server", "host": "server1", "cpu_usage": 30},
-                {"id": "vm2", "name": "db-server", "host": "server1", "cpu_usage": 60},
-            ]
-        )
+        mock_hypervisor.get_vms = AsyncMock(return_value=[
+            {"id": "vm1", "name": "web-server", "host": "server1", "cpu_usage": 30},
+            {"id": "vm2", "name": "db-server", "host": "server1", "cpu_usage": 60},
+        ])
         mock_engine.get_integration.return_value = mock_hypervisor
 
         await agent._propose_vm_migration("server1", "cpu")
@@ -654,11 +655,9 @@ class TestHealerAgentVMMigration:
     async def test_propose_vm_migration_no_vms_on_host(self, agent, mock_engine):
         """Test VM migration when no VMs on host."""
         mock_hypervisor = MagicMock()
-        mock_hypervisor.get_vms = AsyncMock(
-            return_value=[
-                {"id": "vm1", "name": "web-server", "host": "server2", "cpu_usage": 30},
-            ]
-        )
+        mock_hypervisor.get_vms = AsyncMock(return_value=[
+            {"id": "vm1", "name": "web-server", "host": "server2", "cpu_usage": 30},
+        ])
         mock_engine.get_integration.return_value = mock_hypervisor
 
         await agent._propose_vm_migration("server1", "cpu")
@@ -684,7 +683,10 @@ class TestHealerAgentPredictiveAnalysis:
     async def test_predictive_analysis_with_warnings(self, agent, mock_engine):
         """Test predictive analysis detects warnings."""
         agent._health_status = {
-            "hypervisor": {"healthy": True, "status": {"warnings": ["High CPU: 85%"]}}
+            "hypervisor": {
+                "healthy": True,
+                "status": {"warnings": ["High CPU: 85%"]}
+            }
         }
 
         await agent._predictive_analysis()
@@ -697,7 +699,9 @@ class TestHealerAgentPredictiveAnalysis:
     async def test_predictive_analysis_cleans_old(self, agent, mock_engine):
         """Test predictive analysis cleans old predictions."""
         old_time = (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat()
-        agent._failure_predictions = [{"component": "old", "timestamp": old_time}]
+        agent._failure_predictions = [
+            {"component": "old", "timestamp": old_time}
+        ]
         agent._health_status = {}
 
         await agent._predictive_analysis()
@@ -723,7 +727,7 @@ class TestHealerAgentDoExecute:
             target_id="router",
             parameters={},
             reasoning="Test reconnect",
-            confidence=0.85,
+            confidence=0.85
         )
 
         result = await agent._do_execute(action)
@@ -743,7 +747,7 @@ class TestHealerAgentDoExecute:
             target_id="router",
             parameters={},
             reasoning="Test reconnect",
-            confidence=0.85,
+            confidence=0.85
         )
 
         result = await agent._do_execute(action)
@@ -756,9 +760,9 @@ class TestHealerAgentDoExecute:
         """Test service restart action via VM restart."""
         # Mock hypervisor with a matching VM
         mock_hypervisor = MagicMock()
-        mock_hypervisor.get_vms = AsyncMock(
-            return_value=[{"id": "vm-nginx-1", "name": "nginx-server", "host": "server1"}]
-        )
+        mock_hypervisor.get_vms = AsyncMock(return_value=[
+            {"id": "vm-nginx-1", "name": "nginx-server", "host": "server1"}
+        ])
         mock_hypervisor.stop_vm = AsyncMock()
         mock_hypervisor.start_vm = AsyncMock()
         mock_engine.get_integration.return_value = mock_hypervisor
@@ -770,7 +774,7 @@ class TestHealerAgentDoExecute:
             target_id="server1:nginx",
             parameters={"service": "nginx", "host": "server1", "attempt": 1},
             reasoning="Test restart",
-            confidence=0.90,
+            confidence=0.90
         )
 
         # Patch sleep to speed up test
@@ -796,7 +800,7 @@ class TestHealerAgentDoExecute:
             target_id="server1:nginx",
             parameters={"service": "nginx", "host": "server1", "attempt": 1},
             reasoning="Test restart",
-            confidence=0.90,
+            confidence=0.90
         )
 
         result = await agent._do_execute(action)
@@ -820,7 +824,7 @@ class TestHealerAgentDoExecute:
             target_id="vm1",
             parameters={"target_host": "server2"},
             reasoning="Test migration",
-            confidence=0.75,
+            confidence=0.75
         )
 
         result = await agent._do_execute(action)
@@ -840,7 +844,7 @@ class TestHealerAgentDoExecute:
             target_id="vm1",
             parameters={"target_host": "server2"},
             reasoning="Test migration",
-            confidence=0.75,
+            confidence=0.75
         )
 
         result = await agent._do_execute(action)
@@ -862,7 +866,7 @@ class TestHealerAgentDoExecute:
             target_id="vm1",
             parameters={},
             reasoning="Test restart",
-            confidence=0.85,
+            confidence=0.85
         )
 
         with patch("asyncio.sleep", new_callable=AsyncMock):
@@ -884,7 +888,7 @@ class TestHealerAgentDoExecute:
             target_id="vm1",
             parameters={},
             reasoning="Test restart",
-            confidence=0.85,
+            confidence=0.85
         )
 
         result = await agent._do_execute(action)
@@ -901,7 +905,7 @@ class TestHealerAgentDoExecute:
             target_id="test",
             parameters={},
             reasoning="Test",
-            confidence=0.5,
+            confidence=0.5
         )
 
         with pytest.raises(ValueError, match="Unknown action type"):
@@ -921,7 +925,7 @@ class TestHealerAgentRollback:
             target_id="vm1",
             parameters={"source_host": "server1"},
             reasoning="Test",
-            confidence=0.75,
+            confidence=0.75
         )
 
         rollback_data = await agent._capture_rollback_data(action)
@@ -940,7 +944,7 @@ class TestHealerAgentRollback:
             target_id="service1",
             parameters={},
             reasoning="Test",
-            confidence=0.85,
+            confidence=0.85
         )
 
         rollback_data = await agent._capture_rollback_data(action)
@@ -962,7 +966,11 @@ class TestHealerAgentRollback:
             parameters={},
             reasoning="Test",
             confidence=0.75,
-            rollback_data={"action": "vm_migration", "vm_id": "vm1", "original_host": "server1"},
+            rollback_data={
+                "action": "vm_migration",
+                "vm_id": "vm1",
+                "original_host": "server1"
+            }
         )
 
         await agent._do_rollback(action)
@@ -979,7 +987,7 @@ class TestHealerAgentRollback:
             target_id="service1",
             parameters={},
             reasoning="Test",
-            confidence=0.85,
+            confidence=0.85
         )
 
         # Should not raise
@@ -1004,7 +1012,10 @@ class TestHealerAgentProperties:
 
     def test_stats_property(self, agent, mock_engine):
         """Test stats property."""
-        agent._health_status = {"router": {"healthy": True}, "switch": {"healthy": False}}
+        agent._health_status = {
+            "router": {"healthy": True},
+            "switch": {"healthy": False}
+        }
         agent._restart_counts = {"service1": 2, "service2": 1}
         agent._failure_predictions = [{"test": 1}]
 
@@ -1030,7 +1041,7 @@ class TestHealerAgentAnalyze:
             source="test",
             title="Test",
             description="Test event",
-            data={},
+            data={}
         )
 
         result = await agent.analyze(event)

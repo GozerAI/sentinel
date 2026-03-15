@@ -6,7 +6,6 @@ Provides management of distributed compute resources including:
 - Docker/container orchestration
 - Kubernetes (k3s) clusters
 """
-
 from sentinel.integrations.compute.cluster import ComputeClusterManager
 from sentinel.integrations.compute.node import ComputeNode
 

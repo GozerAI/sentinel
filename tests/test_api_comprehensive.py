@@ -7,7 +7,6 @@ These tests achieve full coverage including:
 - Authentication
 - Filtering and pagination
 """
-
 import pytest
 from unittest.mock import MagicMock, AsyncMock, patch
 from uuid import uuid4
@@ -16,19 +15,13 @@ from fastapi.testclient import TestClient
 
 from sentinel.api.app import app, create_app, get_engine
 import sys
-
 # Get the actual module reference (not the FastAPI app instance)
-sentinel_app_module = sys.modules["sentinel.api.app"]
+sentinel_app_module = sys.modules['sentinel.api.app']
 from sentinel.api.auth import _auth_config, AuthConfig, configure_auth
 import sentinel.api.auth as auth_module
 from sentinel.core.models.device import (
-    Device,
-    DeviceType,
-    DeviceStatus,
-    TrustLevel,
-    NetworkInterface,
-    DeviceFingerprint,
-    DeviceInventory,
+    Device, DeviceType, DeviceStatus, TrustLevel,
+    NetworkInterface, DeviceFingerprint, DeviceInventory
 )
 from sentinel.core.models.event import Event, EventCategory, EventSeverity
 
@@ -50,7 +43,13 @@ def mock_engine():
     engine.uptime_seconds = 100.5
 
     # Config with auth disabled (used by lifespan)
-    engine.config = {"api": {"auth": {"enabled": False}}}
+    engine.config = {
+        "api": {
+            "auth": {
+                "enabled": False
+            }
+        }
+    }
 
     # Mock event bus
     engine.event_bus = MagicMock()
@@ -61,14 +60,12 @@ def mock_engine():
     engine.event_bus._queue.qsize.return_value = 0
 
     # Mock get_status
-    engine.get_status = AsyncMock(
-        return_value={
-            "status": "running",
-            "uptime_seconds": 100.5,
-            "agents": {},
-            "integrations": {},
-        }
-    )
+    engine.get_status = AsyncMock(return_value={
+        "status": "running",
+        "uptime_seconds": 100.5,
+        "agents": {},
+        "integrations": {}
+    })
 
     # Mock agents dictionary
     engine.agents = {}
@@ -94,10 +91,12 @@ def mock_discovery_agent():
         assigned_vlan=10,
         interfaces=[
             NetworkInterface(
-                mac_address="00:11:22:33:44:55", ip_addresses=["192.168.1.100"], is_primary=True
+                mac_address="00:11:22:33:44:55",
+                ip_addresses=["192.168.1.100"],
+                is_primary=True
             )
         ],
-        fingerprint=DeviceFingerprint(vendor="Dell"),
+        fingerprint=DeviceFingerprint(vendor="Dell")
     )
     device2 = Device(
         hostname="server1",
@@ -107,9 +106,11 @@ def mock_discovery_agent():
         assigned_vlan=20,
         interfaces=[
             NetworkInterface(
-                mac_address="00:11:22:33:44:66", ip_addresses=["192.168.2.100"], is_primary=True
+                mac_address="00:11:22:33:44:66",
+                ip_addresses=["192.168.2.100"],
+                is_primary=True
             )
-        ],
+        ]
     )
     agent._inventory.add_device(device1)
     agent._inventory.add_device(device2)
@@ -129,19 +130,8 @@ def mock_planner_agent():
     agent._enabled = True
     agent.stats = {"name": "planner", "actions_taken": 10}
     agent._vlans = {
-        10: {
-            "name": "Workstations",
-            "subnet": "192.168.10.0/24",
-            "gateway": "192.168.10.1",
-            "purpose": "workstations",
-        },
-        20: {
-            "name": "Servers",
-            "subnet": "192.168.20.0/24",
-            "gateway": "192.168.20.1",
-            "purpose": "servers",
-            "isolated": True,
-        },
+        10: {"name": "Workstations", "subnet": "192.168.10.0/24", "gateway": "192.168.10.1", "purpose": "workstations"},
+        20: {"name": "Servers", "subnet": "192.168.20.0/24", "gateway": "192.168.20.1", "purpose": "servers", "isolated": True}
     }
     agent._segmentation_policies = {
         "policy1": {
@@ -151,7 +141,7 @@ def mock_planner_agent():
             "destination_vlan": 20,
             "allowed_services": ["http", "https"],
             "denied_services": ["ssh"],
-            "default_action": "deny",
+            "default_action": "deny"
         }
     }
     agent._firewall_rules = {
@@ -165,7 +155,7 @@ def mock_planner_agent():
             "destination_port": 80,
             "protocol": "tcp",
             "auto_generated": True,
-            "priority": 100,
+            "priority": 100
         }
     }
     return agent
@@ -361,7 +351,10 @@ class TestVLANEndpoints:
 
     def test_list_vlans(self, client, mock_engine, mock_planner_agent, mock_discovery_agent):
         """Test list VLANs endpoint."""
-        mock_engine.agents = {"planner": mock_planner_agent, "discovery": mock_discovery_agent}
+        mock_engine.agents = {
+            "planner": mock_planner_agent,
+            "discovery": mock_discovery_agent
+        }
 
         response = client.get("/vlans")
         assert response.status_code == 200
@@ -387,7 +380,10 @@ class TestVLANEndpoints:
 
     def test_get_vlan(self, client, mock_engine, mock_planner_agent, mock_discovery_agent):
         """Test get VLAN by ID."""
-        mock_engine.agents = {"planner": mock_planner_agent, "discovery": mock_discovery_agent}
+        mock_engine.agents = {
+            "planner": mock_planner_agent,
+            "discovery": mock_discovery_agent
+        }
 
         response = client.get("/vlans/10")
         assert response.status_code == 200
@@ -406,17 +402,14 @@ class TestVLANEndpoints:
         """Test create VLAN endpoint."""
         mock_engine.agents = {"planner": mock_planner_agent}
 
-        response = client.post(
-            "/vlans",
-            json={
-                "id": 30,
-                "name": "New VLAN",
-                "subnet": "192.168.30.0/24",
-                "gateway": "192.168.30.1",
-                "purpose": "test",
-                "isolated": False,
-            },
-        )
+        response = client.post("/vlans", json={
+            "id": 30,
+            "name": "New VLAN",
+            "subnet": "192.168.30.0/24",
+            "gateway": "192.168.30.1",
+            "purpose": "test",
+            "isolated": False
+        })
         assert response.status_code == 200
         data = response.json()
         assert data["id"] == 30
@@ -426,7 +419,10 @@ class TestVLANEndpoints:
         """Test create VLAN that already exists."""
         mock_engine.agents = {"planner": mock_planner_agent}
 
-        response = client.post("/vlans", json={"id": 10, "name": "Duplicate"})
+        response = client.post("/vlans", json={
+            "id": 10,
+            "name": "Duplicate"
+        })
         assert response.status_code == 409
 
 
@@ -474,7 +470,10 @@ class TestAgentEndpoints:
 
     def test_list_agents(self, client, mock_engine, mock_discovery_agent, mock_guardian_agent):
         """Test list agents endpoint."""
-        mock_engine.agents = {"discovery": mock_discovery_agent, "guardian": mock_guardian_agent}
+        mock_engine.agents = {
+            "discovery": mock_discovery_agent,
+            "guardian": mock_guardian_agent
+        }
 
         response = client.get("/agents")
         assert response.status_code == 200
@@ -540,7 +539,7 @@ class TestEventEndpoints:
             event_type="test.event",
             severity=EventSeverity.INFO,
             source="test",
-            title="Test Event",
+            title="Test Event"
         )
         mock_engine.event_bus.get_recent_events.return_value = [event]
 
@@ -555,10 +554,13 @@ class TestEventEndpoints:
             category=EventCategory.SECURITY,
             event_type="security.alert",
             source="guardian",
-            title="Alert",
+            title="Alert"
         )
         event2 = Event(
-            category=EventCategory.SYSTEM, event_type="system.info", source="system", title="Info"
+            category=EventCategory.SYSTEM,
+            event_type="system.info",
+            source="system",
+            title="Info"
         )
         mock_engine.event_bus.get_recent_events.return_value = [event1, event2]
 
@@ -575,14 +577,14 @@ class TestEventEndpoints:
             event_type="test",
             severity=EventSeverity.CRITICAL,
             source="test",
-            title="Critical",
+            title="Critical"
         )
         event2 = Event(
             category=EventCategory.SYSTEM,
             event_type="test",
             severity=EventSeverity.INFO,
             source="test",
-            title="Info",
+            title="Info"
         )
         mock_engine.event_bus.get_recent_events.return_value = [event1, event2]
 
@@ -594,7 +596,12 @@ class TestEventEndpoints:
 
     def test_acknowledge_event(self, client, mock_engine):
         """Test acknowledge event endpoint."""
-        event = Event(category=EventCategory.SYSTEM, event_type="test", source="test", title="Test")
+        event = Event(
+            category=EventCategory.SYSTEM,
+            event_type="test",
+            source="test",
+            title="Test"
+        )
         mock_engine.event_bus._event_history = [event]
 
         response = client.post(f"/events/{event.id}/acknowledge")
@@ -617,16 +624,13 @@ class TestActionEndpoints:
         """Test execute action with confirmation."""
         mock_engine.agents = {"guardian": mock_guardian_agent}
 
-        response = client.post(
-            "/actions",
-            json={
-                "action_type": "block_ip",
-                "target_type": "ip",
-                "target_id": "192.168.1.100",
-                "parameters": {},
-                "confirm": True,
-            },
-        )
+        response = client.post("/actions", json={
+            "action_type": "block_ip",
+            "target_type": "ip",
+            "target_id": "192.168.1.100",
+            "parameters": {},
+            "confirm": True
+        })
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "success"
@@ -635,15 +639,12 @@ class TestActionEndpoints:
         """Test execute action without confirmation."""
         mock_engine.agents = {"guardian": mock_guardian_agent}
 
-        response = client.post(
-            "/actions",
-            json={
-                "action_type": "block_ip",
-                "target_type": "ip",
-                "target_id": "192.168.1.100",
-                "confirm": False,
-            },
-        )
+        response = client.post("/actions", json={
+            "action_type": "block_ip",
+            "target_type": "ip",
+            "target_id": "192.168.1.100",
+            "confirm": False
+        })
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "pending_confirmation"
@@ -651,25 +652,23 @@ class TestActionEndpoints:
 
     def test_execute_action_unknown_type(self, client, mock_engine):
         """Test execute action with unknown type."""
-        response = client.post(
-            "/actions",
-            json={"action_type": "unknown_action", "target_type": "test", "target_id": "test"},
-        )
+        response = client.post("/actions", json={
+            "action_type": "unknown_action",
+            "target_type": "test",
+            "target_id": "test"
+        })
         assert response.status_code == 400
 
     def test_execute_action_agent_unavailable(self, client, mock_engine):
         """Test execute action when agent unavailable."""
         mock_engine.agents = {}
 
-        response = client.post(
-            "/actions",
-            json={
-                "action_type": "block_ip",
-                "target_type": "ip",
-                "target_id": "192.168.1.100",
-                "confirm": True,
-            },
-        )
+        response = client.post("/actions", json={
+            "action_type": "block_ip",
+            "target_type": "ip",
+            "target_id": "192.168.1.100",
+            "confirm": True
+        })
         assert response.status_code == 503
 
 
@@ -787,7 +786,6 @@ class TestGetEngine:
 
         try:
             from fastapi import HTTPException
-
             with pytest.raises(HTTPException) as exc:
                 get_engine()
 

@@ -7,7 +7,6 @@ Tests cover:
 - Learning System
 - Agent Registry
 """
-
 import pytest
 import asyncio
 from unittest.mock import MagicMock, AsyncMock, patch
@@ -18,7 +17,6 @@ from datetime import datetime, timedelta
 # =============================================================================
 # Agent Factory Tests
 # =============================================================================
-
 
 class TestAgentFactory:
     """Tests for AgentFactory."""
@@ -34,7 +32,7 @@ class TestAgentFactory:
             base_class=BaseAgent,
             capabilities=["scan", "analyze"],
             required_integrations=["router"],
-            default_config={"interval": 300},
+            default_config={"interval": 300}
         )
 
         assert template.name == "test_agent"
@@ -47,7 +45,10 @@ class TestAgentFactory:
         """Test AgentTemplate serialization."""
         from sentinel.agents.factory import AgentTemplate
 
-        template = AgentTemplate(name="test", description="Test template")
+        template = AgentTemplate(
+            name="test",
+            description="Test template"
+        )
 
         data = template.to_dict()
         assert data["name"] == "test"
@@ -121,7 +122,10 @@ class TestAgentFactory:
         mock_engine = MagicMock()
         factory = AgentFactory(mock_engine)
 
-        template = AgentTemplate(name="custom_agent", description="Custom agent template")
+        template = AgentTemplate(
+            name="custom_agent",
+            description="Custom agent template"
+        )
         factory.register_template(template)
 
         assert "custom_agent" in factory._templates
@@ -149,7 +153,9 @@ class TestAgentFactory:
         factory._agent_classes["discovery"] = mock_agent_class
 
         instance = await factory.create_agent(
-            template_name="discovery", config={"test": True}, auto_start=True
+            template_name="discovery",
+            config={"test": True},
+            auto_start=True
         )
 
         assert instance is not None
@@ -199,7 +205,6 @@ class TestAgentFactory:
 # Strategy Agent Tests
 # =============================================================================
 
-
 class TestStrategyAgent:
     """Tests for StrategyAgent."""
 
@@ -212,7 +217,7 @@ class TestStrategyAgent:
             description="Maintain security posture",
             priority=10,
             metrics=["threats_blocked"],
-            target_values={"compliance_score": 0.95},
+            target_values={"compliance_score": 0.95}
         )
 
         assert goal.name == "network_security"
@@ -240,7 +245,7 @@ class TestStrategyAgent:
         plan = StrategicPlan(
             name="Test Plan",
             goals=[goal],
-            actions=[{"action": "spawn_agent", "template": "guardian"}],
+            actions=[{"action": "spawn_agent", "template": "guardian"}]
         )
 
         assert plan.name == "Test Plan"
@@ -280,7 +285,11 @@ class TestStrategyAgent:
         mock_engine = MagicMock()
         agent = StrategyAgent(mock_engine, {})
 
-        goal = StrategicGoal(name="custom_goal", description="Custom goal", priority=8)
+        goal = StrategicGoal(
+            name="custom_goal",
+            description="Custom goal",
+            priority=8
+        )
         agent.add_goal(goal)
 
         assert any(g.name == "custom_goal" for g in agent._goals)
@@ -314,7 +323,6 @@ class TestStrategyAgent:
 # Learning System Tests
 # =============================================================================
 
-
 class TestLearningSystem:
     """Tests for LearningSystem."""
 
@@ -327,7 +335,7 @@ class TestLearningSystem:
             agent_name="guardian",
             action_type="block_ip",
             parameters={"ip": "10.0.0.1"},
-            initial_confidence=0.85,
+            initial_confidence=0.85
         )
 
         assert outcome.agent_name == "guardian"
@@ -344,7 +352,7 @@ class TestLearningSystem:
             agent_name="guardian",
             action_type="block_ip",
             parameters={},
-            initial_confidence=0.85,
+            initial_confidence=0.85
         )
 
         outcome.record_outcome("success", effectiveness=0.95)
@@ -361,7 +369,7 @@ class TestLearningSystem:
             agent_name="guardian",
             action_type="block_ip",
             parameters={},
-            initial_confidence=0.85,
+            initial_confidence=0.85
         )
 
         outcome.add_feedback("Good decision", 0.9)
@@ -380,7 +388,7 @@ class TestLearningSystem:
             conditions={"confidence_bucket": "high"},
             recommendation="Maintain current thresholds",
             confidence_adjustment=0.02,
-            sample_size=100,
+            sample_size=100
         )
 
         assert pattern.agent_name == "guardian"
@@ -414,7 +422,7 @@ class TestLearningSystem:
             agent_name="guardian",
             action_type="block_ip",
             parameters={},
-            initial_confidence=0.85,
+            initial_confidence=0.85
         )
         outcome.record_outcome("success", effectiveness=1.0)
 
@@ -466,7 +474,6 @@ class TestLearningSystem:
 # Agent Registry Tests
 # =============================================================================
 
-
 class TestAgentRegistry:
     """Tests for AgentRegistry."""
 
@@ -482,7 +489,7 @@ class TestAgentRegistry:
             description="Scan network for devices",
             handler=handler,
             input_schema={"subnet": "string"},
-            output_schema={"devices": "list"},
+            output_schema={"devices": "list"}
         )
 
         assert capability.name == "scan_network"
@@ -499,7 +506,7 @@ class TestAgentRegistry:
             from_agent=from_id,
             to_agent=to_id,
             message_type="request_scan",
-            payload={"subnet": "192.168.1.0/24"},
+            payload={"subnet": "192.168.1.0/24"}
         )
 
         assert message.from_agent == from_id
@@ -519,7 +526,7 @@ class TestAgentRegistry:
             agent_id=mock_agent.id,
             agent_name=mock_agent.agent_name,
             agent_description=mock_agent.agent_description,
-            agent=mock_agent,
+            agent=mock_agent
         )
 
         assert registration.agent_id == mock_agent.id
@@ -596,12 +603,16 @@ class TestAgentRegistry:
             agent_id=agent_id,
             agent_name="discovery",
             agent_description="Discovery",
-            agent=mock_agent,
+            agent=mock_agent
         )
         registry._agents[agent_id] = registration
 
         # Register capability
-        capability = AgentCapability(name="scan_network", description="Scan", handler=AsyncMock())
+        capability = AgentCapability(
+            name="scan_network",
+            description="Scan",
+            handler=AsyncMock()
+        )
 
         result = registry.register_capability(agent_id, capability)
 
@@ -625,12 +636,16 @@ class TestAgentRegistry:
             agent_id=agent_id,
             agent_name="discovery",
             agent_description="Discovery",
-            agent=mock_agent,
+            agent=mock_agent
         )
         registry._agents[agent_id] = registration
 
         # Register capability
-        capability = AgentCapability(name="scan_network", description="Scan", handler=AsyncMock())
+        capability = AgentCapability(
+            name="scan_network",
+            description="Scan",
+            handler=AsyncMock()
+        )
         registry.register_capability(agent_id, capability)
 
         # Find by capability
@@ -655,7 +670,7 @@ class TestAgentRegistry:
             agent_id=agent_id,
             agent_name="discovery",
             agent_description="Discovery",
-            agent=mock_agent,
+            agent=mock_agent
         )
         registry._agents[agent_id] = registration
 
@@ -663,7 +678,6 @@ class TestAgentRegistry:
 
         # Wait a moment
         import time
-
         time.sleep(0.01)
 
         result = registry.heartbeat(agent_id)
@@ -689,7 +703,6 @@ class TestAgentRegistry:
 # Integration Tests
 # =============================================================================
 
-
 class TestCTOIntegration:
     """Integration tests for CTO architecture."""
 
@@ -698,7 +711,11 @@ class TestCTOIntegration:
         """Test engine initializes CTO components."""
         from sentinel.core.engine import SentinelEngine
 
-        config = {"cto_mode": {"enabled": True}, "agents": {}, "integrations": {}}
+        config = {
+            "cto_mode": {"enabled": True},
+            "agents": {},
+            "integrations": {}
+        }
 
         # We need to mock heavily to avoid real initialization
         with patch("sentinel.core.engine.EventBus"):
@@ -726,7 +743,9 @@ class TestCTOIntegration:
 
         # Call the method directly
         result = await mock_factory.create_agent(
-            template_name="guardian", config={}, auto_start=True
+            template_name="guardian",
+            config={},
+            auto_start=True
         )
 
         assert result.id is not None
@@ -772,7 +791,7 @@ class TestCTOIntegration:
                 agent_name="guardian",
                 action_type="block_ip",
                 parameters={"ip": f"10.0.0.{i}"},
-                initial_confidence=0.85 + (i * 0.01),
+                initial_confidence=0.85 + (i * 0.01)
             )
             outcome.record_outcome("success", effectiveness=0.9 + (i * 0.01))
             await system.record_outcome(outcome)

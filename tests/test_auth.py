@@ -4,7 +4,6 @@ Tests for the API Authentication module.
 Tests cover API key generation/verification, JWT handling, auth configuration,
 and the current user dependency.
 """
-
 import base64
 import hashlib
 import json
@@ -40,7 +39,12 @@ class TestTokenData:
         now = datetime.now(timezone.utc)
         exp = now + timedelta(hours=1)
 
-        token = TokenData(sub="user123", exp=exp, iat=now, scopes=["read", "write"])
+        token = TokenData(
+            sub="user123",
+            exp=exp,
+            iat=now,
+            scopes=["read", "write"]
+        )
 
         assert token.sub == "user123"
         assert token.exp == exp
@@ -50,7 +54,11 @@ class TestTokenData:
     def test_token_data_default_scopes(self):
         """Test TokenData with default scopes."""
         now = datetime.now(timezone.utc)
-        token = TokenData(sub="user", exp=now, iat=now)
+        token = TokenData(
+            sub="user",
+            exp=now,
+            iat=now
+        )
         assert token.scopes == []
 
 
@@ -72,7 +80,7 @@ class TestAuthConfig:
             enabled=False,
             api_keys={"key1": {"key_hash": "abc", "name": "Test"}},
             jwt_secret="secret",
-            token_expire_minutes=120,
+            token_expire_minutes=120
         )
         assert config.enabled is False
         assert "key1" in config.api_keys
@@ -95,7 +103,7 @@ class TestConfigureAuth:
                     "enabled": True,
                     "api_keys": {"key1": {"key_hash": "abc"}},
                     "jwt_secret": "test_secret",
-                    "token_expire_minutes": 30,
+                    "token_expire_minutes": 30
                 }
             }
         }
@@ -109,7 +117,13 @@ class TestConfigureAuth:
 
     def test_configure_auth_disabled(self):
         """Test configuring auth when disabled."""
-        config = {"api": {"auth": {"enabled": False}}}
+        config = {
+            "api": {
+                "auth": {
+                    "enabled": False
+                }
+            }
+        }
         configure_auth(config)
 
         assert auth_module._auth_config is not None
@@ -191,7 +205,11 @@ class TestGetApiKeyInfo:
 
         auth_module._auth_config = AuthConfig(
             api_keys={
-                "test_key": {"key_hash": key_hash, "name": "Test Key", "scopes": ["read", "write"]}
+                "test_key": {
+                    "key_hash": key_hash,
+                    "name": "Test Key",
+                    "scopes": ["read", "write"]
+                }
             }
         )
 
@@ -206,7 +224,11 @@ class TestGetApiKeyInfo:
         """Test getting key info for invalid key."""
         _, key_hash = generate_api_key()
 
-        auth_module._auth_config = AuthConfig(api_keys={"test_key": {"key_hash": key_hash}})
+        auth_module._auth_config = AuthConfig(
+            api_keys={
+                "test_key": {"key_hash": key_hash}
+            }
+        )
 
         result = get_api_key_info("wrong_key")
         assert result is None
@@ -245,7 +267,13 @@ class TestGetCurrentUser:
 
         auth_module._auth_config = AuthConfig(
             enabled=True,
-            api_keys={"my_key": {"key_hash": key_hash, "name": "My API Key", "scopes": ["read"]}},
+            api_keys={
+                "my_key": {
+                    "key_hash": key_hash,
+                    "name": "My API Key",
+                    "scopes": ["read"]
+                }
+            }
         )
 
         user = await get_current_user(api_key=key, bearer=None)
@@ -258,7 +286,10 @@ class TestGetCurrentUser:
     @pytest.mark.asyncio
     async def test_get_current_user_invalid_api_key(self):
         """Test get_current_user with invalid API key."""
-        auth_module._auth_config = AuthConfig(enabled=True, api_keys={})
+        auth_module._auth_config = AuthConfig(
+            enabled=True,
+            api_keys={}
+        )
 
         with pytest.raises(HTTPException) as exc_info:
             await get_current_user(api_key="invalid_key", bearer=None)
@@ -281,11 +312,16 @@ class TestGetCurrentUser:
     async def test_get_current_user_valid_bearer(self):
         """Test get_current_user with valid bearer token."""
         # Configure auth first so we can create a proper token
-        auth_module._auth_config = AuthConfig(enabled=True, jwt_secret="test_secret")
+        auth_module._auth_config = AuthConfig(
+            enabled=True,
+            jwt_secret="test_secret"
+        )
 
         # Create a properly signed JWT token using the new function
         token = create_jwt_token(
-            subject="user123", scopes=["read", "write"], expires_delta=timedelta(hours=1)
+            subject="user123",
+            scopes=["read", "write"],
+            expires_delta=timedelta(hours=1)
         )
 
         bearer = HTTPAuthorizationCredentials(scheme="Bearer", credentials=token)
@@ -298,9 +334,15 @@ class TestGetCurrentUser:
     @pytest.mark.asyncio
     async def test_get_current_user_invalid_bearer(self):
         """Test get_current_user with invalid bearer token."""
-        auth_module._auth_config = AuthConfig(enabled=True, jwt_secret="test_secret")
+        auth_module._auth_config = AuthConfig(
+            enabled=True,
+            jwt_secret="test_secret"
+        )
 
-        bearer = HTTPAuthorizationCredentials(scheme="Bearer", credentials="invalid.token")
+        bearer = HTTPAuthorizationCredentials(
+            scheme="Bearer",
+            credentials="invalid.token"
+        )
 
         with pytest.raises(HTTPException) as exc_info:
             await get_current_user(api_key=None, bearer=bearer)
@@ -340,22 +382,22 @@ class TestVerifyJwtToken:
         with pytest.raises(ValueError) as exc_info:
             verify_jwt_token("not.a.valid.token.format")
 
-        # PyJWT raises InvalidTokenError for invalid tokens
+        # python-jose raises JWTError for invalid tokens
         assert "verification failed" in str(exc_info.value).lower()
 
     def test_verify_jwt_expired_token(self):
         """Test verifying expired JWT."""
         auth_module._auth_config = AuthConfig(jwt_secret="secret")
 
-        # Create a properly signed but expired token using auth_core
-        # Create a properly signed but already-expired token
-        from auth_core.jwt import create_token
-
-        token = create_token(
-            subject="user",
-            secret="secret",
-            expires_delta=timedelta(hours=-1),
-        )
+        # Create a properly signed but expired token using python-jose directly
+        from jose import jwt as jose_jwt
+        past = datetime.now(timezone.utc) - timedelta(hours=1)
+        payload = {
+            "sub": "user",
+            "exp": past,
+            "iat": past - timedelta(hours=1)
+        }
+        token = jose_jwt.encode(payload, "secret", algorithm="HS256")
 
         with pytest.raises(ValueError) as exc_info:
             verify_jwt_token(token)
@@ -368,7 +410,9 @@ class TestVerifyJwtToken:
 
         # Create a properly signed token using create_jwt_token
         token = create_jwt_token(
-            subject="user123", scopes=["admin"], expires_delta=timedelta(hours=1)
+            subject="user123",
+            scopes=["admin"],
+            expires_delta=timedelta(hours=1)
         )
 
         result = verify_jwt_token(token)
@@ -443,7 +487,11 @@ class TestAuthMiddleware:
 
         middleware = AuthMiddleware(mock_app)
 
-        scope = {"type": "http", "path": "/test", "headers": []}
+        scope = {
+            "type": "http",
+            "path": "/test",
+            "headers": []
+        }
 
         await middleware(scope, None, None)
 
@@ -496,7 +544,10 @@ class TestAuthMiddleware:
         scope = {
             "type": "http",
             "path": "/api/test",
-            "headers": [(b"x-api-key", b"test-key"), (b"authorization", b"Bearer token")],
+            "headers": [
+                (b"x-api-key", b"test-key"),
+                (b"authorization", b"Bearer token")
+            ]
         }
 
         await middleware(scope, None, None)

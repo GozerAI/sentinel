@@ -4,7 +4,6 @@ Integration tests for Event Flow across the Sentinel platform.
 Tests the complete lifecycle of events from creation, through the event bus,
 to handlers, and storage.
 """
-
 import asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock
@@ -68,35 +67,29 @@ class TestEventBusFlow:
 
         try:
             # Publish different category events
-            await bus.publish(
-                Event(
-                    category=EventCategory.SECURITY,
-                    event_type="security.alert",
-                    severity=EventSeverity.WARNING,
-                    source="test",
-                    title="Security alert",
-                )
-            )
+            await bus.publish(Event(
+                category=EventCategory.SECURITY,
+                event_type="security.alert",
+                severity=EventSeverity.WARNING,
+                source="test",
+                title="Security alert",
+            ))
 
-            await bus.publish(
-                Event(
-                    category=EventCategory.NETWORK,
-                    event_type="network.change",
-                    severity=EventSeverity.INFO,
-                    source="test",
-                    title="Network change",
-                )
-            )
+            await bus.publish(Event(
+                category=EventCategory.NETWORK,
+                event_type="network.change",
+                severity=EventSeverity.INFO,
+                source="test",
+                title="Network change",
+            ))
 
-            await bus.publish(
-                Event(
-                    category=EventCategory.SYSTEM,
-                    event_type="system.update",
-                    severity=EventSeverity.INFO,
-                    source="test",
-                    title="System update",
-                )
-            )
+            await bus.publish(Event(
+                category=EventCategory.SYSTEM,
+                event_type="system.update",
+                severity=EventSeverity.INFO,
+                source="test",
+                title="System update",
+            ))
 
             await asyncio.sleep(0.3)
 
@@ -124,25 +117,21 @@ class TestEventBusFlow:
 
         try:
             # Publish different event types
-            await bus.publish(
-                Event(
-                    category=EventCategory.DEVICE,
-                    event_type="device.discovered",
-                    severity=EventSeverity.INFO,
-                    source="discovery",
-                    title="Device discovered",
-                )
-            )
+            await bus.publish(Event(
+                category=EventCategory.DEVICE,
+                event_type="device.discovered",
+                severity=EventSeverity.INFO,
+                source="discovery",
+                title="Device discovered",
+            ))
 
-            await bus.publish(
-                Event(
-                    category=EventCategory.DEVICE,
-                    event_type="device.updated",
-                    severity=EventSeverity.INFO,
-                    source="discovery",
-                    title="Device updated",
-                )
-            )
+            await bus.publish(Event(
+                category=EventCategory.DEVICE,
+                event_type="device.updated",
+                severity=EventSeverity.INFO,
+                source="discovery",
+                title="Device updated",
+            ))
 
             await asyncio.sleep(0.2)
 
@@ -168,16 +157,14 @@ class TestEventBusFlow:
         try:
             # Publish events in order
             for i in range(10):
-                await bus.publish(
-                    Event(
-                        category=EventCategory.SYSTEM,
-                        event_type="test.ordered",
-                        severity=EventSeverity.INFO,
-                        source="test",
-                        title=f"Event {i}",
-                        data={"order": i},
-                    )
-                )
+                await bus.publish(Event(
+                    category=EventCategory.SYSTEM,
+                    event_type="test.ordered",
+                    severity=EventSeverity.INFO,
+                    source="test",
+                    title=f"Event {i}",
+                    data={"order": i},
+                ))
 
             await asyncio.sleep(0.3)
 
@@ -242,15 +229,13 @@ class TestEventBusFlow:
         try:
             # Publish several events
             for i in range(5):
-                await bus.publish(
-                    Event(
-                        category=EventCategory.SYSTEM,
-                        event_type=f"test.history.{i}",
-                        severity=EventSeverity.INFO,
-                        source="test",
-                        title=f"History event {i}",
-                    )
-                )
+                await bus.publish(Event(
+                    category=EventCategory.SYSTEM,
+                    event_type=f"test.history.{i}",
+                    severity=EventSeverity.INFO,
+                    source="test",
+                    title=f"History event {i}",
+                ))
 
             await asyncio.sleep(0.2)
 
@@ -305,7 +290,6 @@ class TestEventFlowWithEngine:
         await engine.start()
 
         try:
-
             async def track_events(event):
                 if event.category == EventCategory.DEVICE:
                     guardian_received.append(event)
@@ -342,37 +326,28 @@ class TestEventFlowWithEngine:
         await engine.start()
 
         try:
-
             async def track_security(event):
-                if event.severity in [
-                    EventSeverity.WARNING,
-                    EventSeverity.ERROR,
-                    EventSeverity.CRITICAL,
-                ]:
+                if event.severity in [EventSeverity.WARNING, EventSeverity.ERROR, EventSeverity.CRITICAL]:
                     escalated.append(event)
 
             engine.event_bus.subscribe(track_security, category=EventCategory.SECURITY)
 
             # Publish escalating security events
-            await engine.event_bus.publish(
-                Event(
-                    category=EventCategory.SECURITY,
-                    event_type="security.scan_detected",
-                    severity=EventSeverity.WARNING,
-                    source="guardian",
-                    title="Port scan detected",
-                )
-            )
+            await engine.event_bus.publish(Event(
+                category=EventCategory.SECURITY,
+                event_type="security.scan_detected",
+                severity=EventSeverity.WARNING,
+                source="guardian",
+                title="Port scan detected",
+            ))
 
-            await engine.event_bus.publish(
-                Event(
-                    category=EventCategory.SECURITY,
-                    event_type="security.threat",
-                    severity=EventSeverity.ERROR,
-                    source="guardian",
-                    title="Active threat detected",
-                )
-            )
+            await engine.event_bus.publish(Event(
+                category=EventCategory.SECURITY,
+                event_type="security.threat",
+                severity=EventSeverity.ERROR,
+                source="guardian",
+                title="Active threat detected",
+            ))
 
             await asyncio.sleep(0.2)
 
@@ -389,7 +364,6 @@ class TestEventFlowWithEngine:
         await engine.start()
 
         try:
-
             async def update_state_on_event(event):
                 if event.event_type == "device.discovered":
                     await engine.state.increment("devices:discovered_count")
@@ -401,15 +375,13 @@ class TestEventFlowWithEngine:
 
             # Publish discovery events
             for i in range(5):
-                await engine.event_bus.publish(
-                    Event(
-                        category=EventCategory.DEVICE,
-                        event_type="device.discovered",
-                        severity=EventSeverity.INFO,
-                        source="discovery",
-                        title=f"Device {i} found",
-                    )
-                )
+                await engine.event_bus.publish(Event(
+                    category=EventCategory.DEVICE,
+                    event_type="device.discovered",
+                    severity=EventSeverity.INFO,
+                    source="discovery",
+                    title=f"Device {i} found",
+                ))
 
             await asyncio.sleep(0.3)
 
@@ -443,13 +415,9 @@ class TestAgentActionFlow:
         await engine.start()
 
         try:
-
             async def track_actions(event):
                 # Only track action.executed events, not agent.started events
-                if (
-                    event.category == EventCategory.AGENT
-                    and event.event_type == "agent.action.executed"
-                ):
+                if event.category == EventCategory.AGENT and event.event_type == "agent.action.executed":
                     action_events.append(event)
 
             engine.event_bus.subscribe(track_actions, category=EventCategory.AGENT)
@@ -466,19 +434,17 @@ class TestAgentActionFlow:
             )
 
             # Publish action event
-            await engine.event_bus.publish(
-                Event(
-                    category=EventCategory.AGENT,
-                    event_type="agent.action.executed",
-                    severity=EventSeverity.INFO,
-                    source="guardian",
-                    title="IP Blocked",
-                    data={
-                        "action_type": action.action_type,
-                        "target": action.target_id,
-                    },
-                )
-            )
+            await engine.event_bus.publish(Event(
+                category=EventCategory.AGENT,
+                event_type="agent.action.executed",
+                severity=EventSeverity.INFO,
+                source="guardian",
+                title="IP Blocked",
+                data={
+                    "action_type": action.action_type,
+                    "target": action.target_id,
+                },
+            ))
 
             await asyncio.sleep(0.2)
 
@@ -497,7 +463,6 @@ class TestAgentActionFlow:
         await engine.start()
 
         try:
-
             async def track_all(event):
                 event_chain.append(event)
 
@@ -507,40 +472,34 @@ class TestAgentActionFlow:
             correlation_id = uuid4()
 
             # Detection event
-            await engine.event_bus.publish(
-                Event(
-                    id=correlation_id,
-                    category=EventCategory.SECURITY,
-                    event_type="threat.detected",
-                    severity=EventSeverity.WARNING,
-                    source="guardian",
-                    title="Threat detected",
-                )
-            )
+            await engine.event_bus.publish(Event(
+                id=correlation_id,
+                category=EventCategory.SECURITY,
+                event_type="threat.detected",
+                severity=EventSeverity.WARNING,
+                source="guardian",
+                title="Threat detected",
+            ))
 
             # Analysis event
-            await engine.event_bus.publish(
-                Event(
-                    category=EventCategory.AGENT,
-                    event_type="agent.analyzing",
-                    severity=EventSeverity.INFO,
-                    source="guardian",
-                    title="Analyzing threat",
-                    correlation_id=correlation_id,
-                )
-            )
+            await engine.event_bus.publish(Event(
+                category=EventCategory.AGENT,
+                event_type="agent.analyzing",
+                severity=EventSeverity.INFO,
+                source="guardian",
+                title="Analyzing threat",
+                correlation_id=correlation_id,
+            ))
 
             # Action event
-            await engine.event_bus.publish(
-                Event(
-                    category=EventCategory.AGENT,
-                    event_type="agent.action.executed",
-                    severity=EventSeverity.INFO,
-                    source="guardian",
-                    title="Mitigation applied",
-                    correlation_id=correlation_id,
-                )
-            )
+            await engine.event_bus.publish(Event(
+                category=EventCategory.AGENT,
+                event_type="agent.action.executed",
+                severity=EventSeverity.INFO,
+                source="guardian",
+                title="Mitigation applied",
+                correlation_id=correlation_id,
+            ))
 
             await asyncio.sleep(0.3)
 
@@ -574,15 +533,13 @@ class TestEventErrorHandling:
 
         try:
             # Publish event - failing handler shouldn't stop successful one
-            await bus.publish(
-                Event(
-                    category=EventCategory.SYSTEM,
-                    event_type="test.error",
-                    severity=EventSeverity.INFO,
-                    source="test",
-                    title="Error test",
-                )
-            )
+            await bus.publish(Event(
+                category=EventCategory.SYSTEM,
+                event_type="test.error",
+                severity=EventSeverity.INFO,
+                source="test",
+                title="Error test",
+            ))
 
             await asyncio.sleep(0.2)
 
@@ -611,15 +568,13 @@ class TestEventErrorHandling:
         await bus.start()
 
         try:
-            await bus.publish(
-                Event(
-                    category=EventCategory.SYSTEM,
-                    event_type="test.slow",
-                    severity=EventSeverity.INFO,
-                    source="test",
-                    title="Slow test",
-                )
-            )
+            await bus.publish(Event(
+                category=EventCategory.SYSTEM,
+                event_type="test.slow",
+                severity=EventSeverity.INFO,
+                source="test",
+                title="Slow test",
+            ))
 
             # Fast handler should receive quickly
             await asyncio.sleep(0.1)

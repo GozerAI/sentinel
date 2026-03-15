@@ -4,7 +4,6 @@ Prometheus metrics collection for Sentinel platform.
 This module provides metrics for monitoring the Sentinel engine,
 agents, integrations, and overall platform health.
 """
-
 import logging
 from typing import Optional
 
@@ -26,12 +25,19 @@ logger = logging.getLogger(__name__)
 # Engine Metrics
 # =============================================================================
 
-ENGINE_INFO = Info("sentinel_engine", "Sentinel engine information")
+ENGINE_INFO = Info(
+    "sentinel_engine",
+    "Sentinel engine information"
+)
 
-ENGINE_UPTIME = Gauge("sentinel_engine_uptime_seconds", "Engine uptime in seconds")
+ENGINE_UPTIME = Gauge(
+    "sentinel_engine_uptime_seconds",
+    "Engine uptime in seconds"
+)
 
 ENGINE_RUNNING = Gauge(
-    "sentinel_engine_running", "Whether the engine is running (1=running, 0=stopped)"
+    "sentinel_engine_running",
+    "Whether the engine is running (1=running, 0=stopped)"
 )
 
 
@@ -39,29 +45,35 @@ ENGINE_RUNNING = Gauge(
 # Agent Metrics
 # =============================================================================
 
-AGENT_RUNNING = Gauge("sentinel_agent_running", "Whether the agent is running", ["agent_name"])
+AGENT_RUNNING = Gauge(
+    "sentinel_agent_running",
+    "Whether the agent is running",
+    ["agent_name"]
+)
 
 AGENT_EVENTS_PROCESSED = Counter(
     "sentinel_agent_events_processed_total",
     "Total events processed by agent",
-    ["agent_name", "event_type"],
+    ["agent_name", "event_type"]
 )
 
 AGENT_ACTIONS_TAKEN = Counter(
     "sentinel_agent_actions_total",
     "Total actions taken by agent",
-    ["agent_name", "action_type", "status"],
+    ["agent_name", "action_type", "status"]
 )
 
 AGENT_DECISIONS_MADE = Counter(
-    "sentinel_agent_decisions_total", "Total decisions made by agent", ["agent_name"]
+    "sentinel_agent_decisions_total",
+    "Total decisions made by agent",
+    ["agent_name"]
 )
 
 AGENT_ANALYSIS_DURATION = Histogram(
     "sentinel_agent_analysis_duration_seconds",
     "Time spent analyzing events",
     ["agent_name"],
-    buckets=(0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0, 5.0, 10.0),
+    buckets=(0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0, 5.0, 10.0)
 )
 
 
@@ -70,15 +82,21 @@ AGENT_ANALYSIS_DURATION = Histogram(
 # =============================================================================
 
 DEVICES_TOTAL = Gauge(
-    "sentinel_devices_total", "Total number of discovered devices", ["device_type", "status"]
+    "sentinel_devices_total",
+    "Total number of discovered devices",
+    ["device_type", "status"]
 )
 
 DEVICES_BY_VLAN = Gauge(
-    "sentinel_devices_by_vlan", "Number of devices per VLAN", ["vlan_id", "vlan_name"]
+    "sentinel_devices_by_vlan",
+    "Number of devices per VLAN",
+    ["vlan_id", "vlan_name"]
 )
 
 DEVICES_BY_TRUST_LEVEL = Gauge(
-    "sentinel_devices_by_trust_level", "Number of devices by trust level", ["trust_level"]
+    "sentinel_devices_by_trust_level",
+    "Number of devices by trust level",
+    ["trust_level"]
 )
 
 
@@ -86,12 +104,20 @@ DEVICES_BY_TRUST_LEVEL = Gauge(
 # Network Metrics
 # =============================================================================
 
-VLANS_TOTAL = Gauge("sentinel_vlans_total", "Total number of configured VLANs")
+VLANS_TOTAL = Gauge(
+    "sentinel_vlans_total",
+    "Total number of configured VLANs"
+)
 
-TRAFFIC_FLOWS_ACTIVE = Gauge("sentinel_traffic_flows_active", "Number of active traffic flows")
+TRAFFIC_FLOWS_ACTIVE = Gauge(
+    "sentinel_traffic_flows_active",
+    "Number of active traffic flows"
+)
 
 BANDWIDTH_USAGE_BYTES = Counter(
-    "sentinel_bandwidth_bytes_total", "Total bandwidth usage in bytes", ["direction", "vlan_id"]
+    "sentinel_bandwidth_bytes_total",
+    "Total bandwidth usage in bytes",
+    ["direction", "vlan_id"]
 )
 
 
@@ -99,18 +125,26 @@ BANDWIDTH_USAGE_BYTES = Counter(
 # Security Metrics
 # =============================================================================
 
-BLOCKED_IPS_TOTAL = Gauge("sentinel_blocked_ips_total", "Number of currently blocked IPs")
+BLOCKED_IPS_TOTAL = Gauge(
+    "sentinel_blocked_ips_total",
+    "Number of currently blocked IPs"
+)
 
 QUARANTINED_DEVICES_TOTAL = Gauge(
-    "sentinel_quarantined_devices_total", "Number of quarantined devices"
+    "sentinel_quarantined_devices_total",
+    "Number of quarantined devices"
 )
 
 SECURITY_EVENTS = Counter(
-    "sentinel_security_events_total", "Total security events", ["event_type", "severity"]
+    "sentinel_security_events_total",
+    "Total security events",
+    ["event_type", "severity"]
 )
 
 THREAT_DETECTIONS = Counter(
-    "sentinel_threat_detections_total", "Total threat detections", ["threat_type"]
+    "sentinel_threat_detections_total",
+    "Total threat detections",
+    ["threat_type"]
 )
 
 
@@ -121,12 +155,18 @@ THREAT_DETECTIONS = Counter(
 EVENTS_PUBLISHED = Counter(
     "sentinel_events_published_total",
     "Total events published to event bus",
-    ["category", "event_type"],
+    ["category", "event_type"]
 )
 
-EVENTS_QUEUE_SIZE = Gauge("sentinel_events_queue_size", "Current event queue size")
+EVENTS_QUEUE_SIZE = Gauge(
+    "sentinel_events_queue_size",
+    "Current event queue size"
+)
 
-EVENT_HANDLERS_TOTAL = Gauge("sentinel_event_handlers_total", "Number of registered event handlers")
+EVENT_HANDLERS_TOTAL = Gauge(
+    "sentinel_event_handlers_total",
+    "Number of registered event handlers"
+)
 
 
 # =============================================================================
@@ -136,20 +176,20 @@ EVENT_HANDLERS_TOTAL = Gauge("sentinel_event_handlers_total", "Number of registe
 INTEGRATION_STATUS = Gauge(
     "sentinel_integration_connected",
     "Whether integration is connected",
-    ["integration_name", "integration_type"],
+    ["integration_name", "integration_type"]
 )
 
 INTEGRATION_REQUESTS = Counter(
     "sentinel_integration_requests_total",
     "Total requests to integrations",
-    ["integration_name", "operation", "status"],
+    ["integration_name", "operation", "status"]
 )
 
 INTEGRATION_LATENCY = Histogram(
     "sentinel_integration_latency_seconds",
     "Integration request latency",
     ["integration_name", "operation"],
-    buckets=(0.01, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0),
+    buckets=(0.01, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0)
 )
 
 
@@ -158,14 +198,16 @@ INTEGRATION_LATENCY = Histogram(
 # =============================================================================
 
 API_REQUESTS = Counter(
-    "sentinel_api_requests_total", "Total API requests", ["method", "endpoint", "status_code"]
+    "sentinel_api_requests_total",
+    "Total API requests",
+    ["method", "endpoint", "status_code"]
 )
 
 API_LATENCY = Histogram(
     "sentinel_api_latency_seconds",
     "API request latency",
     ["method", "endpoint"],
-    buckets=(0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0),
+    buckets=(0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0)
 )
 
 
@@ -173,19 +215,21 @@ API_LATENCY = Histogram(
 # Scheduler Metrics
 # =============================================================================
 
-SCHEDULED_TASKS_TOTAL = Gauge("sentinel_scheduled_tasks_total", "Number of scheduled tasks")
+SCHEDULED_TASKS_TOTAL = Gauge(
+    "sentinel_scheduled_tasks_total",
+    "Number of scheduled tasks"
+)
 
 SCHEDULED_TASK_EXECUTIONS = Counter(
     "sentinel_scheduled_task_executions_total",
     "Total scheduled task executions",
-    ["task_name", "status"],
+    ["task_name", "status"]
 )
 
 
 # =============================================================================
 # Metrics Collector Class
 # =============================================================================
-
 
 class MetricsCollector:
     """
@@ -211,7 +255,10 @@ class MetricsCollector:
         self._engine = None
 
         # Set initial engine info
-        ENGINE_INFO.info({"version": "0.1.0", "platform": "sentinel"})
+        ENGINE_INFO.info({
+            "version": "0.1.0",
+            "platform": "sentinel"
+        })
 
     def set_engine(self, engine) -> None:
         """
@@ -236,7 +283,9 @@ class MetricsCollector:
             return
 
         for name, agent in self._engine._agents.items():
-            AGENT_RUNNING.labels(agent_name=name).set(1 if getattr(agent, "_running", False) else 0)
+            AGENT_RUNNING.labels(agent_name=name).set(
+                1 if getattr(agent, '_running', False) else 0
+            )
 
     def update_device_metrics(self) -> None:
         """Update device inventory metrics."""
@@ -244,12 +293,11 @@ class MetricsCollector:
             return
 
         discovery = self._engine.get_agent("discovery")
-        if not discovery or not hasattr(discovery, "_inventory"):
+        if not discovery or not hasattr(discovery, '_inventory'):
             return
 
         # Count devices by type and status
         from collections import defaultdict
-
         type_status_counts = defaultdict(int)
         vlan_counts = defaultdict(int)
         trust_counts = defaultdict(int)
@@ -277,8 +325,10 @@ class MetricsCollector:
 
         guardian = self._engine.get_agent("guardian")
         if guardian:
-            BLOCKED_IPS_TOTAL.set(len(getattr(guardian, "_blocked_ips", set())))
-            QUARANTINED_DEVICES_TOTAL.set(len(getattr(guardian, "_quarantined_devices", set())))
+            BLOCKED_IPS_TOTAL.set(len(getattr(guardian, '_blocked_ips', set())))
+            QUARANTINED_DEVICES_TOTAL.set(
+                len(getattr(guardian, '_quarantined_devices', set()))
+            )
 
     def update_event_bus_metrics(self) -> None:
         """Update event bus metrics."""
@@ -304,33 +354,63 @@ class MetricsCollector:
     # Recording methods for specific events
     # ==========================================================================
 
-    def record_agent_event(self, agent_name: str, event_type: str) -> None:
+    def record_agent_event(
+        self,
+        agent_name: str,
+        event_type: str
+    ) -> None:
         """Record an event processed by an agent."""
-        AGENT_EVENTS_PROCESSED.labels(agent_name=agent_name, event_type=event_type).inc()
+        AGENT_EVENTS_PROCESSED.labels(
+            agent_name=agent_name,
+            event_type=event_type
+        ).inc()
 
     def record_agent_action(
-        self, agent_name: str, action_type: str, status: str = "success"
+        self,
+        agent_name: str,
+        action_type: str,
+        status: str = "success"
     ) -> None:
         """Record an action taken by an agent."""
         AGENT_ACTIONS_TAKEN.labels(
-            agent_name=agent_name, action_type=action_type, status=status
+            agent_name=agent_name,
+            action_type=action_type,
+            status=status
         ).inc()
 
     def record_agent_decision(self, agent_name: str) -> None:
         """Record a decision made by an agent."""
         AGENT_DECISIONS_MADE.labels(agent_name=agent_name).inc()
 
-    def record_agent_analysis_time(self, agent_name: str, duration: float) -> None:
+    def record_agent_analysis_time(
+        self,
+        agent_name: str,
+        duration: float
+    ) -> None:
         """Record time spent analyzing an event."""
         AGENT_ANALYSIS_DURATION.labels(agent_name=agent_name).observe(duration)
 
-    def record_event_published(self, category: str, event_type: str) -> None:
+    def record_event_published(
+        self,
+        category: str,
+        event_type: str
+    ) -> None:
         """Record an event published to the event bus."""
-        EVENTS_PUBLISHED.labels(category=category, event_type=event_type).inc()
+        EVENTS_PUBLISHED.labels(
+            category=category,
+            event_type=event_type
+        ).inc()
 
-    def record_security_event(self, event_type: str, severity: str) -> None:
+    def record_security_event(
+        self,
+        event_type: str,
+        severity: str
+    ) -> None:
         """Record a security event."""
-        SECURITY_EVENTS.labels(event_type=event_type, severity=severity).inc()
+        SECURITY_EVENTS.labels(
+            event_type=event_type,
+            severity=severity
+        ).inc()
 
     def record_threat_detection(self, threat_type: str) -> None:
         """Record a threat detection."""
@@ -341,32 +421,50 @@ class MetricsCollector:
         integration_name: str,
         operation: str,
         status: str = "success",
-        latency: Optional[float] = None,
+        latency: Optional[float] = None
     ) -> None:
         """Record an integration request."""
         INTEGRATION_REQUESTS.labels(
-            integration_name=integration_name, operation=operation, status=status
+            integration_name=integration_name,
+            operation=operation,
+            status=status
         ).inc()
 
         if latency is not None:
             INTEGRATION_LATENCY.labels(
-                integration_name=integration_name, operation=operation
+                integration_name=integration_name,
+                operation=operation
             ).observe(latency)
 
     def record_api_request(
-        self, method: str, endpoint: str, status_code: int, latency: float
+        self,
+        method: str,
+        endpoint: str,
+        status_code: int,
+        latency: float
     ) -> None:
         """Record an API request."""
-        API_REQUESTS.labels(method=method, endpoint=endpoint, status_code=str(status_code)).inc()
+        API_REQUESTS.labels(
+            method=method,
+            endpoint=endpoint,
+            status_code=str(status_code)
+        ).inc()
 
-        API_LATENCY.labels(method=method, endpoint=endpoint).observe(latency)
+        API_LATENCY.labels(
+            method=method,
+            endpoint=endpoint
+        ).observe(latency)
 
     def set_integration_status(
-        self, integration_name: str, integration_type: str, connected: bool
+        self,
+        integration_name: str,
+        integration_type: str,
+        connected: bool
     ) -> None:
         """Set integration connection status."""
         INTEGRATION_STATUS.labels(
-            integration_name=integration_name, integration_type=integration_type
+            integration_name=integration_name,
+            integration_type=integration_type
         ).set(1 if connected else 0)
 
     def generate_metrics(self) -> bytes:

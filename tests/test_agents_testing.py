@@ -11,14 +11,16 @@ Tests cover:
 - Issue detection and resolution
 - Action execution
 """
-
 import asyncio
 import pytest
 from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, AsyncMock, patch, PropertyMock
 
 from sentinel.agents.testing import TestingAgent
-from sentinel.core.models.event import Event, EventCategory, EventSeverity, AgentAction
+from sentinel.core.models.event import (
+    Event, EventCategory, EventSeverity,
+    AgentAction
+)
 
 
 @pytest.fixture
@@ -203,9 +205,7 @@ class TestTestingAgentAgentChecks:
 
         issues = await agent._check_agents()
 
-        assert not any(
-            i.get("component") == "other_agent" and i["type"] == "agent_stopped" for i in issues
-        )
+        assert not any(i.get("component") == "other_agent" and i["type"] == "agent_stopped" for i in issues)
 
     @pytest.mark.asyncio
     async def test_check_agents_stopped(self, agent, mock_engine):
@@ -285,9 +285,7 @@ class TestTestingAgentEventPerformance:
         issues = await agent._check_event_performance()
 
         # No issues for normal performance
-        assert not any(
-            i["type"] in ("event_queue_backlog", "slow_event_processing") for i in issues
-        )
+        assert not any(i["type"] in ("event_queue_backlog", "slow_event_processing") for i in issues)
 
 
 class TestTestingAgentResourceChecks:
@@ -336,7 +334,7 @@ class TestTestingAgentIssueTracking:
             "type": "test_issue",
             "severity": "medium",
             "component": "test",
-            "message": "Test issue",
+            "message": "Test issue"
         }
 
         await agent._record_issue("test_1", issue)
@@ -352,7 +350,7 @@ class TestTestingAgentIssueTracking:
             "test_1": {
                 "type": "test_issue",
                 "occurrence_count": 1,
-                "first_detected": datetime.now(timezone.utc).isoformat(),
+                "first_detected": datetime.now(timezone.utc).isoformat()
             }
         }
 
@@ -368,7 +366,7 @@ class TestTestingAgentIssueTracking:
             "test_1": {
                 "type": "test_issue",
                 "occurrence_count": 3,
-                "first_detected": datetime.now(timezone.utc).isoformat(),
+                "first_detected": datetime.now(timezone.utc).isoformat()
             }
         }
 
@@ -414,16 +412,9 @@ class TestTestingAgentHealthCheck:
     @pytest.mark.asyncio
     async def test_run_system_health_check_with_issues(self, agent, mock_engine):
         """Test health check with issues found."""
-        agent._check_integrations = AsyncMock(
-            return_value=[
-                {
-                    "type": "integration_error",
-                    "severity": "high",
-                    "component": "router",
-                    "message": "Error",
-                }
-            ]
-        )
+        agent._check_integrations = AsyncMock(return_value=[
+            {"type": "integration_error", "severity": "high", "component": "router", "message": "Error"}
+        ])
         agent._check_agents = AsyncMock(return_value=[])
         agent._check_event_performance = AsyncMock(return_value=[])
         agent._check_resources = AsyncMock(return_value=[])
@@ -460,7 +451,7 @@ class TestTestingAgentEventHandlers:
             source="test",
             title="Action",
             description="Test action",
-            data={"agent_name": "healer"},
+            data={"agent_name": "healer"}
         )
 
         await agent._handle_agent_action(event)
@@ -481,8 +472,8 @@ class TestTestingAgentEventHandlers:
             data={
                 "component": "database",
                 "error_type": "connection",
-                "message": "Connection lost",
-            },
+                "message": "Connection lost"
+            }
         )
 
         await agent._handle_system_error(event)
@@ -500,7 +491,7 @@ class TestTestingAgentEventHandlers:
             source="test",
             title="Integration Status",
             description="Status changed",
-            data={"integration": "router", "status": "disconnected"},
+            data={"integration": "router", "status": "disconnected"}
         )
 
         await agent._handle_integration_status(event)
@@ -514,7 +505,7 @@ class TestTestingAgentEventHandlers:
         # First record a disconnected issue
         agent._detected_issues["int_router_status_disconnected"] = {
             "type": "integration_disconnected",
-            "component": "router",
+            "component": "router"
         }
 
         event = Event(
@@ -524,7 +515,7 @@ class TestTestingAgentEventHandlers:
             source="test",
             title="Integration Status",
             description="Status changed",
-            data={"integration": "router", "status": "connected"},
+            data={"integration": "router", "status": "connected"}
         )
 
         await agent._handle_integration_status(event)
@@ -550,7 +541,7 @@ class TestTestingAgentDoExecute:
             target_id="stopped_agent",
             parameters={"agent_name": "stopped_agent"},
             reasoning="Agent stopped",
-            confidence=0.85,
+            confidence=0.85
         )
 
         result = await agent._do_execute(action)
@@ -570,7 +561,7 @@ class TestTestingAgentDoExecute:
             target_id="nonexistent",
             parameters={"agent_name": "nonexistent"},
             reasoning="Agent stopped",
-            confidence=0.85,
+            confidence=0.85
         )
 
         result = await agent._do_execute(action)
@@ -592,7 +583,7 @@ class TestTestingAgentDoExecute:
             target_id="failing_agent",
             parameters={"agent_name": "failing_agent"},
             reasoning="Agent stopped",
-            confidence=0.85,
+            confidence=0.85
         )
 
         result = await agent._do_execute(action)
@@ -603,7 +594,9 @@ class TestTestingAgentDoExecute:
     @pytest.mark.asyncio
     async def test_do_execute_clear_issue(self, agent, mock_engine):
         """Test clearing issue action."""
-        agent._detected_issues = {"test_issue": {"type": "test", "occurrence_count": 1}}
+        agent._detected_issues = {
+            "test_issue": {"type": "test", "occurrence_count": 1}
+        }
 
         action = AgentAction(
             agent_name="testing",
@@ -612,7 +605,7 @@ class TestTestingAgentDoExecute:
             target_id="test_issue",
             parameters={"issue_id": "test_issue"},
             reasoning="Clear resolved issue",
-            confidence=0.95,
+            confidence=0.95
         )
 
         result = await agent._do_execute(action)
@@ -630,7 +623,7 @@ class TestTestingAgentDoExecute:
             target_id="nonexistent",
             parameters={"issue_id": "nonexistent"},
             reasoning="Clear issue",
-            confidence=0.95,
+            confidence=0.95
         )
 
         result = await agent._do_execute(action)
@@ -647,7 +640,7 @@ class TestTestingAgentDoExecute:
             target_id="test",
             parameters={},
             reasoning="Test",
-            confidence=0.5,
+            confidence=0.5
         )
 
         with pytest.raises(ValueError, match="Unknown action type"):
@@ -665,7 +658,7 @@ class TestTestingAgentCleanup:
 
         agent._resolved_issues = [
             {"type": "old", "resolved_at": old_time},
-            {"type": "recent", "resolved_at": recent_time},
+            {"type": "recent", "resolved_at": recent_time}
         ]
 
         await agent._cleanup_old_data()
@@ -830,7 +823,7 @@ class TestTestingAgentAnalyze:
             source="test",
             title="Test",
             description="Test event",
-            data={},
+            data={}
         )
 
         result = await agent.analyze(event)

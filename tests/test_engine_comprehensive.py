@@ -7,7 +7,6 @@ These tests achieve full coverage of the engine module including:
 - Error handling paths
 - Properties and methods
 """
-
 import asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch, PropertyMock
@@ -22,7 +21,11 @@ class TestEngineProperties:
 
     @pytest.fixture
     def basic_config(self):
-        return {"state": {"backend": "memory"}, "agents": {}, "integrations": {}}
+        return {
+            "state": {"backend": "memory"},
+            "agents": {},
+            "integrations": {}
+        }
 
     def test_is_running_false_initially(self, basic_config):
         """Test is_running is False initially."""
@@ -67,7 +70,11 @@ class TestEngineStart:
 
     @pytest.fixture
     def basic_config(self):
-        return {"state": {"backend": "memory"}, "agents": {}, "integrations": {}}
+        return {
+            "state": {"backend": "memory"},
+            "agents": {},
+            "integrations": {}
+        }
 
     @pytest.mark.asyncio
     async def test_start_sets_start_time(self, basic_config):
@@ -126,7 +133,11 @@ class TestEngineStop:
 
     @pytest.fixture
     def basic_config(self):
-        return {"state": {"backend": "memory"}, "agents": {}, "integrations": {}}
+        return {
+            "state": {"backend": "memory"},
+            "agents": {},
+            "integrations": {}
+        }
 
     @pytest.mark.asyncio
     async def test_stop_stops_scheduler(self, basic_config):
@@ -244,9 +255,9 @@ class TestRouterIntegrationLoading:
                     "type": "opnsense",
                     "host": "https://router.local",
                     "api_key": "test",
-                    "api_secret": "secret",
+                    "api_secret": "secret"
                 }
-            },
+            }
         }
 
         engine = SentinelEngine(config)
@@ -270,7 +281,9 @@ class TestRouterIntegrationLoading:
         config = {
             "state": {"backend": "memory"},
             "agents": {},
-            "integrations": {"router": {"type": "pfsense"}},
+            "integrations": {
+                "router": {"type": "pfsense"}
+            }
         }
 
         engine = SentinelEngine(config)
@@ -285,7 +298,9 @@ class TestRouterIntegrationLoading:
         config = {
             "state": {"backend": "memory"},
             "agents": {},
-            "integrations": {"router": {"type": "mikrotik"}},
+            "integrations": {
+                "router": {"type": "mikrotik"}
+            }
         }
 
         engine = SentinelEngine(config)
@@ -300,7 +315,9 @@ class TestRouterIntegrationLoading:
         config = {
             "state": {"backend": "memory"},
             "agents": {},
-            "integrations": {"router": {"type": "unknown_router"}},
+            "integrations": {
+                "router": {"type": "unknown_router"}
+            }
         }
 
         engine = SentinelEngine(config)
@@ -316,7 +333,9 @@ class TestRouterIntegrationLoading:
         config = {
             "state": {"backend": "memory"},
             "agents": {},
-            "integrations": {"router": {"type": "opnsense"}},
+            "integrations": {
+                "router": {"type": "opnsense"}
+            }
         }
 
         engine = SentinelEngine(config)
@@ -335,7 +354,9 @@ class TestRouterIntegrationLoading:
         config = {
             "state": {"backend": "memory"},
             "agents": {},
-            "integrations": {"router": {"type": "opnsense"}},
+            "integrations": {
+                "router": {"type": "opnsense"}
+            }
         }
 
         engine = SentinelEngine(config)
@@ -362,7 +383,9 @@ class TestSwitchIntegrationLoading:
         config = {
             "state": {"backend": "memory"},
             "agents": {},
-            "integrations": {"switch": {"type": "ubiquiti"}},
+            "integrations": {
+                "switch": {"type": "ubiquiti"}
+            }
         }
 
         engine = SentinelEngine(config)
@@ -384,7 +407,9 @@ class TestSwitchIntegrationLoading:
         config = {
             "state": {"backend": "memory"},
             "agents": {},
-            "integrations": {"switch": {"type": "cisco"}},
+            "integrations": {
+                "switch": {"type": "cisco"}
+            }
         }
 
         engine = SentinelEngine(config)
@@ -399,7 +424,9 @@ class TestSwitchIntegrationLoading:
         config = {
             "state": {"backend": "memory"},
             "agents": {},
-            "integrations": {"switch": {"type": "unknown_switch"}},
+            "integrations": {
+                "switch": {"type": "unknown_switch"}
+            }
         }
 
         engine = SentinelEngine(config)
@@ -415,7 +442,9 @@ class TestSwitchIntegrationLoading:
         config = {
             "state": {"backend": "memory"},
             "agents": {},
-            "integrations": {"switch": {"type": "ubiquiti"}},
+            "integrations": {
+                "switch": {"type": "ubiquiti"}
+            }
         }
 
         engine = SentinelEngine(config)
@@ -437,7 +466,9 @@ class TestHypervisorIntegrationLoading:
         config = {
             "state": {"backend": "memory"},
             "agents": {},
-            "integrations": {"hypervisor": {"type": "proxmox"}},
+            "integrations": {
+                "hypervisor": {"type": "proxmox"}
+            }
         }
 
         engine = SentinelEngine(config)
@@ -459,7 +490,9 @@ class TestHypervisorIntegrationLoading:
         config = {
             "state": {"backend": "memory"},
             "agents": {},
-            "integrations": {"hypervisor": {"type": "docker"}},
+            "integrations": {
+                "hypervisor": {"type": "docker"}
+            }
         }
 
         engine = SentinelEngine(config)
@@ -474,7 +507,9 @@ class TestHypervisorIntegrationLoading:
         config = {
             "state": {"backend": "memory"},
             "agents": {},
-            "integrations": {"hypervisor": {"type": "unknown_hv"}},
+            "integrations": {
+                "hypervisor": {"type": "unknown_hv"}
+            }
         }
 
         engine = SentinelEngine(config)
@@ -494,7 +529,9 @@ class TestStorageIntegrationLoading:
         config = {
             "state": {"backend": "memory"},
             "agents": {},
-            "integrations": {"storage": {"type": "truenas"}},
+            "integrations": {
+                "storage": {"type": "truenas"}
+            }
         }
 
         engine = SentinelEngine(config)
@@ -516,7 +553,9 @@ class TestStorageIntegrationLoading:
         config = {
             "state": {"backend": "memory"},
             "agents": {},
-            "integrations": {"storage": {"type": "unknown_storage"}},
+            "integrations": {
+                "storage": {"type": "unknown_storage"}
+            }
         }
 
         engine = SentinelEngine(config)
@@ -536,7 +575,9 @@ class TestKubernetesIntegrationLoading:
         config = {
             "state": {"backend": "memory"},
             "agents": {},
-            "integrations": {"kubernetes": {"kubeconfig": "/path/to/config"}},
+            "integrations": {
+                "kubernetes": {"kubeconfig": "/path/to/config"}
+            }
         }
 
         engine = SentinelEngine(config)
@@ -548,7 +589,13 @@ class TestKubernetesIntegrationLoading:
     @pytest.mark.asyncio
     async def test_kubernetes_import_error(self):
         """Test Kubernetes ImportError is handled."""
-        config = {"state": {"backend": "memory"}, "agents": {}, "integrations": {"kubernetes": {}}}
+        config = {
+            "state": {"backend": "memory"},
+            "agents": {},
+            "integrations": {
+                "kubernetes": {}
+            }
+        }
 
         engine = SentinelEngine(config)
 
@@ -569,7 +616,11 @@ class TestLLMIntegrationLoading:
         config = {
             "state": {"backend": "memory"},
             "agents": {},
-            "integrations": {"llm": {"primary": {"type": "ollama", "model": "llama3.1:8b"}}},
+            "integrations": {
+                "llm": {
+                    "primary": {"type": "ollama", "model": "llama3.1:8b"}
+                }
+            }
         }
 
         engine = SentinelEngine(config)
@@ -589,7 +640,13 @@ class TestLLMIntegrationLoading:
     @pytest.mark.asyncio
     async def test_llm_import_error(self):
         """Test LLM ImportError is handled."""
-        config = {"state": {"backend": "memory"}, "agents": {}, "integrations": {"llm": {}}}
+        config = {
+            "state": {"backend": "memory"},
+            "agents": {},
+            "integrations": {
+                "llm": {}
+            }
+        }
 
         engine = SentinelEngine(config)
 
@@ -609,8 +666,10 @@ class TestAgentInitialization:
         """Test Discovery agent is initialized when enabled."""
         config = {
             "state": {"backend": "memory"},
-            "agents": {"discovery": {"enabled": True}},
-            "integrations": {},
+            "agents": {
+                "discovery": {"enabled": True}
+            },
+            "integrations": {}
         }
 
         engine = SentinelEngine(config)
@@ -632,8 +691,10 @@ class TestAgentInitialization:
         """Test Optimizer agent is initialized when enabled."""
         config = {
             "state": {"backend": "memory"},
-            "agents": {"optimizer": {"enabled": True}},
-            "integrations": {},
+            "agents": {
+                "optimizer": {"enabled": True}
+            },
+            "integrations": {}
         }
 
         engine = SentinelEngine(config)
@@ -654,8 +715,10 @@ class TestAgentInitialization:
         """Test Planner agent is initialized when enabled."""
         config = {
             "state": {"backend": "memory"},
-            "agents": {"planner": {"enabled": True}},
-            "integrations": {},
+            "agents": {
+                "planner": {"enabled": True}
+            },
+            "integrations": {}
         }
 
         engine = SentinelEngine(config)
@@ -676,8 +739,10 @@ class TestAgentInitialization:
         """Test Healer agent is initialized when enabled."""
         config = {
             "state": {"backend": "memory"},
-            "agents": {"healer": {"enabled": True}},
-            "integrations": {},
+            "agents": {
+                "healer": {"enabled": True}
+            },
+            "integrations": {}
         }
 
         engine = SentinelEngine(config)
@@ -698,8 +763,10 @@ class TestAgentInitialization:
         """Test Guardian agent is initialized when enabled."""
         config = {
             "state": {"backend": "memory"},
-            "agents": {"guardian": {"enabled": True}},
-            "integrations": {},
+            "agents": {
+                "guardian": {"enabled": True}
+            },
+            "integrations": {}
         }
 
         engine = SentinelEngine(config)
@@ -720,8 +787,10 @@ class TestAgentInitialization:
         """Test disabled agents are not initialized."""
         config = {
             "state": {"backend": "memory"},
-            "agents": {"discovery": {"enabled": False}},
-            "integrations": {},
+            "agents": {
+                "discovery": {"enabled": False}
+            },
+            "integrations": {}
         }
 
         engine = SentinelEngine(config)
@@ -738,8 +807,10 @@ class TestAgentInitialization:
         """Test agent ImportError is handled gracefully."""
         config = {
             "state": {"backend": "memory"},
-            "agents": {"discovery": {"enabled": True}},
-            "integrations": {},
+            "agents": {
+                "discovery": {"enabled": True}
+            },
+            "integrations": {}
         }
 
         engine = SentinelEngine(config)
@@ -757,8 +828,10 @@ class TestAgentInitialization:
         """Test agent start error is handled gracefully."""
         config = {
             "state": {"backend": "memory"},
-            "agents": {"discovery": {"enabled": True}},
-            "integrations": {},
+            "agents": {
+                "discovery": {"enabled": True}
+            },
+            "integrations": {}
         }
 
         engine = SentinelEngine(config)
@@ -779,7 +852,11 @@ class TestGetStatus:
 
     @pytest.fixture
     def basic_config(self):
-        return {"state": {"backend": "memory"}, "agents": {}, "integrations": {}}
+        return {
+            "state": {"backend": "memory"},
+            "agents": {},
+            "integrations": {}
+        }
 
     @pytest.mark.asyncio
     async def test_status_when_stopped(self, basic_config):

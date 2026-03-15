@@ -4,7 +4,6 @@ Tests for the DiscoveryAgent class.
 Tests cover device discovery, fingerprinting, classification,
 VLAN recommendations, and event handling.
 """
-
 import asyncio
 import pytest
 from datetime import datetime, timedelta, timezone
@@ -15,16 +14,11 @@ from sentinel.agents.discovery import (
     DiscoveryAgent,
     VENDOR_MAC_PREFIXES,
     SERVICE_SIGNATURES,
-    VLAN_RECOMMENDATIONS,
+    VLAN_RECOMMENDATIONS
 )
 from sentinel.core.models.device import (
-    Device,
-    DeviceType,
-    DeviceStatus,
-    TrustLevel,
-    NetworkInterface,
-    DeviceFingerprint,
-    DeviceInventory,
+    Device, DeviceType, DeviceStatus, TrustLevel,
+    NetworkInterface, DeviceFingerprint, DeviceInventory
 )
 from sentinel.core.models.event import Event, EventCategory, EventSeverity
 from sentinel.core.utils import utc_now
@@ -54,7 +48,7 @@ def default_config():
         "port_scan_enabled": True,
         "service_detection_enabled": True,
         "auto_execute_threshold": 0.95,
-        "confirm_threshold": 0.60,
+        "confirm_threshold": 0.60
     }
 
 
@@ -139,13 +133,19 @@ class TestDiscoveryAgentClassifyDevice:
 
     def test_classify_printer(self, agent):
         """Test classification of printer."""
-        fingerprint = DeviceFingerprint(open_ports=[9100, 515], services=["jetdirect", "lpd"])
+        fingerprint = DeviceFingerprint(
+            open_ports=[9100, 515],
+            services=["jetdirect", "lpd"]
+        )
         device_type = agent._classify_device(fingerprint)
         assert device_type == DeviceType.PRINTER
 
     def test_classify_camera(self, agent):
         """Test classification of camera."""
-        fingerprint = DeviceFingerprint(open_ports=[554, 80], services=["rtsp", "http"])
+        fingerprint = DeviceFingerprint(
+            open_ports=[554, 80],
+            services=["rtsp", "http"]
+        )
         device_type = agent._classify_device(fingerprint)
         assert device_type == DeviceType.CAMERA
 
@@ -153,44 +153,59 @@ class TestDiscoveryAgentClassifyDevice:
         """Test classification of server."""
         fingerprint = DeviceFingerprint(
             open_ports=[22, 80, 3306, 5432],  # SSH, HTTP, MySQL, PostgreSQL
-            services=["ssh", "http", "mysql", "postgresql"],
+            services=["ssh", "http", "mysql", "postgresql"]
         )
         device_type = agent._classify_device(fingerprint)
         assert device_type == DeviceType.SERVER
 
     def test_classify_storage(self, agent):
         """Test classification of storage device."""
-        fingerprint = DeviceFingerprint(open_ports=[2049, 111], services=["nfs", "rpcbind"])
+        fingerprint = DeviceFingerprint(
+            open_ports=[2049, 111],
+            services=["nfs", "rpcbind"]
+        )
         device_type = agent._classify_device(fingerprint)
         assert device_type == DeviceType.STORAGE
 
     def test_classify_iot_by_vendor(self, agent):
         """Test classification of IoT by vendor."""
-        fingerprint = DeviceFingerprint(vendor="Espressif Systems", open_ports=[80])
+        fingerprint = DeviceFingerprint(
+            vendor="Espressif Systems",
+            open_ports=[80]
+        )
         device_type = agent._classify_device(fingerprint)
         assert device_type == DeviceType.IOT
 
     def test_classify_iot_by_ports(self, agent):
         """Test classification of IoT by port pattern."""
-        fingerprint = DeviceFingerprint(open_ports=[80, 1883])  # HTTP and MQTT only
+        fingerprint = DeviceFingerprint(
+            open_ports=[80, 1883]  # HTTP and MQTT only
+        )
         device_type = agent._classify_device(fingerprint)
         assert device_type == DeviceType.IOT
 
     def test_classify_raspberry_pi_server(self, agent):
         """Test classification of Raspberry Pi as server."""
-        fingerprint = DeviceFingerprint(vendor="Raspberry Pi", open_ports=[22, 80])
+        fingerprint = DeviceFingerprint(
+            vendor="Raspberry Pi",
+            open_ports=[22, 80]
+        )
         device_type = agent._classify_device(fingerprint)
         assert device_type == DeviceType.SERVER
 
     def test_classify_unknown(self, agent):
         """Test classification falls back to unknown."""
-        fingerprint = DeviceFingerprint(open_ports=[12345])  # Unusual port
+        fingerprint = DeviceFingerprint(
+            open_ports=[12345]  # Unusual port
+        )
         device_type = agent._classify_device(fingerprint)
         assert device_type == DeviceType.UNKNOWN
 
     def test_classify_workstation(self, agent):
         """Test classification of workstation."""
-        fingerprint = DeviceFingerprint(open_ports=[22, 3389, 5900])  # SSH, RDP, VNC
+        fingerprint = DeviceFingerprint(
+            open_ports=[22, 3389, 5900]  # SSH, RDP, VNC
+        )
         device_type = agent._classify_device(fingerprint)
         assert device_type == DeviceType.WORKSTATION
 
@@ -201,14 +216,20 @@ class TestDiscoveryAgentCalculateConfidence:
     def test_calculate_confidence_full(self, agent):
         """Test confidence with all data."""
         fingerprint = DeviceFingerprint(
-            vendor="Dell", os_family="Linux", services=["ssh", "http"], open_ports=[22, 80]
+            vendor="Dell",
+            os_family="Linux",
+            services=["ssh", "http"],
+            open_ports=[22, 80]
         )
         confidence = agent._calculate_confidence(fingerprint)
         assert confidence == 1.0  # All components present
 
     def test_calculate_confidence_partial(self, agent):
         """Test confidence with partial data."""
-        fingerprint = DeviceFingerprint(vendor="Dell", open_ports=[22])
+        fingerprint = DeviceFingerprint(
+            vendor="Dell",
+            open_ports=[22]
+        )
         confidence = agent._calculate_confidence(fingerprint)
         assert confidence == 0.50  # Vendor + ports
 
@@ -249,12 +270,10 @@ class TestDiscoveryAgentARPScan:
     async def test_arp_scan_with_router(self, agent, mock_engine):
         """Test ARP scan using router integration."""
         mock_router = MagicMock()
-        mock_router.get_arp_table = AsyncMock(
-            return_value=[
-                {"mac": "00:50:56:AA:BB:CC", "ip": "192.168.1.10"},
-                {"mac": "B8:27:EB:11:22:33", "ip": "192.168.1.20"},
-            ]
-        )
+        mock_router.get_arp_table = AsyncMock(return_value=[
+            {"mac": "00:50:56:AA:BB:CC", "ip": "192.168.1.10"},
+            {"mac": "B8:27:EB:11:22:33", "ip": "192.168.1.20"}
+        ])
         mock_engine.get_integration.return_value = mock_router
 
         devices = await agent._arp_scan("192.168.1.0/24")
@@ -303,11 +322,11 @@ class TestDiscoveryAgentFingerprintDevice:
         agent.port_scan_enabled = False
 
         device = Device(
-            interfaces=[
-                NetworkInterface(
-                    mac_address="00:11:22:33:44:55", ip_addresses=["192.168.1.100"], is_primary=True
-                )
-            ]
+            interfaces=[NetworkInterface(
+                mac_address="00:11:22:33:44:55",
+                ip_addresses=["192.168.1.100"],
+                is_primary=True
+            )]
         )
 
         await agent._fingerprint_device(device)
@@ -323,11 +342,11 @@ class TestDiscoveryAgentProcessDiscoveredDevices:
     async def test_process_new_device(self, agent, mock_engine):
         """Test processing a new device."""
         device = Device(
-            interfaces=[
-                NetworkInterface(
-                    mac_address="00:11:22:33:44:55", ip_addresses=["192.168.1.100"], is_primary=True
-                )
-            ]
+            interfaces=[NetworkInterface(
+                mac_address="00:11:22:33:44:55",
+                ip_addresses=["192.168.1.100"],
+                is_primary=True
+            )]
         )
         device.device_type = DeviceType.WORKSTATION
         device.fingerprint.confidence = 0.80
@@ -345,22 +364,22 @@ class TestDiscoveryAgentProcessDiscoveredDevices:
         """Test processing an existing device."""
         # Add device first
         device = Device(
-            interfaces=[
-                NetworkInterface(
-                    mac_address="00:11:22:33:44:55", ip_addresses=["192.168.1.100"], is_primary=True
-                )
-            ]
+            interfaces=[NetworkInterface(
+                mac_address="00:11:22:33:44:55",
+                ip_addresses=["192.168.1.100"],
+                is_primary=True
+            )]
         )
         device.status = DeviceStatus.ONLINE
         agent._inventory.add_device(device)
 
         # Process same device again
         updated = Device(
-            interfaces=[
-                NetworkInterface(
-                    mac_address="00:11:22:33:44:55", ip_addresses=["192.168.1.100"], is_primary=True
-                )
-            ]
+            interfaces=[NetworkInterface(
+                mac_address="00:11:22:33:44:55",
+                ip_addresses=["192.168.1.100"],
+                is_primary=True
+            )]
         )
 
         await agent._process_discovered_devices([updated], full_scan=False)
@@ -374,22 +393,22 @@ class TestDiscoveryAgentProcessDiscoveredDevices:
         """Test processing when device type changes."""
         # Add device first as unknown
         device = Device(
-            interfaces=[
-                NetworkInterface(
-                    mac_address="00:11:22:33:44:55", ip_addresses=["192.168.1.100"], is_primary=True
-                )
-            ]
+            interfaces=[NetworkInterface(
+                mac_address="00:11:22:33:44:55",
+                ip_addresses=["192.168.1.100"],
+                is_primary=True
+            )]
         )
         device.device_type = DeviceType.UNKNOWN
         agent._inventory.add_device(device)
 
         # Process with new type on full scan
         updated = Device(
-            interfaces=[
-                NetworkInterface(
-                    mac_address="00:11:22:33:44:55", ip_addresses=["192.168.1.100"], is_primary=True
-                )
-            ]
+            interfaces=[NetworkInterface(
+                mac_address="00:11:22:33:44:55",
+                ip_addresses=["192.168.1.100"],
+                is_primary=True
+            )]
         )
         updated.device_type = DeviceType.SERVER
 
@@ -422,11 +441,11 @@ class TestDiscoveryAgentProposeSegmentation:
         agent.enable_auto_segmentation = False
 
         device = Device(
-            interfaces=[
-                NetworkInterface(
-                    mac_address="00:11:22:33:44:55", ip_addresses=["192.168.1.100"], is_primary=True
-                )
-            ]
+            interfaces=[NetworkInterface(
+                mac_address="00:11:22:33:44:55",
+                ip_addresses=["192.168.1.100"],
+                is_primary=True
+            )]
         )
         device.device_type = DeviceType.IOT
         device.fingerprint.confidence = 0.90  # Above confirm_threshold
@@ -447,11 +466,11 @@ class TestDiscoveryAgentProposeSegmentation:
         agent.enable_auto_segmentation = False
 
         device = Device(
-            interfaces=[
-                NetworkInterface(
-                    mac_address="00:11:22:33:44:55", ip_addresses=["192.168.1.100"], is_primary=True
-                )
-            ]
+            interfaces=[NetworkInterface(
+                mac_address="00:11:22:33:44:55",
+                ip_addresses=["192.168.1.100"],
+                is_primary=True
+            )]
         )
         device.device_type = DeviceType.UNKNOWN
         device.fingerprint.confidence = 0.30  # Below confirm_threshold
@@ -469,11 +488,11 @@ class TestDiscoveryAgentProposeSegmentation:
             pytest.skip("IoT segmenter not available")
 
         device = Device(
-            interfaces=[
-                NetworkInterface(
-                    mac_address="00:11:22:33:44:55", ip_addresses=["192.168.1.100"], is_primary=True
-                )
-            ]
+            interfaces=[NetworkInterface(
+                mac_address="00:11:22:33:44:55",
+                ip_addresses=["192.168.1.100"],
+                is_primary=True
+            )]
         )
         device.device_type = DeviceType.IOT
         device.fingerprint.confidence = 0.90
@@ -489,8 +508,7 @@ class TestDiscoveryAgentProposeSegmentation:
         for device_type in DeviceType:
             if device_type != DeviceType.UNKNOWN:
                 assert device_type in VLAN_RECOMMENDATIONS or device_type in [
-                    DeviceType.CONTAINER,
-                    DeviceType.VIRTUAL_MACHINE,
+                    DeviceType.CONTAINER, DeviceType.VIRTUAL_MACHINE
                 ]
 
 
@@ -501,11 +519,11 @@ class TestDiscoveryAgentCheckOfflineDevices:
     async def test_check_offline_device(self, agent, mock_engine):
         """Test detection of offline device."""
         device = Device(
-            interfaces=[
-                NetworkInterface(
-                    mac_address="00:11:22:33:44:55", ip_addresses=["192.168.1.100"], is_primary=True
-                )
-            ]
+            interfaces=[NetworkInterface(
+                mac_address="00:11:22:33:44:55",
+                ip_addresses=["192.168.1.100"],
+                is_primary=True
+            )]
         )
         device.status = DeviceStatus.ONLINE
         device.last_seen = utc_now() - timedelta(minutes=30)  # 30 mins ago
@@ -523,11 +541,11 @@ class TestDiscoveryAgentCheckOfflineDevices:
     async def test_check_online_device_stays_online(self, agent, mock_engine):
         """Test that recently seen device stays online."""
         device = Device(
-            interfaces=[
-                NetworkInterface(
-                    mac_address="00:11:22:33:44:55", ip_addresses=["192.168.1.100"], is_primary=True
-                )
-            ]
+            interfaces=[NetworkInterface(
+                mac_address="00:11:22:33:44:55",
+                ip_addresses=["192.168.1.100"],
+                is_primary=True
+            )]
         )
         device.status = DeviceStatus.ONLINE
         device.last_seen = utc_now() - timedelta(minutes=5)  # 5 mins ago
@@ -576,7 +594,11 @@ class TestDiscoveryAgentEventHandlers:
             severity=EventSeverity.INFO,
             source="router",
             title="DHCP Lease",
-            data={"mac": "00:11:22:33:44:55", "ip": "192.168.1.100", "hostname": "test-host"},
+            data={
+                "mac": "00:11:22:33:44:55",
+                "ip": "192.168.1.100",
+                "hostname": "test-host"
+            }
         )
 
         # Disable port scanning for faster test
@@ -594,11 +616,11 @@ class TestDiscoveryAgentEventHandlers:
         """Test handling DHCP event for existing device."""
         # Add device first
         device = Device(
-            interfaces=[
-                NetworkInterface(
-                    mac_address="00:11:22:33:44:55", ip_addresses=["192.168.1.100"], is_primary=True
-                )
-            ]
+            interfaces=[NetworkInterface(
+                mac_address="00:11:22:33:44:55",
+                ip_addresses=["192.168.1.100"],
+                is_primary=True
+            )]
         )
         agent._inventory.add_device(device)
 
@@ -608,7 +630,10 @@ class TestDiscoveryAgentEventHandlers:
             severity=EventSeverity.INFO,
             source="router",
             title="DHCP Lease",
-            data={"mac": "00:11:22:33:44:55", "ip": "192.168.1.100"},
+            data={
+                "mac": "00:11:22:33:44:55",
+                "ip": "192.168.1.100"
+            }
         )
 
         await agent._handle_dhcp_event(event)
@@ -625,7 +650,7 @@ class TestDiscoveryAgentEventHandlers:
             severity=EventSeverity.INFO,
             source="router",
             title="DHCP Lease",
-            data={"mac": None, "ip": None},
+            data={"mac": None, "ip": None}
         )
 
         await agent._handle_dhcp_event(event)
@@ -638,11 +663,11 @@ class TestDiscoveryAgentEventHandlers:
         """Test handling ARP event updates last_seen."""
         # Add device first
         device = Device(
-            interfaces=[
-                NetworkInterface(
-                    mac_address="00:11:22:33:44:55", ip_addresses=["192.168.1.100"], is_primary=True
-                )
-            ]
+            interfaces=[NetworkInterface(
+                mac_address="00:11:22:33:44:55",
+                ip_addresses=["192.168.1.100"],
+                is_primary=True
+            )]
         )
         device.status = DeviceStatus.OFFLINE
         device.last_seen = utc_now() - timedelta(hours=1)
@@ -654,7 +679,10 @@ class TestDiscoveryAgentEventHandlers:
             severity=EventSeverity.INFO,
             source="router",
             title="ARP Entry",
-            data={"mac": "00:11:22:33:44:55", "ip": "192.168.1.100"},
+            data={
+                "mac": "00:11:22:33:44:55",
+                "ip": "192.168.1.100"
+            }
         )
 
         await agent._handle_arp_event(event)
@@ -671,7 +699,10 @@ class TestDiscoveryAgentEventHandlers:
             severity=EventSeverity.INFO,
             source="router",
             title="ARP Entry",
-            data={"mac": "00:11:22:33:44:55", "ip": "192.168.1.100"},
+            data={
+                "mac": "00:11:22:33:44:55",
+                "ip": "192.168.1.100"
+            }
         )
 
         await agent._handle_arp_event(event)
@@ -688,11 +719,11 @@ class TestDiscoveryAgentDoExecute:
         """Test VLAN assignment execution."""
         # Add device to inventory
         device = Device(
-            interfaces=[
-                NetworkInterface(
-                    mac_address="00:11:22:33:44:55", ip_addresses=["192.168.1.100"], is_primary=True
-                )
-            ]
+            interfaces=[NetworkInterface(
+                mac_address="00:11:22:33:44:55",
+                ip_addresses=["192.168.1.100"],
+                is_primary=True
+            )]
         )
         agent._inventory.add_device(device)
 
@@ -702,15 +733,17 @@ class TestDiscoveryAgentDoExecute:
         mock_engine.get_integration.return_value = mock_switch
 
         from sentinel.core.models.event import AgentAction
-
         action = AgentAction(
             agent_name="discovery",
             action_type="assign_vlan",
             target_type="device",
             target_id=str(device.id),
-            parameters={"vlan_id": 100, "mac": "00:11:22:33:44:55"},
+            parameters={
+                "vlan_id": 100,
+                "mac": "00:11:22:33:44:55"
+            },
             reasoning="Test",
-            confidence=0.95,
+            confidence=0.95
         )
 
         result = await agent._do_execute(action)
@@ -723,7 +756,6 @@ class TestDiscoveryAgentDoExecute:
     async def test_do_execute_unknown_action(self, agent, mock_engine):
         """Test execution of unknown action type."""
         from sentinel.core.models.event import AgentAction
-
         action = AgentAction(
             agent_name="discovery",
             action_type="unknown_action",
@@ -731,7 +763,7 @@ class TestDiscoveryAgentDoExecute:
             target_id="123",
             parameters={},
             reasoning="Test",
-            confidence=0.95,
+            confidence=0.95
         )
 
         with pytest.raises(ValueError, match="Unknown action type"):
@@ -746,17 +778,16 @@ class TestDiscoveryAgentRollback:
         """Test capturing rollback data."""
         # Add device with existing VLAN
         device = Device(
-            interfaces=[
-                NetworkInterface(
-                    mac_address="00:11:22:33:44:55", ip_addresses=["192.168.1.100"], is_primary=True
-                )
-            ]
+            interfaces=[NetworkInterface(
+                mac_address="00:11:22:33:44:55",
+                ip_addresses=["192.168.1.100"],
+                is_primary=True
+            )]
         )
         device.assigned_vlan = 10
         agent._inventory.add_device(device)
 
         from sentinel.core.models.event import AgentAction
-
         action = AgentAction(
             agent_name="discovery",
             action_type="assign_vlan",
@@ -764,7 +795,7 @@ class TestDiscoveryAgentRollback:
             target_id=str(device.id),
             parameters={"mac": "00:11:22:33:44:55", "vlan_id": 100},
             reasoning="Test",
-            confidence=0.95,
+            confidence=0.95
         )
 
         rollback_data = await agent._capture_rollback_data(action)
@@ -777,11 +808,11 @@ class TestDiscoveryAgentRollback:
         """Test rollback execution."""
         # Add device
         device = Device(
-            interfaces=[
-                NetworkInterface(
-                    mac_address="00:11:22:33:44:55", ip_addresses=["192.168.1.100"], is_primary=True
-                )
-            ]
+            interfaces=[NetworkInterface(
+                mac_address="00:11:22:33:44:55",
+                ip_addresses=["192.168.1.100"],
+                is_primary=True
+            )]
         )
         device.assigned_vlan = 100
         agent._inventory.add_device(device)
@@ -792,7 +823,6 @@ class TestDiscoveryAgentRollback:
         mock_engine.get_integration.return_value = mock_switch
 
         from sentinel.core.models.event import AgentAction
-
         action = AgentAction(
             agent_name="discovery",
             action_type="assign_vlan",
@@ -801,7 +831,7 @@ class TestDiscoveryAgentRollback:
             parameters={"mac": "00:11:22:33:44:55", "vlan_id": 100},
             reasoning="Test",
             confidence=0.95,
-            rollback_data={"previous_vlan": 10, "mac": "00:11:22:33:44:55"},
+            rollback_data={"previous_vlan": 10, "mac": "00:11:22:33:44:55"}
         )
 
         await agent._do_rollback(action)
@@ -820,13 +850,11 @@ class TestDiscoveryAgentGetRelevantState:
         # Add some devices
         for i in range(3):
             device = Device(
-                interfaces=[
-                    NetworkInterface(
-                        mac_address=f"00:11:22:33:44:{i:02d}",
-                        ip_addresses=[f"192.168.1.{100+i}"],
-                        is_primary=True,
-                    )
-                ]
+                interfaces=[NetworkInterface(
+                    mac_address=f"00:11:22:33:44:{i:02d}",
+                    ip_addresses=[f"192.168.1.{100+i}"],
+                    is_primary=True
+                )]
             )
             device.device_type = DeviceType.WORKSTATION
             agent._inventory.add_device(device)
@@ -859,7 +887,7 @@ class TestDiscoveryAgentAnalyze:
             event_type="device.discovered",
             severity=EventSeverity.INFO,
             source="test",
-            title="Test",
+            title="Test"
         )
 
         result = await agent.analyze(event)
@@ -874,9 +902,9 @@ class TestDiscoveryAgentQuickScan:
     async def test_perform_quick_scan(self, agent, mock_engine):
         """Test quick scan execution."""
         mock_router = MagicMock()
-        mock_router.get_arp_table = AsyncMock(
-            return_value=[{"mac": "00:50:56:AA:BB:CC", "ip": "192.168.1.10"}]
-        )
+        mock_router.get_arp_table = AsyncMock(return_value=[
+            {"mac": "00:50:56:AA:BB:CC", "ip": "192.168.1.10"}
+        ])
         mock_engine.get_integration.return_value = mock_router
 
         await agent._perform_quick_scan()
@@ -895,9 +923,9 @@ class TestDiscoveryAgentFullScan:
         agent.port_scan_enabled = False
 
         mock_router = MagicMock()
-        mock_router.get_arp_table = AsyncMock(
-            return_value=[{"mac": "00:50:56:AA:BB:CC", "ip": "192.168.1.10"}]
-        )
+        mock_router.get_arp_table = AsyncMock(return_value=[
+            {"mac": "00:50:56:AA:BB:CC", "ip": "192.168.1.10"}
+        ])
         mock_engine.get_integration.return_value = mock_router
 
         await agent._perform_full_scan()

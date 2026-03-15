@@ -8,7 +8,6 @@ This agent continuously monitors the Sentinel system for:
 - Resource utilization concerns
 - Configuration inconsistencies
 """
-
 import asyncio
 import logging
 from datetime import datetime, timedelta
@@ -17,11 +16,8 @@ from typing import Optional
 from sentinel.core.utils import utc_now
 from sentinel.agents.base import BaseAgent
 from sentinel.core.models.event import (
-    Event,
-    EventCategory,
-    EventSeverity,
-    AgentAction,
-    AgentDecision,
+    Event, EventCategory, EventSeverity,
+    AgentAction, AgentDecision
 )
 
 logger = logging.getLogger(__name__)
@@ -83,10 +79,17 @@ class TestingAgent(BaseAgent):
 
     async def _subscribe_events(self) -> None:
         """Subscribe to system monitoring events."""
-        self.engine.event_bus.subscribe(self._handle_agent_action, event_type="agent.action.*")
-        self.engine.event_bus.subscribe(self._handle_system_error, event_type="system.error")
         self.engine.event_bus.subscribe(
-            self._handle_integration_status, event_type="integration.status.*"
+            self._handle_agent_action,
+            event_type="agent.action.*"
+        )
+        self.engine.event_bus.subscribe(
+            self._handle_system_error,
+            event_type="system.error"
+        )
+        self.engine.event_bus.subscribe(
+            self._handle_integration_status,
+            event_type="integration.status.*"
         )
 
     async def _main_loop(self) -> None:
@@ -97,8 +100,8 @@ class TestingAgent(BaseAgent):
 
                 # Run health checks periodically
                 if (
-                    self._last_health_check is None
-                    or (now - self._last_health_check).total_seconds() > self.health_check_interval
+                    self._last_health_check is None or
+                    (now - self._last_health_check).total_seconds() > self.health_check_interval
                 ):
                     await self._run_system_health_check()
                     self._last_health_check = now
@@ -142,7 +145,7 @@ class TestingAgent(BaseAgent):
             "issues_found": len(issues_found),
             "issues": issues_found,
             "integrations_checked": len(self._integration_status),
-            "agents_checked": len(self._agent_metrics),
+            "agents_checked": len(self._agent_metrics)
         }
         self._health_history.append(health_result)
 
@@ -155,19 +158,15 @@ class TestingAgent(BaseAgent):
         if issues_found:
             severity = EventSeverity.WARNING if len(issues_found) < 3 else EventSeverity.ERROR
 
-        await self.engine.event_bus.publish(
-            Event(
-                category=EventCategory.SYSTEM,
-                event_type="system.health.check",
-                severity=severity,
-                source=f"sentinel.agents.{self.agent_name}",
-                title="System Health Check",
-                description=(
-                    f"Found {len(issues_found)} issues" if issues_found else "All systems healthy"
-                ),
-                data=health_result,
-            )
-        )
+        await self.engine.event_bus.publish(Event(
+            category=EventCategory.SYSTEM,
+            event_type="system.health.check",
+            severity=severity,
+            source=f"sentinel.agents.{self.agent_name}",
+            title="System Health Check",
+            description=f"Found {len(issues_found)} issues" if issues_found else "All systems healthy",
+            data=health_result
+        ))
 
     async def _check_integrations(self) -> list[dict]:
         """Check health of all integrations."""
@@ -182,13 +181,13 @@ class TestingAgent(BaseAgent):
 
             try:
                 # Check if integration is connected
-                connected = getattr(integration, "connected", True)
+                connected = getattr(integration, 'connected', True)
                 if not connected:
                     issue = {
                         "type": "integration_disconnected",
                         "severity": "high",
                         "component": int_type,
-                        "message": f"Integration {int_type} is disconnected",
+                        "message": f"Integration {int_type} is disconnected"
                     }
                     issues.append(issue)
                     await self._record_issue(f"int_{int_type}_disconnected", issue)
@@ -196,14 +195,14 @@ class TestingAgent(BaseAgent):
                     await self._clear_issue(f"int_{int_type}_disconnected")
 
                 # Check if integration has health check method
-                if hasattr(integration, "health_check"):
+                if hasattr(integration, 'health_check'):
                     healthy = await integration.health_check()
                     if not healthy:
                         issue = {
                             "type": "integration_unhealthy",
                             "severity": "medium",
                             "component": int_type,
-                            "message": f"Integration {int_type} health check failed",
+                            "message": f"Integration {int_type} health check failed"
                         }
                         issues.append(issue)
                         await self._record_issue(f"int_{int_type}_unhealthy", issue)
@@ -212,8 +211,8 @@ class TestingAgent(BaseAgent):
 
                 self._integration_status[int_type] = {
                     "connected": connected,
-                    "healthy": connected and (not hasattr(integration, "health_check") or healthy),
-                    "last_check": utc_now().isoformat(),
+                    "healthy": connected and (not hasattr(integration, 'health_check') or healthy),
+                    "last_check": utc_now().isoformat()
                 }
 
             except Exception as e:
@@ -221,7 +220,7 @@ class TestingAgent(BaseAgent):
                     "type": "integration_error",
                     "severity": "high",
                     "component": int_type,
-                    "message": f"Error checking {int_type}: {str(e)}",
+                    "message": f"Error checking {int_type}: {str(e)}"
                 }
                 issues.append(issue)
                 await self._record_issue(f"int_{int_type}_error", issue)
@@ -233,7 +232,7 @@ class TestingAgent(BaseAgent):
         issues = []
 
         # Get all registered agents
-        agents = getattr(self.engine, "_agents", {})
+        agents = getattr(self.engine, '_agents', {})
 
         for agent_name, agent in agents.items():
             if agent_name == self.agent_name:
@@ -241,13 +240,13 @@ class TestingAgent(BaseAgent):
 
             try:
                 # Check if agent is running
-                running = getattr(agent, "_running", False)
+                running = getattr(agent, '_running', False)
                 if not running:
                     issue = {
                         "type": "agent_stopped",
                         "severity": "high",
                         "component": agent_name,
-                        "message": f"Agent {agent_name} is not running",
+                        "message": f"Agent {agent_name} is not running"
                     }
                     issues.append(issue)
                     await self._record_issue(f"agent_{agent_name}_stopped", issue)
@@ -259,9 +258,9 @@ class TestingAgent(BaseAgent):
                     await self._clear_issue(f"agent_{agent_name}_stopped")
 
                 # Check agent metrics
-                stats = getattr(agent, "stats", {})
+                stats = getattr(agent, 'stats', {})
                 if isinstance(stats, dict):
-                    actions_per_min = stats.get("actions_this_minute", 0)
+                    actions_per_min = stats.get('actions_this_minute', 0)
 
                     # Check for potential runaway agent
                     if actions_per_min > 50:
@@ -269,7 +268,7 @@ class TestingAgent(BaseAgent):
                             "type": "agent_high_activity",
                             "severity": "medium",
                             "component": agent_name,
-                            "message": f"Agent {agent_name} has high activity: {actions_per_min} actions/min",
+                            "message": f"Agent {agent_name} has high activity: {actions_per_min} actions/min"
                         }
                         issues.append(issue)
                         await self._record_issue(f"agent_{agent_name}_high_activity", issue)
@@ -277,7 +276,7 @@ class TestingAgent(BaseAgent):
                     self._agent_metrics[agent_name] = {
                         "running": running,
                         "stats": stats,
-                        "last_check": utc_now().isoformat(),
+                        "last_check": utc_now().isoformat()
                     }
 
             except Exception as e:
@@ -290,18 +289,18 @@ class TestingAgent(BaseAgent):
         issues = []
 
         # Get event bus metrics if available
-        event_bus = getattr(self.engine, "event_bus", None)
+        event_bus = getattr(self.engine, 'event_bus', None)
         if not event_bus:
             return issues
 
         # Check queue depth
-        queue_depth = getattr(event_bus, "_queue_depth", 0)
+        queue_depth = getattr(event_bus, '_queue_depth', 0)
         if queue_depth > 100:
             issue = {
                 "type": "event_queue_backlog",
                 "severity": "medium",
                 "component": "event_bus",
-                "message": f"Event queue has {queue_depth} pending events",
+                "message": f"Event queue has {queue_depth} pending events"
             }
             issues.append(issue)
             await self._record_issue("event_queue_backlog", issue)
@@ -316,7 +315,7 @@ class TestingAgent(BaseAgent):
                     "type": "slow_event_processing",
                     "severity": "medium",
                     "component": "event_bus",
-                    "message": f"Average event processing time: {avg_time:.1f}ms (threshold: {self.max_event_delay_ms}ms)",
+                    "message": f"Average event processing time: {avg_time:.1f}ms (threshold: {self.max_event_delay_ms}ms)"
                 }
                 issues.append(issue)
                 await self._record_issue("slow_event_processing", issue)
@@ -330,7 +329,7 @@ class TestingAgent(BaseAgent):
         issues = []
 
         # Get metrics from engine if available
-        metrics = getattr(self.engine, "metrics", None)
+        metrics = getattr(self.engine, 'metrics', None)
         if metrics:
             try:
                 memory_usage = await metrics.get_value("system.memory.percent")
@@ -339,7 +338,7 @@ class TestingAgent(BaseAgent):
                         "type": "high_memory",
                         "severity": "high",
                         "component": "system",
-                        "message": f"System memory usage at {memory_usage}%",
+                        "message": f"System memory usage at {memory_usage}%"
                     }
                     issues.append(issue)
                     await self._record_issue("high_memory", issue)
@@ -357,25 +356,19 @@ class TestingAgent(BaseAgent):
             self._detected_issues[issue_id] = {
                 **issue,
                 "first_detected": utc_now().isoformat(),
-                "occurrence_count": 1,
+                "occurrence_count": 1
             }
 
             # Publish issue detected event
-            await self.engine.event_bus.publish(
-                Event(
-                    category=EventCategory.SYSTEM,
-                    event_type="system.issue.detected",
-                    severity=(
-                        EventSeverity.WARNING
-                        if issue.get("severity") == "medium"
-                        else EventSeverity.ERROR
-                    ),
-                    source=f"sentinel.agents.{self.agent_name}",
-                    title=f"Issue Detected: {issue.get('type')}",
-                    description=issue.get("message"),
-                    data=self._detected_issues[issue_id],
-                )
-            )
+            await self.engine.event_bus.publish(Event(
+                category=EventCategory.SYSTEM,
+                event_type="system.issue.detected",
+                severity=EventSeverity.WARNING if issue.get("severity") == "medium" else EventSeverity.ERROR,
+                source=f"sentinel.agents.{self.agent_name}",
+                title=f"Issue Detected: {issue.get('type')}",
+                description=issue.get("message"),
+                data=self._detected_issues[issue_id]
+            ))
         else:
             self._detected_issues[issue_id]["occurrence_count"] += 1
             self._detected_issues[issue_id]["last_seen"] = utc_now().isoformat()
@@ -388,17 +381,15 @@ class TestingAgent(BaseAgent):
             self._resolved_issues.append(resolved_issue)
 
             # Publish issue resolved event
-            await self.engine.event_bus.publish(
-                Event(
-                    category=EventCategory.SYSTEM,
-                    event_type="system.issue.resolved",
-                    severity=EventSeverity.INFO,
-                    source=f"sentinel.agents.{self.agent_name}",
-                    title=f"Issue Resolved: {resolved_issue.get('type')}",
-                    description=f"Previously detected issue has been resolved",
-                    data=resolved_issue,
-                )
-            )
+            await self.engine.event_bus.publish(Event(
+                category=EventCategory.SYSTEM,
+                event_type="system.issue.resolved",
+                severity=EventSeverity.INFO,
+                source=f"sentinel.agents.{self.agent_name}",
+                title=f"Issue Resolved: {resolved_issue.get('type')}",
+                description=f"Previously detected issue has been resolved",
+                data=resolved_issue
+            ))
 
     async def _check_resolved_issues(self) -> None:
         """Check if any issues have automatically resolved."""
@@ -411,8 +402,7 @@ class TestingAgent(BaseAgent):
 
         # Clean old resolved issues
         self._resolved_issues = [
-            issue
-            for issue in self._resolved_issues
+            issue for issue in self._resolved_issues
             if datetime.fromisoformat(issue.get("resolved_at", cutoff.isoformat())) > cutoff
         ]
 
@@ -429,10 +419,10 @@ class TestingAgent(BaseAgent):
             analysis=f"Agent {agent_name} is not running and auto-restart is enabled",
             options_considered=[
                 {"action": "restart", "reason": "Agent stopped"},
-                {"action": "ignore", "reason": "May be intentional"},
+                {"action": "ignore", "reason": "May be intentional"}
             ],
             selected_option={"action": "restart"},
-            confidence=0.85,
+            confidence=0.85
         )
         self._decisions.append(decision)
 
@@ -443,7 +433,7 @@ class TestingAgent(BaseAgent):
             parameters={"agent_name": agent_name},
             reasoning=f"Agent {agent_name} is stopped, proposing restart",
             confidence=0.85,
-            reversible=False,
+            reversible=False
         )
 
     async def _handle_agent_action(self, event: Event) -> None:
@@ -452,9 +442,7 @@ class TestingAgent(BaseAgent):
         if agent_name:
             if agent_name not in self._agent_metrics:
                 self._agent_metrics[agent_name] = {"actions": 0}
-            self._agent_metrics[agent_name]["actions"] = (
-                self._agent_metrics[agent_name].get("actions", 0) + 1
-            )
+            self._agent_metrics[agent_name]["actions"] = self._agent_metrics[agent_name].get("actions", 0) + 1
             self._agent_metrics[agent_name]["last_action"] = utc_now().isoformat()
 
     async def _handle_system_error(self, event: Event) -> None:
@@ -468,7 +456,7 @@ class TestingAgent(BaseAgent):
             "severity": "high",
             "component": component,
             "message": error.get("message", "System error occurred"),
-            "error_data": error,
+            "error_data": error
         }
         await self._record_issue(f"sys_error_{component}_{error_type}", issue)
 
@@ -480,7 +468,7 @@ class TestingAgent(BaseAgent):
         if integration:
             self._integration_status[integration] = {
                 "status": status,
-                "last_update": utc_now().isoformat(),
+                "last_update": utc_now().isoformat()
             }
 
             if status == "disconnected":
@@ -488,7 +476,7 @@ class TestingAgent(BaseAgent):
                     "type": "integration_disconnected",
                     "severity": "high",
                     "component": integration,
-                    "message": f"Integration {integration} reported disconnected",
+                    "message": f"Integration {integration} reported disconnected"
                 }
                 await self._record_issue(f"int_{integration}_status_disconnected", issue)
             elif status == "connected":
@@ -505,7 +493,7 @@ class TestingAgent(BaseAgent):
             agent_name = action.parameters.get("agent_name")
 
             # Get the agent from engine
-            agents = getattr(self.engine, "_agents", {})
+            agents = getattr(self.engine, '_agents', {})
             agent = agents.get(agent_name)
 
             if agent:
@@ -541,7 +529,7 @@ class TestingAgent(BaseAgent):
             "detected_issues": len(self._detected_issues),
             "resolved_issues": len(self._resolved_issues),
             "integration_status": self._integration_status,
-            "agent_metrics": self._agent_metrics,
+            "agent_metrics": self._agent_metrics
         }
 
     @property
@@ -570,5 +558,5 @@ class TestingAgent(BaseAgent):
             "resolved_issues_24h": len(self._resolved_issues),
             "health_checks": len(self._health_history),
             "integrations_monitored": len(self._integration_status),
-            "agents_monitored": len(self._agent_metrics),
+            "agents_monitored": len(self._agent_metrics)
         }

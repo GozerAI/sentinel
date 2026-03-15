@@ -9,7 +9,6 @@ unified compute cluster. Handles:
 - k3s/Docker orchestration
 - SSH-based provisioning
 """
-
 import asyncio
 import logging
 import json
@@ -22,11 +21,7 @@ import asyncssh
 
 from sentinel.integrations.base import BaseIntegration
 from sentinel.integrations.compute.node import (
-    ComputeNode,
-    NodeRole,
-    NodeStatus,
-    NodeResources,
-    NodeMetrics,
+    ComputeNode, NodeRole, NodeStatus, NodeResources, NodeMetrics
 )
 from sentinel.core.utils import utc_now
 
@@ -88,9 +83,7 @@ class ComputeClusterManager(BaseIntegration):
             raise ValueError("SSH user is required")
 
         self.ssh_key_path = config.get("ssh_key_path")
-        self._ssh_password = config.get(
-            "ssh_password"
-        )  # Prefixed with _ to discourage direct access
+        self._ssh_password = config.get("ssh_password")  # Prefixed with _ to discourage direct access
 
         # Validate SSH port
         self.ssh_port = config.get("ssh_port", 22)
@@ -115,18 +108,17 @@ class ComputeClusterManager(BaseIntegration):
         self.scan_networks = config.get("scan_networks", [])
         self.discovery_interval = config.get("discovery_interval", 300)
         if self.discovery_interval < 60:
-            logger.warning(
-                f"Discovery interval {self.discovery_interval}s is very short, may impact performance"
-            )
+            logger.warning(f"Discovery interval {self.discovery_interval}s is very short, may impact performance")
 
         # k3s configuration (sensitive - don't log tokens)
         self.k3s_server_url = config.get("k3s_server_url")
         self._k3s_token = config.get("k3s_token")  # Prefixed with _ for security
 
         # Persistence
-        self.persistence_path = Path(
-            config.get("persistence_path", "/var/lib/sentinel/cluster.json")
-        )
+        self.persistence_path = Path(config.get(
+            "persistence_path",
+            "/var/lib/sentinel/cluster.json"
+        ))
 
         # Node registry
         self._nodes: dict[UUID, ComputeNode] = {}
@@ -270,7 +262,7 @@ class ComputeClusterManager(BaseIntegration):
                 client_keys=[self.ssh_key_path] if self.ssh_key_path else None,
                 password=self.ssh_password,
                 known_hosts=None,
-                connect_timeout=10,
+                connect_timeout=10
             ) as conn:
                 # Get system information
                 result = await conn.run("hostname", check=True)
@@ -281,22 +273,22 @@ class ComputeClusterManager(BaseIntegration):
                     "cat /proc/device-tree/model 2>/dev/null || "
                     "cat /sys/class/dmi/id/product_name 2>/dev/null || "
                     "echo 'Unknown'",
-                    check=False,
+                    check=False
                 )
-                model = result.stdout.strip().replace("\x00", "")
+                model = result.stdout.strip().replace('\x00', '')
 
                 # Get MAC address
                 result = await conn.run(
                     "cat /sys/class/net/eth0/address 2>/dev/null || "
                     "ip link show | grep -A1 'state UP' | grep ether | awk '{print $2}'",
-                    check=False,
+                    check=False
                 )
-                mac = result.stdout.strip().split("\n")[0]
+                mac = result.stdout.strip().split('\n')[0]
 
                 # Get OS version
                 result = await conn.run(
                     "cat /etc/os-release | grep PRETTY_NAME | cut -d'=' -f2 | tr -d '\"'",
-                    check=False,
+                    check=False
                 )
                 os_version = result.stdout.strip()
 
@@ -313,7 +305,7 @@ class ComputeClusterManager(BaseIntegration):
                     status=NodeStatus.ONLINE,
                     ssh_user=self.ssh_user,
                     ssh_port=self.ssh_port,
-                    ssh_key_path=self.ssh_key_path,
+                    ssh_key_path=self.ssh_key_path
                 )
 
                 # Detect if it's a Raspberry Pi
@@ -352,19 +344,24 @@ class ComputeClusterManager(BaseIntegration):
                 resources.cpu_cores = int(result.stdout.strip())
 
             result = await conn.run(
-                "cat /proc/cpuinfo | grep 'model name' | head -1 | cut -d':' -f2", check=False
+                "cat /proc/cpuinfo | grep 'model name' | head -1 | cut -d':' -f2",
+                check=False
             )
             if result.exit_status == 0:
                 resources.cpu_model = result.stdout.strip()
 
             # Memory info
-            result = await conn.run("free -m | grep Mem | awk '{print $2}'", check=False)
+            result = await conn.run(
+                "free -m | grep Mem | awk '{print $2}'",
+                check=False
+            )
             if result.exit_status == 0:
                 resources.memory_total_mb = int(result.stdout.strip())
 
             # Disk info
             result = await conn.run(
-                "df -BG / | tail -1 | awk '{print $2}' | tr -d 'G'", check=False
+                "df -BG / | tail -1 | awk '{print $2}' | tr -d 'G'",
+                check=False
             )
             if result.exit_status == 0:
                 resources.disk_total_gb = float(result.stdout.strip())
@@ -460,7 +457,10 @@ class ComputeClusterManager(BaseIntegration):
     # =========================================================================
 
     async def execute_on_node(
-        self, node: ComputeNode, command: str, timeout: int = 30
+        self,
+        node: ComputeNode,
+        command: str,
+        timeout: int = 30
     ) -> tuple[int, str, str]:
         """
         Execute a command on a node via SSH.
@@ -481,9 +481,12 @@ class ComputeClusterManager(BaseIntegration):
                 client_keys=[node.ssh_key_path] if node.ssh_key_path else None,
                 password=self.ssh_password,
                 known_hosts=None,
-                connect_timeout=10,
+                connect_timeout=10
             ) as conn:
-                result = await asyncio.wait_for(conn.run(command, check=False), timeout=timeout)
+                result = await asyncio.wait_for(
+                    conn.run(command, check=False),
+                    timeout=timeout
+                )
                 return result.exit_status, result.stdout, result.stderr
 
         except Exception as e:
@@ -491,7 +494,10 @@ class ComputeClusterManager(BaseIntegration):
             return -1, "", str(e)
 
     async def execute_on_all(
-        self, command: str, role: NodeRole = None, parallel: bool = True
+        self,
+        command: str,
+        role: NodeRole = None,
+        parallel: bool = True
     ) -> dict[str, tuple[int, str, str]]:
         """
         Execute a command on multiple nodes.
@@ -508,7 +514,10 @@ class ComputeClusterManager(BaseIntegration):
         results = {}
 
         if parallel:
-            tasks = [self.execute_on_node(node, command) for node in nodes]
+            tasks = [
+                self.execute_on_node(node, command)
+                for node in nodes
+            ]
             task_results = await asyncio.gather(*tasks, return_exceptions=True)
 
             for node, result in zip(nodes, task_results):
@@ -550,7 +559,7 @@ class ComputeClusterManager(BaseIntegration):
         ports: dict[int, int] = None,
         environment: dict[str, str] = None,
         volumes: dict[str, str] = None,
-        restart_policy: str = "unless-stopped",
+        restart_policy: str = "unless-stopped"
     ) -> bool:
         """
         Deploy a Docker container on a node.
@@ -606,26 +615,33 @@ class ComputeClusterManager(BaseIntegration):
 
     async def remove_container(self, node: ComputeNode, name: str) -> bool:
         """Remove a container from a node."""
-        exit_code, _, _ = await self.execute_on_node(node, f"docker rm -f {name}")
+        exit_code, _, _ = await self.execute_on_node(
+            node,
+            f"docker rm -f {name}"
+        )
         return exit_code == 0
 
     async def get_containers(self, node: ComputeNode) -> list[dict]:
         """Get list of containers on a node."""
         exit_code, stdout, _ = await self.execute_on_node(
-            node, "docker ps -a --format '{{.ID}}|{{.Names}}|{{.Image}}|{{.Status}}'"
+            node,
+            "docker ps -a --format '{{.ID}}|{{.Names}}|{{.Image}}|{{.Status}}'"
         )
 
         if exit_code != 0:
             return []
 
         containers = []
-        for line in stdout.strip().split("\n"):
+        for line in stdout.strip().split('\n'):
             if line:
-                parts = line.split("|")
+                parts = line.split('|')
                 if len(parts) >= 4:
-                    containers.append(
-                        {"id": parts[0], "name": parts[1], "image": parts[2], "status": parts[3]}
-                    )
+                    containers.append({
+                        "id": parts[0],
+                        "name": parts[1],
+                        "image": parts[2],
+                        "status": parts[3]
+                    })
 
         return containers
 
@@ -644,9 +660,14 @@ class ComputeClusterManager(BaseIntegration):
             True if successful
         """
         # Install k3s server
-        install_cmd = "curl -sfL https://get.k3s.io | " "sh -s - server --write-kubeconfig-mode=644"
+        install_cmd = (
+            "curl -sfL https://get.k3s.io | "
+            "sh -s - server --write-kubeconfig-mode=644"
+        )
 
-        exit_code, stdout, stderr = await self.execute_on_node(node, install_cmd, timeout=300)
+        exit_code, stdout, stderr = await self.execute_on_node(
+            node, install_cmd, timeout=300
+        )
 
         if exit_code != 0:
             logger.error(f"Failed to install k3s server: {stderr}")
@@ -694,7 +715,9 @@ class ComputeClusterManager(BaseIntegration):
             f"sh -s - agent"
         )
 
-        exit_code, stdout, stderr = await self.execute_on_node(node, install_cmd, timeout=300)
+        exit_code, stdout, stderr = await self.execute_on_node(
+            node, install_cmd, timeout=300
+        )
 
         if exit_code != 0:
             logger.error(f"Failed to install k3s agent: {stderr}")
@@ -723,7 +746,7 @@ class ComputeClusterManager(BaseIntegration):
                 client_keys=[node.ssh_key_path] if node.ssh_key_path else None,
                 password=self.ssh_password,
                 known_hosts=None,
-                connect_timeout=5,
+                connect_timeout=5
             ) as conn:
                 result = await conn.run("echo ok", check=True)
                 return result.stdout.strip() == "ok"
@@ -743,11 +766,12 @@ class ComputeClusterManager(BaseIntegration):
                 client_keys=[node.ssh_key_path] if node.ssh_key_path else None,
                 password=self.ssh_password,
                 known_hosts=None,
-                connect_timeout=10,
+                connect_timeout=10
             ) as conn:
                 # CPU usage
                 result = await conn.run(
-                    "top -bn1 | grep 'Cpu(s)' | awk '{print $2}' | cut -d'%' -f1", check=False
+                    "top -bn1 | grep 'Cpu(s)' | awk '{print $2}' | cut -d'%' -f1",
+                    check=False
                 )
                 if result.exit_status == 0:
                     try:
@@ -757,7 +781,8 @@ class ComputeClusterManager(BaseIntegration):
 
                 # Memory usage
                 result = await conn.run(
-                    "free | grep Mem | awk '{print ($3/$2) * 100.0}'", check=False
+                    "free | grep Mem | awk '{print ($3/$2) * 100.0}'",
+                    check=False
                 )
                 if result.exit_status == 0:
                     try:
@@ -767,7 +792,8 @@ class ComputeClusterManager(BaseIntegration):
 
                 # Temperature (for Raspberry Pi)
                 result = await conn.run(
-                    "cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null", check=False
+                    "cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null",
+                    check=False
                 )
                 if result.exit_status == 0:
                     try:
@@ -776,7 +802,10 @@ class ComputeClusterManager(BaseIntegration):
                         pass
 
                 # Uptime
-                result = await conn.run("cat /proc/uptime | awk '{print $1}'", check=False)
+                result = await conn.run(
+                    "cat /proc/uptime | awk '{print $1}'",
+                    check=False
+                )
                 if result.exit_status == 0:
                     try:
                         metrics.uptime_seconds = int(float(result.stdout.strip()))
@@ -846,10 +875,10 @@ class ComputeClusterManager(BaseIntegration):
                 "nodes": [node.to_dict() for node in self._nodes.values()],
                 "k3s_server_url": self.k3s_server_url,
                 "k3s_token": self.k3s_token,
-                "persisted_at": utc_now().isoformat(),
+                "persisted_at": utc_now().isoformat()
             }
 
-            with open(self.persistence_path, "w") as f:
+            with open(self.persistence_path, 'w') as f:
                 json.dump(data, f, indent=2)
 
         except Exception as e:
@@ -861,7 +890,7 @@ class ComputeClusterManager(BaseIntegration):
             if not self.persistence_path.exists():
                 return
 
-            with open(self.persistence_path, "r") as f:
+            with open(self.persistence_path, 'r') as f:
                 data = json.load(f)
 
             self.k3s_server_url = data.get("k3s_server_url")
@@ -890,5 +919,5 @@ class ComputeClusterManager(BaseIntegration):
             "raspberry_pis": len([n for n in nodes if n.is_raspberry_pi]),
             "total_cpu_cores": sum(n.resources.cpu_cores for n in nodes),
             "total_memory_gb": sum(n.resources.memory_total_mb for n in nodes) / 1024,
-            "total_storage_gb": sum(n.resources.disk_total_gb for n in nodes),
+            "total_storage_gb": sum(n.resources.disk_total_gb for n in nodes)
         }

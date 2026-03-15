@@ -15,7 +15,6 @@ CTO Architecture components:
 - AgentFactory: Dynamic agent creation and management
 - AgentRegistry: Inter-agent communication and discovery
 """
-
 from sentinel.agents.base import BaseAgent
 from sentinel.agents.discovery import DiscoveryAgent
 from sentinel.agents.optimizer import OptimizerAgent

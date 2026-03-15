@@ -10,7 +10,7 @@ readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.11"
 authors = [
-    {name = "GozerAI", email = "dev@gozerai.com"}
+    {name = "1450 Enterprises LLC", email = "dev@1450enterprises.com"}
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -33,7 +33,7 @@ dependencies = [
     "httpx>=0.25.0",
     "uvicorn>=0.24.0",
     "fastapi>=0.104.0",
-    "PyJWT[crypto]>=2.8.0",
+    "python-jose[cryptography]>=3.3.0",
     "passlib[bcrypt]>=1.7.4",
     "pyyaml>=6.0.1",
     "python-dotenv>=1.0.0",
@@ -75,10 +75,10 @@ sentinel = "sentinel.cli.main:main"
 sentinel-gui = "sentinel.gui.app:main"
 
 [project.urls]
-Homepage = "https://github.com/chrisarseno/sentinel"
-Documentation = "https://sentinel.gozerai.com/docs"
-Repository = "https://github.com/chrisarseno/sentinel"
-Issues = "https://github.com/chrisarseno/sentinel/issues"
+Homepage = "https://github.com/1450enterprises/sentinel"
+Documentation = "https://sentinel.1450enterprises.com/docs"
+Repository = "https://github.com/1450enterprises/sentinel"
+Issues = "https://github.com/1450enterprises/sentinel/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]
